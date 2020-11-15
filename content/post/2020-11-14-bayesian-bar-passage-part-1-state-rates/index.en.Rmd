@@ -24,28 +24,14 @@ projects: []
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE, error=FALSE}
 library(knitr)
 library(rstanarm)
+library(tidybayes)
 library(glue)
 library(tidyverse)
+
 # stan options
 # detect and use max number of cores
 options(mc.cores = parallel::detectCores())
 ```
-
-```{r}
-logit2prob <- function(logit) {
-  
-  # function to convert log odds to percentage
-  
-  # convert log odds to odds
-  odds <- exp(logit)
-  
-  # convert odds to percentage
-  prob <- odds / (1+odds)
-  
-  return(prob)
-}
-```
-
 
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE, error=FALSE}
 # all the ABA datasets are on GitHub
@@ -67,51 +53,46 @@ admiss <- read_csv(glue("{data_dir}Admissions.csv"))  %>%
   select(schoolname, calendaryear, uggpa75, uggpa50, uggpa25, lsat75, lsat50, lsat25) %>%
   # large outlier in GPA; remove because school is in PR and its GPA
   # could impact scaling
-  filter(str_detect(schoolname != 'Pontifical'),
-         complete.cases(.)) %>%
+  filter(!str_detect(schoolname, 'Pontifical'),
+         # arizona summit in 2021 seems odd regarding its lsat and GPA, so remove
+         !(schoolname == "Arizona Summit Law School" & calendaryear == 2018)) %>%
   # students in these admissions classes will take bar in three years
   # so, add three to year, so it matches the bar year
   mutate(year = calendaryear+3) %>%
   # scale gpa and lsat meterics by converting to mean of 0 and standard deviation of 1
   mutate_at(vars(uggpa75, uggpa50, uggpa25, lsat75, lsat50, lsat25), scale) %>%
-  # create squred columns for 50thgpa and lsat, to be used in polynomial model
-  # many values are negative, so we must first add the minimum to the numbers, 
-  # so all are positive
-  mutate(gpa_sq = (abs(min(uggpa50)) + uggpa50 + 0.01)^2,
-         lsat_sq = (abs(min(lsat50)) + lsat50 + 0.01)^2) %>%
   select(-calendaryear)
+
 #combine bar results and admissions datasets
 bar <- left_join(bar, admiss, by=c('schoolname', 'year')) %>%
   # all WI graduates are listed as passing the bar, so remove
   filter(state != "WI",
         # extreme outlier
-        state != "PR",
-        # remove observations with NA in any values
-        complete.cases(.))
-```
+        state != "PR")
 
-```{r}
-# create dataset of each state's cumulative pass rate
-# by grouping by state and summing takers and passers
+# create dataset of each state's cumulative pass rate, by year
 state_rates <- bar %>%
   group_by(state) %>%
   summarize(takers = sum(takers),
             passers = sum(passers)) %>%
-  mutate(pass_rate = passers / takers)
-# find cumulative US pass rate, so it can be added to plots
+  mutate(pass_rate = passers / takers) %>%
+  ungroup()
+
+# find cumulative US pass rate by year, so it can be added to plots
 overall_pass <- state_rates %>%
   summarize(takers = sum(takers),
             passers = sum(passers)) %>%
-  mutate(pass_rate = passers / takers)
+  mutate(pass_rate = passers / takers) %>%
+  ungroup()
 ```
 
-*Technical notes:  I conducted this analysis in R with the [rstanarm](https://mc-stan.org/users/interfaces/rstanarm) package for Bayesian modeling.  The dataset represents law school ABA 509 disclosures, aggregated by [AccessLex](http://analytix.accesslex.org/DataSet).*
+*Technical notes:  I conducted this analysis in R with the [rstanarm](https://mc-stan.org/users/interfaces/rstanarm) package for Bayesian modeling.  The dataset represents law school ABA 509 disclosures, aggregated by [AccessLex](http://analytix.accesslex.org/DataSet). I fetched the data from a [GitHub repo](https://github.com/shanejorr/ABA-509-disclosures) I created to store the .csv files.*
 
 ### What are hierarchical models?
 
 We start with a simple question: Which states have the lowest and highest bar passage rates? On the surface, this is simple arithmetic. Just divide the number of bar passers by the number of takers. And in a way, that's all there is to it.
 
-But in another context, it's trickier.  Let's look at Alaska. In our data - spanning 2014 to 2017 - there are two takers and two passers; a bar passage rate of 100%. Do we assume their bar exam is fluff, and if I took it I would be sure to pass?  If a thousand cold souls took it would they all pass?
+But in another context, it's trickier.  Let's look at Alaska. In our data - spanning 2014 to 2019 - there are two takers and two passers; a bar passage rate of 100%. Do we assume their bar exam is fluff, and if I took it I would be sure to pass?  If a thousand cold souls took it would they all pass?
 
 Framing the issue so highlights what we really want to know.  We want to know what I call the hypothetical pass rate with an infinite number of takers.  Let's call this the infinite takers pass rate. In other words, if a gazillion people took the Alaska bar, what percentage would pass?  Surely it's not 100%.
 
@@ -139,73 +120,54 @@ The plot below shows the results from a Bayesian hierarchical binomial model. Th
 
 ```{r}
 # ----- create bayesian model
+
 # create intercept only Bayesian binomial model
 state_intercept <- stan_glmer(cbind(passers, takers - passers) ~ (1 | state),
-                              prior_intercept = normal(0, 1), 
-                              data = state_rates, family = binomial("logit"))
-int <- as.data.frame(state_intercept)[[1]]
-state_int_trace <- state_intercept %>%
-  # extract trace as dataframe
-  as.data.frame(.) %>%
-  # add intercept to estimates
-  mutate_all(funs(!!int + .)) %>%
-  # convert to percentage
-  mutate_all(funs(logit2prob(.))) %>%
-  # first and last rows are global intercept and sigma, not states
-  .[3:ncol(.)-1]
-colnames(state_int_trace) <- state_rates$state
-# find 90% poserior interval
-hpi <- as.data.frame(posterior_interval(state_intercept))
-# extract first row as intercept
-# which will later be added to state values
-int_hpi <- head(hpi, 1)
-# add intercept to state values
-hpi[[1]] <- int_hpi[[1]] + hpi[[1]]
-hpi[[2]] <- int_hpi[[2]] + hpi[[2]]
-# remove first and last rows
-hpi <- hpi[3:nrow(hpi)-1, 1:2]
-hpi <- hpi %>%
-  # convert to percentage
-  mutate_all(funs(logit2prob(.))) %>%
-  # add column that is state names
-  mutate(state = state_rates$state)
-# calculate mean of trace
-state_int_summary <- state_int_trace %>%
-  summarize_all(mean) %>%
-  t(.) %>%
-  as.data.frame(.) %>%
-  # add column with state abbreviations
-  mutate(state = row.names(.)) %>%
-  # join hpi
-  full_join(., hpi, by='state') %>%
-  # join state pass rates
-  full_join(., state_rates, by='state')
-# change column names to be more descriptive
-colnames(state_int_summary) <- c('mean_pass', 'state', 'lower', 'upper', 
-                                 'takers', 'passers', 'real_pass') 
+                              prior_intercept = student_t(1, 2.5, 3), 
+                              iter = 5000, seed = 145,
+                              data = state_rates, 
+                              family = binomial("logit"))
+
+# create posterior distribution of state pass rate predictions
+state_draws <- state_rates['state'] %>%
+  add_fitted_draws(state_intercept, n = 300, seed = 958) %>%
+  # calculate hdi and median value of posterior predictions
+  group_by(state) %>%
+  median_hdi(.value, .width = .95) %>%
+  select(-.width, -.point, -.interval) %>%
+  # add the actual state rates to the dataset of posterior predictions
+  left_join(state_rates, by = 'state')
+
 ```
 
 ```{r fig.height=8, fig.width=8}
 # ----- create plot of estimates from model
-# order by mean bar passage
-state_int_summary <- state_int_summary %>%
-    arrange(desc(mean_pass))
+
+# colors for custom legend
+state_draws_colors <- c("Predicted Pass Rate" = "indianred2",
+                        "Actual Pass Rate" = "dodgerblue2")
+
 # create plot of bayesian estimated pass rates, actual rates, and HPI
-state_int_summary %>%
-  ggplot(aes(mean_pass, fct_inorder(state), color='Bayesian passage rate')) +
+state_draws %>%
+  ggplot(aes(.value, fct_reorder(state, .value), color=names(state_draws_colors)[1])) +
   # add vertical line that is the US pass rate
-  geom_vline(xintercept = overall_pass$pass_rate, alpha = .7) +
+  geom_vline(xintercept = overall_pass$pass_rate, alpha = .7, linetype = 2) +
   # bayesian predicted pass rate
-  geom_point(color='indianred2', alpha=.7) +
+  geom_point(alpha=.7) + 
   # bayesian 95% HPI
-  geom_errorbarh(aes(xmax = upper, xmin = lower), color='indianred2') +
+  geom_errorbarh(aes(xmax = .upper, xmin = .lower)) + 
   # real pass rate
-  geom_point(aes(x=real_pass, color='Real passage rate'), color='dodgerblue2', alpha=.9, size=1) +
+  geom_point(aes(x=pass_rate, color=names(state_draws_colors)[2]), alpha=.9, size=1) + 
   # convert x-axis to percentage
-  scale_x_continuous(labels=function(x) paste0(x*100,"%")) +
-  labs(x='Bar passage rate',
-       y='State') +
-  theme_minimal()
+  scale_x_continuous(labels = scales::percent, limits = c(.5, 1)) +
+  scale_color_manual(values = state_draws_colors) +
+  labs(title = "Predicted and Actual Bar Passage Rates by State",
+       caption = "Data Source: AccessLex",
+       x='Bar passage rate',
+       y= NULL,
+       color = NULL) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 The plot highlights a couple features of Bayesian hierarchical models. First, look again at Alaska. Confirming our intuition, the estimated infinite takers pass rate sits a few percentage points higher than the United States rate. Also, Alaska's wide HPI indicates the lack of data points for the state. 
@@ -232,21 +194,27 @@ school_pass <- bar %>%
             gpa = max(uggpa50)) %>%
   mutate(school_pass = passers / takers) %>%
   select(-takers, -passers)
+
 # create different datasets for lsat and gpa, then we will bind for plotting
 lsat <- school_pass %>%
   select(-gpa) %>%
   mutate(type = 'LSAT') %>%
   rename(metric = lsat)
+
 gpa <- school_pass %>%
   select(-lsat) %>%
   mutate(type = 'GPA') %>%
   rename(metric = gpa)
+```
+
+```{r fig.width = 5, fig,height = 5}
 # bind lsat and GPA, and plot as facetted scatterplots
 bind_rows(lsat, gpa) %>%
   ggplot(aes(metric, school_pass, color = type)) +
-  geom_point(alpha = 0.6) +
+  geom_point(alpha = 0.4, size = 1) +
   facet_wrap(~type, ncol = 1) +
-  scale_y_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
+  scale_color_brewer(palette = "Set2") +
   labs(title = 'School bar passage rates and student scores',
        x = 'Scaled scores',
        y = 'School bar passage rate') +
@@ -258,82 +226,40 @@ Now, let's model this relationship. For reasons we won't explore now, the best f
 
 ```{r}
 # create models with GPA and LSAT, test fit, and compare
-# only use school / state / year combinations with at least 5 bar takers
+
+# only use school / state / year combinations with at least 10 bar takers
+# reason: the smaller the number of takers, the less likely that the school's
+# mean GPA and LSAT will represent the takers
 admissions_mod <- bar %>%
-  filter(takers > 4)
+  filter(takers > 10)
+
 # model with state as grouping term, and grades as predictors
 # prior intercept is student t, so it is more robust
 # prior to regression coefficients is positive, because we have strong prior 
 # information that undergrad GPA and LSAT positively relates to bar passage
-# create multiple models and then compare them
-# best model among this model, model with only mean GPA and LSAT, 
-# and polynomial model with mean GPA and LSAT
-fit_admissions <- stan_glmer(cbind(passers, takers - passers) ~ poly(uggpa50, 2) + poly(lsat50,2) + (1 | state),
-                            prior_intercept = student_t(2, 0, 2), prior = normal(.5, 1), 
-                            data = admissions_mod, family = binomial("logit"))
-# ---- no need to rerun these sections
-# fit_admissions_min <- stan_glmer(cbind(passers, takers - passers) ~ uggpa50 + lsat50 + (1 | state),
-#                             prior_intercept = student_t(2, 0, 2), prior = normal(.5, 1),
-#                             data = admissions_mod, family = binomial("logit"))
-# 
-# fit_admissions_poly <- stan_glmer(cbind(passers, takers - passers) ~ poly(uggpa50, 2) + poly(lsat50,2) + (1 | state),
-#                             prior_intercept = student_t(2, 0, 2), prior = normal(.5, 1),
-#                             data = admissions_mod, family = binomial("logit"))
-# 
-# compare_models(loo(fit_admissions_full, k_threshold = 0.7),
-#                loo(fit_admissions_min, k_threshold = 0.7),
-#                loo(fit_admissions_poly, k_threshold = 0.7))
-# Complete model diagnostics can be examined by launching the model's shinystan app. 
-# To launch the app enter `launch_shinystan(fit_grades)` into the console.
-```
+fit_admissions <- stan_glmer(cbind(passers, takers - passers) ~ uggpa50 + lsat50 + (1 | state),
+                            prior_intercept = student_t(1, 2.5, 3), 
+                            prior = normal(.5, 2.5), 
+                            iter = 4000, seed = 948,
+                            data = admissions_mod, 
+                            family = binomial("logit"))
 
+# create predictions by predicting passage rates for hypothetical schools in every state
+# with mean - 0 - uggpa and LSAT
 
-```{r}
-# create dataframe that is each state's predicted bar passage with median
-# lsat and gpa
-# create dataframe that includes each state and average admissions factors
-# undergraduate gpa and lsat are 0 because we scaled these columns to have a mean of 0
-state_admissions_prediction <- data.frame(state = unique(admissions_mod$state),
-                                          uggpa25 = 0,
-                                          uggpa50 = 0,
-                                          uggpa75 = 0,
-                                          lsat25 = 0,
-                                          lsat50 = 0,
-                                          lsat75 = 0,
-                                          passers = 0,
-                                          takers = 100)
-# create predictions, which will return the number of passers out of 100
-yhat_state_admissions <- posterior_predict(fit_admissions, state_admissions_prediction) %>%
-  as.data.frame(.)
-# change column names to state abbreviations
-colnames(yhat_state_admissions) <- unique(admissions_mod$state)
-# calculate the mean and 90% HPD of the posterior predictions
-hpdi_states <-lapply(yhat_state_admissions, function(x) HPDinterval(mcmc(x), 0.90)[c(1,2)]) %>%
-  as.data.frame() %>%
-  # make each row a different state, and columns for upper and lower HPDI
-  t() %>%
-  as.data.frame() %>%
-  rename(lower_hpdi = V1,
-         upper_hpdi = V2) %>%
-  # add column for state, so we can merge on states with mean dataset
-  mutate(state = row.names(.))
-pred_state_admissions <- yhat_state_admissions %>%
-  # calcualte mean number of passers for each state
-  summarize_all(mean) %>%
-  # make each row a state
-  t() %>%
-  as.data.frame() %>%
-  rename(mean_predicted = V1) %>%
-  # add column for state, so we can merge on it
-  mutate(state = row.names(.)) %>%
-  # merge HPDI dataset with mean dataset
-  left_join(hpdi_states, by = 'state') %>%
-  # we also want to add state pass rates to the predicted rates dataset for plotting
-  left_join(state_int_summary[c('real_pass', 'state')], by = 'state') %>%
-  # multiply pass rate by 100 to convert decimal to whole number
-  mutate(real_pass = real_pass * 100,
-         pass_diff = mean_predicted - real_pass) %>%
-  arrange(desc(mean_predicted))
+# get individual states
+ind_states <- unique(admissions_mod$state)
+
+admis_mod_pred <- tibble(
+  takers = 2000,
+  passers = 2000,
+  state = ind_states,
+  uggpa50 = 0,
+  lsat50 = 0) %>%
+  # increase number of draws to 1000 since we will plot with ggridges
+  add_fitted_draws(fit_admissions, n = 1000, seed = 960) %>%
+  ungroup() %>%
+  select(state, .value)
 ```
 
 The plot below shows each state's predicted bar passage rate with average students. To get here, we first created a model of bar passage with state, LSAT, and GPA as predictors. Then, we created a test data set with 100 takers for each state, and each taker had an average LSAT and GPA.  The average represented below is each state's average pass rate from these 100 middle-of-the-road hypothetical takers.
@@ -342,37 +268,19 @@ The plot provides an estimate of what each state's passage rate would have been 
 
 Theoretically, these rates should give us a better indicator of bar exam difficulty than the raw pass rate because they control for student ability.
 
-```{r}
-# order states by mean pass rate
-state_order <- list(categoryorder = "array",
-                    categoryarray = pred_state_admissions$state)
-pred_state_admissions %>%
-  # convert precentages to integers by multiplying by 100
-  plot_ly(x = ~mean_predicted, y = ~state, type = "scatter", mode = "markers",
-          mode = list(color = 'lightblue',
-                      bgcolor = 'lightblue'),
-          hoverinfo = 'text',
-          text = ~paste0("State:  ", state,
-                        "<br>Predicted Pass:  ", round(mean_predicted, 2), '%',
-                        "<br>Real Pass:  ", round(real_pass, 2),'%',
-                        "<br>Difference:  ", round(pass_diff, 2),'%'),
-         # create legend label
-         name = 'Predicted pass rate',
-         width = 900, height = 1200) %>%
-  # add error bars from hpi rgb(17, 157, 255)
-  add_segments(x = ~upper_hpdi, xend = ~lower_hpdi, y = ~state, yend = ~state,
-              name = '90% posterior interval',
-              line = list(color = 'rgb(17, 157, 255)')) %>%
-  # add actual passage rate
-  add_trace(x = ~real_pass, y = ~state, type = "scatter", mode = "markers",
-           # create legend label
-           name = "Real passage rate") %>%
-  layout(yaxis = state_order,   # order states by pass rates
-         xaxis = list(title = 'Pass Rates (%)', # axis label names
-                      ticksuffix = "%"),  # add percentage to axis lables
-         legend = list(orientation = "h",   # show entries horizontally
-                     xanchor = "center",  # use center of legend as anchor
-                     x = 0.5))            # put legend in center of x-axis)
+```{r fig.height = 7, fig.width = 6}
+ggplot(admis_mod_pred, aes(.value, fct_reorder(state, .value), group=state)) +  
+  # add vertical line that is the US pass rate
+  geom_vline(xintercept = overall_pass$pass_rate, alpha = .7, linetype = 2) +
+  geom_density_ridges(scale = 3, size = .25, rel_min_height = 0.01,
+                      fill = 'dodgerblue2', alpha = .2) +
+  scale_x_continuous(labels = scales::percent, limits = c(.5, 1)) +
+  labs(title = "Predicted Bar Passage by State",
+       caption = "Data Source: AccessLex",
+       x='Bar passage rate',
+       y= NULL,
+       color = NULL) +
+  theme_minimal()
 ```
 
 ### There are always caveats with models
