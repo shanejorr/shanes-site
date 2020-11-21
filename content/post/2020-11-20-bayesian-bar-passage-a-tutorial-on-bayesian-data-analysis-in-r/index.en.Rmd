@@ -15,7 +15,7 @@ lastmod: '2020-11-20T22:51:48-05:00'
 featured: no
 image:
   caption: ''
-  focal_point: ''
+  focal_point: center
   preview_only: no
 projects: []
 ---

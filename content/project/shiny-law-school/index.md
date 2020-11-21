@@ -1,10 +1,10 @@
 ---
 date: "2016-04-27T00:00:00Z"
-external_link: https://sites.google.com/forsythfutures.org/benefits-cliff-forsyth-2019/benefits-cliff-simulator
+external_link: https://shanejorr.shinyapps.io/shiny-school-bar-passage/
 image:
   focal_point: Center
-summary: Simulation of public benefit levels given income and family size. Simulation conducted in R and plots created with JavaScript.
+summary: Shiny app highlighting the relationship between a law school's bar passage rate and its average undergraduate GPA and LSAT score.
 tags:
-- JavaScript
-title: Benefits Cliff Simulator
+- Shiny
+title: Law School Bar Passage Rates
 ---
