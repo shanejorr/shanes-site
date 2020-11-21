@@ -21,7 +21,7 @@ social:
   link: https://www.linkedin.com/in/orrshanej/
 - icon: github
   icon_pack: fab
-  link: https://github.com/gcushen
+  link: https://github.com/shanejorr
 superuser: true
 title: Shane Orr
 ---
