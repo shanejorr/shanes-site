@@ -10,7 +10,6 @@ categories:
 tags: []
 subtitle: ''
 summary: ''
-authors: []
 lastmod: '2020-11-23T22:51:48-05:00'
 featured: no
 image:
@@ -145,7 +144,7 @@ state_intercept <- stan_glmer(cbind(passers, takers - passers) ~ (1 | state),
                               family = binomial("logit"))
 
 # create posterior distribution of state pass rate predictions
-state_pred <- state_rates['state'] %>%
+state_draws <- state_rates['state'] %>%
   # predict bar passage rates for each state
   add_fitted_draws(state_intercept, n = 300, seed = 958) %>%
   # calculate hdi and median value of posterior predictions

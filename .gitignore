@@ -5,3 +5,5 @@
 blogdown
 public/ 
 *.Rproj
+**/index.en_cache
+*.rds
