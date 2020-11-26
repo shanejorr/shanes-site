@@ -17,6 +17,11 @@ image:
   focal_point: center
   preview_only: no
 projects: []
+links:
+- icon: github
+  icon_pack: fab
+  name: Github
+  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en.Rmd
 ---
 
 ```{r setup, echo = F}
