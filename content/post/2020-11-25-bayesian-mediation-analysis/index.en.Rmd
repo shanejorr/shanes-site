@@ -1,0 +1,171 @@
+---
+title: Bayesian Mediation Analysis
+author: Shane Orr
+date: '2020-11-25'
+slug: bayesian-mediation-analysis
+categories:
+  - bayesian analysis
+  - mediation analysis
+tags: []
+subtitle: "Using Bayesian methods to conduct mediation analysis R"
+summary: ''
+authors: []
+lastmod: '2020-11-25T18:38:02-05:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+links:
+- icon: github
+  icon_pack: fab
+  name: Github
+  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-11-25-bayesian-mediation-analysis/index.en.Rmd
+---
+
+```{r setup, echo = F}
+knitr::opts_chunk$set(echo = T,
+                      message = F,
+                      warning = F,
+                      error = F)
+```
+
+```{r loadPackages}
+library(rstanarm)
+library(tidybayes)
+library(glue)
+library(tidyverse)
+
+# stan options
+# detect and use max number of cores
+options(mc.cores = parallel::detectCores())
+```
+
+## What is mediation analysis?
+
+### A simple example
+
+### A simple overview
+
+## How do I conduct one using Bayesian methods?
+
+```{r createDataset}
+# create simulated dataset --------
+
+# number of rows in dataset
+n <- 300
+
+# 1 if student works, 0 otherwise
+working <- rep(c(1, 0), times = n/2)
+
+# save for future use
+work_string <- c('Working', 'Not working')
+
+# how much student studies
+# if working, number with mean of 22 and sd of 5
+# if not working, mean of 17, sd of 5
+study_hours <- rpois(n, lambda = 15 + (working*5))
+study_hours_std <- (study_hours - mean(study_hours)) / (sd(study_hours) / 2)
+
+# intercept of -1 (.27 prob)
+final_grade <- invlogit(-3 + .3*study_hours + .1*working)
+final_grade <- rnorm(n = n, mean = final_grade, sd = .15)
+final_grade <- ifelse(final_grade > 1, 1, final_grade)
+final_grade <- ifelse(final_grade < 0, 0, final_grade)
+final_grade <- rbinom(n = n, size = 1, prob = final_grade)
+
+grades <- data.frame(
+  work = working,
+  study = study_hours,
+  grade = final_grade
+) %>%
+  mutate(work = ifelse(work == 1, 'Working', 'Not working'))
+
+grades %>%
+  group_by(work) %>%
+  summarize(mn = mean(grade))
+```
+
+### Indirect effect (kind-of) the old fashioned way
+
+```{r ieModel}
+# Direct effect model
+direct_effect <- stan_glm(study ~ work, 
+                         prior = student_t(df = 3, location = .5, scale = 2),
+                         family = poisson,
+                         seed = 938,
+                         data = grades)
+
+direct_posterior <- direct_effect %>%
+  add_fitted_draws(newdata = data.frame(work = work_string))
+```
+
+```{r iePlotPosterior, fig.height = 3, fig.width = 3.5}
+ggplot(direct_posterior, aes(x = .value, fill = work)) +
+  stat_halfeye(alpha = .7) +
+  labs(title = 'Effect of Working on Hours Studied',
+       x = 'Hours Studied',
+       y = 'Density',
+       fill = NULL) +
+  theme_minimal() +
+  theme(legend.position = 'bottom',
+        plot.title = element_text(size = 10),
+        axis.title = element_text(size = 10))
+```
+### Direct effect the old fashioned way
+
+```{r deMod}
+# indirect effect model
+indirect_effect <- stan_glm(grade ~ work, 
+                           prior = student_t(df = 3, location = .1, scale = 2),
+                           family = binomial('logit'),
+                           seed = 938,
+                           data = grades)
+
+indirect_posterior <- indirect_effect %>%
+  add_fitted_draws(newdata = data.frame(work = work_string))
+```
+
+```{r iePlotPosterior, fig.height = 3, fig.width = 3.5}
+ggplot(indirect_posterior, aes(x = .value, fill = work)) +
+  stat_halfeye(alpha = .7) +
+  scale_x_continuous(limits = c(.6, 1), labels = scales::percent_format(accuracy = 1)) +
+  labs(title = 'Probability of Passing Class by Work Status',
+       x = 'Probability of passing class',
+       y = 'Density',
+       fill = NULL) +
+  theme_minimal() +
+  theme(legend.position = 'bottom',
+        plot.title = element_text(size = 10),
+        axis.title = element_text(size = 10))
+```
+
+```{r iePlotDiff, fig.height = 2.5, fig.width = 3}
+posterior_epred(indirect_effect, 
+                newdata = data.frame(work = work_string)) %>%
+  as.data.frame() %>%
+  rename(working = `1`, not_working = `2`) %>%
+  mutate(diff = working - not_working) %>%
+  ggplot(aes(x =diff)) +
+  stat_halfeye(alpha = .7) +
+  scale_x_continuous(limits = c(-.1, .4), labels = scales::percent_format(accuracy = 1)) +
+  labs(title = 'Direct Effect of Working on Passing',
+       x = 'Difference in probability of passing class\nNot working - working',
+       y = 'Density',
+       fill = NULL) +
+  theme_minimal() +
+  theme(legend.position = 'bottom',
+        plot.title = element_text(size = 10),
+        axis.title = element_text(size = 10))
+```
+
+### Total effect the old fashioned way
+
+### Putting it all together to find the indirect effect
+
+### Mediation analysis the Bayesian way
+
+### Compare results to `mediation` package
+
+## The versitility of mediation analysis
