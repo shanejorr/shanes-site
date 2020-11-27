@@ -35,11 +35,21 @@ knitr::opts_chunk$set(echo = T,
 library(rstanarm)
 library(tidybayes)
 library(glue)
+library(knitr)
+library(ggeffects)
 library(tidyverse)
 
 # stan options
 # detect and use max number of cores
 options(mc.cores = parallel::detectCores())
+
+# create ggplot theme for this post
+post_theme <- theme_minimal() +
+  theme(legend.position = 'bottom',
+        plot.title = element_text(size = 10),
+        axis.title = element_text(size = 10))
+
+theme_set(post_theme)
 ```
 
 ## What is mediation analysis?
@@ -54,7 +64,7 @@ options(mc.cores = parallel::detectCores())
 # create simulated dataset --------
 
 # number of rows in dataset
-n <- 300
+n <- 500
 
 # 1 if student works, 0 otherwise
 working <- rep(c(1, 0), times = n/2)
@@ -65,18 +75,18 @@ work_string <- c('Working', 'Not working')
 # how much student studies
 # if working, number with mean of 22 and sd of 5
 # if not working, mean of 17, sd of 5
-study_hours <- rpois(n, lambda = 15 + (working*5))
+set.seed(2938)
+study_hours <- rnorm(n, 
+                     mean = 20 + (working*6),
+                     sd = 7)
 study_hours_std <- (study_hours - mean(study_hours)) / (sd(study_hours) / 2)
 
-# intercept of -1 (.27 prob)
-final_grade <- invlogit(-3 + .3*study_hours + .1*working)
-final_grade <- rnorm(n = n, mean = final_grade, sd = .15)
-final_grade <- ifelse(final_grade > 1, 1, final_grade)
-final_grade <- ifelse(final_grade < 0, 0, final_grade)
+final_grade <- invlogit(-3 + .2*study_hours + 0*working)
 final_grade <- rbinom(n = n, size = 1, prob = final_grade)
 
 grades <- data.frame(
   work = working,
+  study_std = study_hours_std,
   study = study_hours,
   grade = final_grade
 ) %>%
@@ -87,85 +97,144 @@ grades %>%
   summarize(mn = mean(grade))
 ```
 
-### Indirect effect (kind-of) the old fashioned way
-
-```{r ieModel}
-# Direct effect model
-direct_effect <- stan_glm(study ~ work, 
-                         prior = student_t(df = 3, location = .5, scale = 2),
-                         family = poisson,
-                         seed = 938,
-                         data = grades)
-
-direct_posterior <- direct_effect %>%
-  add_fitted_draws(newdata = data.frame(work = work_string))
-```
-
-```{r iePlotPosterior, fig.height = 3, fig.width = 3.5}
-ggplot(direct_posterior, aes(x = .value, fill = work)) +
-  stat_halfeye(alpha = .7) +
-  labs(title = 'Effect of Working on Hours Studied',
-       x = 'Hours Studied',
-       y = 'Density',
-       fill = NULL) +
-  theme_minimal() +
-  theme(legend.position = 'bottom',
-        plot.title = element_text(size = 10),
-        axis.title = element_text(size = 10))
-```
-### Direct effect the old fashioned way
+### Total effect the old fashioned way
 
 ```{r deMod}
-# indirect effect model
-indirect_effect <- stan_glm(grade ~ work, 
-                           prior = student_t(df = 3, location = .1, scale = 2),
+# total effect model
+total_effect <- stan_glm(grade ~ work, 
+                           prior = student_t(df = 3, location = 0, scale = 2),
                            family = binomial('logit'),
                            seed = 938,
                            data = grades)
-
-indirect_posterior <- indirect_effect %>%
-  add_fitted_draws(newdata = data.frame(work = work_string))
 ```
 
 ```{r iePlotPosterior, fig.height = 3, fig.width = 3.5}
-ggplot(indirect_posterior, aes(x = .value, fill = work)) +
+total_effect %>%
+  add_fitted_draws(newdata = data.frame(work = work_string), seed = 93) %>%
+  ggplot(aes(x = .value, fill = work)) +
   stat_halfeye(alpha = .7) +
-  scale_x_continuous(limits = c(.6, 1), labels = scales::percent_format(accuracy = 1)) +
-  labs(title = 'Probability of Passing Class by Work Status',
+  scale_x_continuous(limits = c(.5, 1), labels = scales::percent_format(accuracy = 1)) +
+  labs(title = 'Prob. of Passing based on Work Status',
        x = 'Probability of passing class',
        y = 'Density',
-       fill = NULL) +
-  theme_minimal() +
-  theme(legend.position = 'bottom',
-        plot.title = element_text(size = 10),
-        axis.title = element_text(size = 10))
+       fill = NULL)
 ```
 
 ```{r iePlotDiff, fig.height = 2.5, fig.width = 3}
-posterior_epred(indirect_effect, 
-                newdata = data.frame(work = work_string)) %>%
+posterior_epred(total_effect, 
+                newdata = data.frame(work = work_string), seed = 917) %>%
   as.data.frame() %>%
   rename(working = `1`, not_working = `2`) %>%
   mutate(diff = working - not_working) %>%
   ggplot(aes(x =diff)) +
   stat_halfeye(alpha = .7) +
-  scale_x_continuous(limits = c(-.1, .4), labels = scales::percent_format(accuracy = 1)) +
+  scale_x_continuous(limits = c(-.1, .4),
+                     labels = scales::percent_format(accuracy = 1)) +
+  labs(title = 'Total Effect of Working on Passing',
+       x = 'Difference in probability of passing class\nNot working - working',
+       y = 'Density',
+       fill = NULL)
+```
+
+### Indirect effect (kind-of) the old fashioned way
+
+#### Effect of working on number of hours studied
+
+```{r ieModel}
+# indirect effect model
+indirect_effect1 <- stan_glm(study ~ work, 
+                         prior = student_t(df = 3, location = 0, scale = 2),
+                         family = 'gaussian',
+                         seed = 938,
+                         data = grades)
+```
+
+```{r iePlotPosterior, fig.height = 3, fig.width = 3.5}
+indirect_effect1 %>%
+  add_fitted_draws(newdata = data.frame(work = work_string), seed = 1837) %>%
+  ggplot(aes(x = .value, fill = work)) +
+  stat_halfeye(alpha = .7) +
+  labs(title = 'Effect of Working on Hours Studied',
+       x = 'Hours Studied',
+       y = 'Density',
+       fill = NULL)
+```
+
+#### Effect of number of hours studied on working
+
+```{r ieModel2}
+indirect_effect2 <- stan_glm(grade ~ study + work, 
+                         family = binomial(link = 'logit'),
+                         seed = 938,
+                         data = grades)
+```
+
+```{r iePlot2, fig.height = 3.5, fig.width = 3.5}
+ggpredict(indirect_effect2, c("study [10:35]", "work"), seed = 39) %>% 
+  plot() +
+  labs(title = 'Probability of Passing Class',
+       x = 'Hours studied',
+       y = 'Probability of passing',
+       color = NULL) +
+  theme(legend.position = 'bottom',
+        plot.title = element_text(size = 10))
+```
+
+To calculate, multiply the two coefficients.
+Issue, the hours studied coefficient will be in log-odds since it is a logistic regression model. 
+
+### Mediation analysis with Bayesian predictions
+
+```{r}
+# posterior draws of work to study model
+ie1_post_pred <- indirect_effect1 %>%
+  add_fitted_draws(newdata = data.frame(work = work_string), n = 300, seed = 893) %>%
+  ungroup() %>%
+  select(work, study = .value)
+
+kable(head(ie1_post_pred, 10), digits = 2)
+```
+
+```{r}
+ie2_post_pred <- indirect_effect2 %>%
+  add_fitted_draws(newdata = ie1_post_pred, n = 300, seed = 76) %>%
+  ungroup()
+```
+
+```{r fig.height = 3, fig.width = 3.5}
+ie2_post_pred %>%
+  ggplot(aes(x = .value, fill = work)) +
+  stat_halfeye(alpha = .7) +
+  scale_x_continuous(limits = c(.5, 1), labels = scales::percent_format(accuracy = 1)) +
+  labs(title = 'Probability of Passing Class by Work Status',
+       x = 'Probability of passing class',
+       y = 'Density',
+       fill = NULL)
+```
+
+```{r fig.height = 3.5, fig.width = 3.5}
+ie2_post_pred_mat <- posterior_linpred(indirect_effect2, 
+                                       newdata = ie1_post_pred, 
+                                       n = 300, seed = 756,
+                                       transform=TRUE) %>%
+  as.data.frame()
+
+ie2_post_pred_diff <- unlist(ie2_post_pred_mat[1:300] - ie2_post_pred_mat[301:600])
+
+diff <- data.frame(diff = ie2_post_pred_diff)
+
+```
+
+```{r fig.height = 2.5, fig.width = 3}
+ggplot(diff, aes(x =diff)) +
+  stat_halfeye(alpha = .7) +
+  scale_x_continuous(limits = c(-.1, .4),
+                     labels = scales::percent_format(accuracy = 1)) +
   labs(title = 'Direct Effect of Working on Passing',
        x = 'Difference in probability of passing class\nNot working - working',
        y = 'Density',
-       fill = NULL) +
-  theme_minimal() +
-  theme(legend.position = 'bottom',
-        plot.title = element_text(size = 10),
-        axis.title = element_text(size = 10))
+       fill = NULL)
 ```
-
-### Total effect the old fashioned way
-
-### Putting it all together to find the indirect effect
-
-### Mediation analysis the Bayesian way
-
 ### Compare results to `mediation` package
 
 ## The versitility of mediation analysis
