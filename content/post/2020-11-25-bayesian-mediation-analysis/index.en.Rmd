@@ -22,6 +22,8 @@ links:
   icon_pack: fab
   name: Github
   url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-11-25-bayesian-mediation-analysis/index.en.Rmd
+  
+draft: true
 ---
 
 ```{r setup, echo = F}
@@ -33,6 +35,7 @@ knitr::opts_chunk$set(echo = T,
 
 ```{r loadPackages}
 library(rstanarm)
+library(mediation)
 library(tidybayes)
 library(glue)
 library(knitr)
@@ -52,6 +55,69 @@ post_theme <- theme_minimal() +
 theme_set(post_theme)
 ```
 
+
+```{r customFunctions}
+relabel_plot_color <- scale_fill_brewer(palette = "Set2", type = "Qual", labels = c(`0`= "Working", `1` = "Not working"))
+
+posterior_diff <- function(mod, new_df, effect_type) {
+  
+  # create one column dataframe that is the difference in linear predictions for working and non-working students
+  # parameters:
+  #   mod: model
+  #   new_df: dataframe to create predictions from
+  #   effect_type: type of effect (indirect, direct, total)
+
+  mod_post <- posterior_linpred(mod, newdata = new_df, transform = T,
+                              seed = 1837, n = 500) %>%
+    as.data.frame()
+  
+  col_split <- ncol(mod_post)/2
+  
+  mod_diff <- unlist(mod_post[1:col_split] - mod_post[(col_split+1):ncol(mod_post)])
+  
+  diff <- data.frame(diff = mod_diff,
+                     type_effect = effect_type)
+  
+  return(diff)
+}
+
+posterior_diff_plot <- function(post_diff, x_limits, plot_title)  {
+  
+  # plot posterior distribution of difference in working and no-working predictions
+  # parameters:
+  #   post_diff: dataframe created from posterior_diff with predicted posterior 
+  #     difference between workers and non-workers
+  #   x_limits: plot x limits
+  #   plot_title: title of plot
+  
+  ggplot(post_diff, aes(x =diff)) +
+    stat_halfeye(alpha = .7) +
+    scale_x_continuous(limits = x_limits,
+                       labels = scales::percent_format(accuracy = 1)) +
+    labs(title = plot_title,
+         x = 'Difference in probability of passing class\nNot working - working',
+         y = 'Density',
+         fill = NULL)
+}
+
+two_group_plot <- function(df, plot_title) {
+  
+  # plot posterior distribution of both workers and non-workers
+  # parameters:
+  #   df: dataframe for plotting; will be linear predictions for workers and non-workers
+  #   plot_title: title of plot
+  
+  ggplot(df, aes(x = .value, fill = as.factor(work))) +
+    stat_halfeye(alpha = .8) +
+    scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+    relabel_plot_color +
+    labs(title = plot_title,
+         x = 'Probability of passing class',
+         y = 'Density',
+         fill = NULL)
+}
+```
+
 ## What is mediation analysis?
 
 ### A simple example
@@ -67,7 +133,8 @@ theme_set(post_theme)
 n <- 500
 
 # 1 if student works, 0 otherwise
-working <- rep(c(1, 0), times = n/2)
+work_order <- c(1, 0)
+working <- rep(work_order, times = n/2)
 
 # save for future use
 work_string <- c('Working', 'Not working')
@@ -77,11 +144,14 @@ work_string <- c('Working', 'Not working')
 # if not working, mean of 17, sd of 5
 set.seed(2938)
 study_hours <- rnorm(n, 
-                     mean = 20 + (working*6),
-                     sd = 7)
+                     mean = 25 + (working*5),
+                     sd = 10)
 study_hours_std <- (study_hours - mean(study_hours)) / (sd(study_hours) / 2)
 
-final_grade <- invlogit(-3 + .2*study_hours + 0*working)
+final_grade_formula <- (.05 + .015*study_hours + .04*working)
+final_grade <- rnorm(n, mean = final_grade_formula, sd = .05)
+final_grade <- ifelse(final_grade > 1, 1, final_grade)
+final_grade <- ifelse(final_grade < 0, 0, final_grade)
 final_grade <- rbinom(n = n, size = 1, prob = final_grade)
 
 grades <- data.frame(
@@ -89,12 +159,7 @@ grades <- data.frame(
   study_std = study_hours_std,
   study = study_hours,
   grade = final_grade
-) %>%
-  mutate(work = ifelse(work == 1, 'Working', 'Not working'))
-
-grades %>%
-  group_by(work) %>%
-  summarize(mn = mean(grade))
+)
 ```
 
 ### Total effect the old fashioned way
@@ -102,38 +167,45 @@ grades %>%
 ```{r deMod}
 # total effect model
 total_effect <- stan_glm(grade ~ work, 
-                           prior = student_t(df = 3, location = 0, scale = 2),
                            family = binomial('logit'),
                            seed = 938,
                            data = grades)
 ```
 
-```{r iePlotPosterior, fig.height = 3, fig.width = 3.5}
+```{r tePlotPosterior, fig.height = 3, fig.width = 4}
 total_effect %>%
-  add_fitted_draws(newdata = data.frame(work = work_string), seed = 93) %>%
-  ggplot(aes(x = .value, fill = work)) +
-  stat_halfeye(alpha = .7) +
-  scale_x_continuous(limits = c(.5, 1), labels = scales::percent_format(accuracy = 1)) +
-  labs(title = 'Prob. of Passing based on Work Status',
-       x = 'Probability of passing class',
-       y = 'Density',
-       fill = NULL)
+  add_fitted_draws(newdata = data.frame(work = work_order), seed = 93, n = 300) %>%
+  two_group_plot('Prob. of Passing based on Work Status')
 ```
 
-```{r iePlotDiff, fig.height = 2.5, fig.width = 3}
-posterior_epred(total_effect, 
-                newdata = data.frame(work = work_string), seed = 917) %>%
-  as.data.frame() %>%
-  rename(working = `1`, not_working = `2`) %>%
-  mutate(diff = working - not_working) %>%
-  ggplot(aes(x =diff)) +
-  stat_halfeye(alpha = .7) +
-  scale_x_continuous(limits = c(-.1, .4),
-                     labels = scales::percent_format(accuracy = 1)) +
-  labs(title = 'Total Effect of Working on Passing',
-       x = 'Difference in probability of passing class\nNot working - working',
-       y = 'Density',
-       fill = NULL)
+```{r tePlotDiff, fig.height = 2.5, fig.width = 4}
+diff_limits <- c(-.1, .35)
+
+total_effect_post <- total_effect %>%
+  posterior_diff(new_df = data.frame(work = work_order), effect_type = 'Total Effect')
+
+posterior_diff_plot(total_effect_post, x_limits = diff_limits, plot_title = 'Total Effect of Working on Passing')
+```
+
+### Direct effect the old fashioned way
+
+```{r deMod}
+full_mod <- stan_glm(grade ~ study + work, 
+                     family = binomial('logit'),
+                     seed = 938,
+                     data = grades)
+
+full_mod_newdata <- expand_grid(study = grades$study,
+                                work = work_order) %>%
+  arrange(desc(work), study) %>%
+  as.data.frame()
+```
+
+```{r iePlotDiff, fig.height = 2.5, fig.width = 4}
+direct_effect_post <- full_mod %>%
+  posterior_diff(new_df = full_mod_newdata, effect_type = 'Direct Effect')
+
+posterior_diff_plot(direct_effect_post, x_limits = c(-.15, .3), plot_title = 'Direct Effect of Working on Passing')
 ```
 
 ### Indirect effect (kind-of) the old fashioned way
@@ -143,21 +215,17 @@ posterior_epred(total_effect,
 ```{r ieModel}
 # indirect effect model
 indirect_effect1 <- stan_glm(study ~ work, 
-                         prior = student_t(df = 3, location = 0, scale = 2),
                          family = 'gaussian',
                          seed = 938,
                          data = grades)
 ```
 
-```{r iePlotPosterior, fig.height = 3, fig.width = 3.5}
+```{r iePlotPosterior, fig.height = 3, fig.width = 4}
 indirect_effect1 %>%
-  add_fitted_draws(newdata = data.frame(work = work_string), seed = 1837) %>%
-  ggplot(aes(x = .value, fill = work)) +
-  stat_halfeye(alpha = .7) +
-  labs(title = 'Effect of Working on Hours Studied',
-       x = 'Hours Studied',
-       y = 'Density',
-       fill = NULL)
+  add_fitted_draws(newdata = data.frame(work = work_order), seed = 1837) %>%
+  two_group_plot('Effect of Working on Hours Studied') +
+  scale_x_continuous() +
+  xlab('Hours worked')
 ```
 
 #### Effect of number of hours studied on working
@@ -172,6 +240,7 @@ indirect_effect2 <- stan_glm(grade ~ study + work,
 ```{r iePlot2, fig.height = 3.5, fig.width = 3.5}
 ggpredict(indirect_effect2, c("study [10:35]", "work"), seed = 39) %>% 
   plot() +
+  scale_color_brewer(palette = "Set2", type = "Qual", labels = c("Not working", "Working")) +
   labs(title = 'Probability of Passing Class',
        x = 'Hours studied',
        y = 'Probability of passing',
@@ -180,61 +249,100 @@ ggpredict(indirect_effect2, c("study [10:35]", "work"), seed = 39) %>%
         plot.title = element_text(size = 10))
 ```
 
+#### Putting it all together: Indirect effect of working on passing class
+
 To calculate, multiply the two coefficients.
 Issue, the hours studied coefficient will be in log-odds since it is a logistic regression model. 
-
-### Mediation analysis with Bayesian predictions
 
 ```{r}
 # posterior draws of work to study model
 ie1_post_pred <- indirect_effect1 %>%
-  add_fitted_draws(newdata = data.frame(work = work_string), n = 300, seed = 893) %>%
+  add_fitted_draws(newdata = data.frame(work = work_order), n = 300, seed = 893) %>%
   ungroup() %>%
-  select(work, study = .value)
+  select(work_original = work, study = .value) %>%
+  mutate(work = 1)
 
 kable(head(ie1_post_pred, 10), digits = 2)
 ```
 
 ```{r}
-ie2_post_pred <- indirect_effect2 %>%
+indirect_effect_post <- indirect_effect2 %>%
   add_fitted_draws(newdata = ie1_post_pred, n = 300, seed = 76) %>%
   ungroup()
+
+ie2_post_pred0 <- indirect_effect_post %>%
+  filter(work_original == 0) %>%
+  mutate(.row = .row - 300) %>%
+  select(work_study = study, .row, .draw, value_work = .value)
+
+ie2_post_pred1 <- indirect_effect_post %>%
+  filter(work_original == 1) %>%
+  select(notwork_study = study, .row, .draw, value_notwork = .value)
+
+indirect_effect_post_diff <- ie2_post_pred0 %>%
+  left_join(ie2_post_pred1, by = c('.row', '.draw')) %>%
+  mutate(diff = value_notwork - value_work,
+         type_effect = 'Indirect Effect')
 ```
 
-```{r fig.height = 3, fig.width = 3.5}
-ie2_post_pred %>%
-  ggplot(aes(x = .value, fill = work)) +
-  stat_halfeye(alpha = .7) +
-  scale_x_continuous(limits = c(.5, 1), labels = scales::percent_format(accuracy = 1)) +
-  labs(title = 'Probability of Passing Class by Work Status',
-       x = 'Probability of passing class',
-       y = 'Density',
-       fill = NULL)
+
+```{r fig.height = 3, fig.width = 4}
+indirect_effect_post %>%
+  select(work = work_original, .value) %>%
+  two_group_plot('Probability of Passing Class by Work Status')
 ```
 
-```{r fig.height = 3.5, fig.width = 3.5}
-ie2_post_pred_mat <- posterior_linpred(indirect_effect2, 
-                                       newdata = ie1_post_pred, 
-                                       n = 300, seed = 756,
-                                       transform=TRUE) %>%
-  as.data.frame()
-
-ie2_post_pred_diff <- unlist(ie2_post_pred_mat[1:300] - ie2_post_pred_mat[301:600])
-
-diff <- data.frame(diff = ie2_post_pred_diff)
-
+```{r fig.height = 2.5, fig.width = 4}
+posterior_diff_plot(indirect_effect_post_diff, x_limits = c(0, .25), plot_title = 'Indirect Effect of Working on Passing')
 ```
 
-```{r fig.height = 2.5, fig.width = 3}
-ggplot(diff, aes(x =diff)) +
-  stat_halfeye(alpha = .7) +
-  scale_x_continuous(limits = c(-.1, .4),
-                     labels = scales::percent_format(accuracy = 1)) +
-  labs(title = 'Direct Effect of Working on Passing',
-       x = 'Difference in probability of passing class\nNot working - working',
-       y = 'Density',
-       fill = NULL)
-```
 ### Compare results to `mediation` package
+
+```{r}
+med_fit <- lm(study ~ work, data = grades)
+
+out_fit <- glm(grade ~ work + study,
+              data = grades, family = binomial("logit"))
+
+med_out <- mediate(med_fit, out_fit, treat = "work", mediator = "study",
+                  robustSE = TRUE, sims = 500)
+
+# get estimates and cnof. intervals for frequentist effect size estimates with mediation package
+
+# dataframe of confidence intervals, with two columns (one for lower and upper bounds)
+# will be used for plotting effect sizes
+upper_lower_ci <- bind_rows(med_out$z.avg.ci, med_out$d.avg.ci, med_out$tau.ci)
+
+mediation_effects <- tibble(
+  effect_type = c('Direct Effect', 'Indirect Effect', 'Total Effect'),
+  effect_size = c(med_out$z.avg, med_out$d.avg, med_out$tau.coef),
+  lower_ci = upper_lower_ci[[1]],
+  upper_ci = upper_lower_ci[[2]],
+  effect_group = 'Frequentist (mediation package)'
+)
+
+# get 95% credible intervals for bayesian effects
+bayes_effect <- bind_rows(list(direct_effect_post, indirect_effect_post_diff, total_effect_post)) %>%
+  group_by(type_effect) %>%
+  median_hdi(diff)
+```
+
+```{r raceMediation, fig.cap = "Direct, indirect, and total effects of working on class passage. Values are the average percentage point difference in class passage.", fig.height = 3.5, fig.width = 5}
+bayes_effect %>%
+  select(effect_type = type_effect, effect_size = diff, lower_ci = .lower, upper_ci = .upper) %>%
+  mutate(effect_group = "Bayesian Mediation") %>%
+  bind_rows(mediation_effects) %>%
+    ggplot(aes(effect_size, fct_rev(effect_type), color = effect_group)) +
+    geom_point() +
+    geom_segment(aes(x = lower_ci, xend = upper_ci, yend = effect_type)) +
+    geom_vline(xintercept = 0, alpha = .6) +
+    scale_color_brewer(palette = "Set2", type = "Qual") +
+    scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+    facet_wrap(~effect_group, ncol = 1) +
+    labs(title = 'Cumulative Effects of Race on Bar Passage',
+           x = "Percentage point difference (Non-workers minus Workers)\nIn avg. probability of class passage",
+           y = NULL) +
+    theme(legend.position = 'none')
+```
 
 ## The versitility of mediation analysis
