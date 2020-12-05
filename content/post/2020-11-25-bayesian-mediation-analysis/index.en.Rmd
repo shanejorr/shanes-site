@@ -1,5 +1,5 @@
 ---
-title: Bayesian Mediation Analysis
+title: A First Attempt at Bayesian Mediation Analysis
 author: Shane Orr
 date: '2020-11-25'
 slug: bayesian-mediation-analysis
@@ -7,7 +7,7 @@ categories:
   - bayesian analysis
   - mediation analysis
 tags: []
-subtitle: "Using Bayesian methods to conduct mediation analysis R"
+subtitle: "The same process and 'almost' the same results as non-Bayesian approaches, but cooler"
 summary: ''
 authors: []
 lastmod: '2020-11-25T18:38:02-05:00'
@@ -27,7 +27,7 @@ draft: true
 ---
 
 ```{r setup, echo = F}
-knitr::opts_chunk$set(echo = T,
+knitr::opts_chunk$set(echo = F,
                       message = F,
                       warning = F,
                       error = F)
@@ -40,6 +40,7 @@ library(tidybayes)
 library(glue)
 library(knitr)
 library(ggeffects)
+library(knitr)
 library(tidyverse)
 
 # stan options
@@ -90,12 +91,11 @@ posterior_diff_plot <- function(post_diff, x_limits, plot_title)  {
   #   x_limits: plot x limits
   #   plot_title: title of plot
   
-  ggplot(post_diff, aes(x =diff)) +
+  ggplot(post_diff, aes(x =diff*100)) +
     stat_halfeye(alpha = .7) +
-    scale_x_continuous(limits = x_limits,
-                       labels = scales::percent_format(accuracy = 1)) +
+    scale_x_continuous(limits = x_limits) +
     labs(title = plot_title,
-         x = 'Difference in probability of passing class\nNot working - working',
+         x = 'Perc. point difference in probability of passing class\nNot working - working',
          y = 'Density',
          fill = NULL)
 }
@@ -120,11 +120,29 @@ two_group_plot <- function(df, plot_title) {
 
 ## What is mediation analysis?
 
-### A simple example
+Let's say you want to examine the effect of working on whether a student passes a class. You set up a randomized controlled trial where some students are forced to work 15 hours a week and other are prohibited from working at all. But, a third variable also come into play. Working students have less time to study and this negatively impacts their probability of passing.
 
-### A simple overview
+We can visually depict the causal relationships with the following Directed Acyclic Graph (DAG):
 
-## How do I conduct one using Bayesian methods?
+```{r mainDag, fig.cap = 'DAG highlighting the effect of working on passing a class', out.width = '50%'}
+knitr::include_graphics("dag/working_dag_main.png")
+```
+
+As the graph shows, we might be interested in three different ways that working effects the probability of passing a class.
+
+1.  *Direct Effect:* The direct effect is the effect that working has on class passage through a direct causal link. For example, working may impact passage through an unknown mechanism outside of hours studied. Assume we don't know, or cannot measure, this mechanism, working will have a direct effect on class passage.
+
+2.  *Indirect Effect:* In our example, working's indirect effect on bar passage is its effect through hours studied. Working impacts hours studied and hours studied effects class passage.
+
+3.  *Total Effect:* Not self-define, but the total effect is the overall, all things considered, effect of working on passing. It's the direct effect plus the indirect effect.
+
+The goal of mediation analysis is to disentangle these three effects.
+
+## Untangling the Gordian Effects Knot
+
+We'll simulate a data set to show the three types of effects. The fake data set includes three columns: a 0 or 1 identifying whether the student worked, a continuous number showing how many hours the student worked in the given week, and a 0 or 1 signifying whether the student passed the class.
+
+The code below creates the fake data.
 
 ```{r createDataset}
 # create simulated dataset --------
@@ -139,15 +157,14 @@ working <- rep(work_order, times = n/2)
 # save for future use
 work_string <- c('Working', 'Not working')
 
-# how much student studies
-# if working, number with mean of 22 and sd of 5
-# if not working, mean of 17, sd of 5
+# create vector for hours studied that depends on whether the student worked
 set.seed(2938)
 study_hours <- rnorm(n, 
                      mean = 25 + (working*5),
                      sd = 10)
-study_hours_std <- (study_hours - mean(study_hours)) / (sd(study_hours) / 2)
 
+# create vector for passing the class
+# value depends on both hours studied and whether the student worked
 final_grade_formula <- (.05 + .015*study_hours + .04*working)
 final_grade <- rnorm(n, mean = final_grade_formula, sd = .05)
 final_grade <- ifelse(final_grade > 1, 1, final_grade)
@@ -156,13 +173,97 @@ final_grade <- rbinom(n = n, size = 1, prob = final_grade)
 
 grades <- data.frame(
   work = working,
-  study_std = study_hours_std,
   study = study_hours,
   grade = final_grade
 )
 ```
 
+Here's a sample of the data set.
+
+```{r}
+kable(head(grades))
+```
+
+### Direct effect the old fashioned way
+
+In figure \@ref(fig:mainDag), the direct effect of working on class passage is the causal line that does not go through hours studied. We calculate this through a single model that conditions on hours studied. By conditioning on hours studied, we block the path from working to passage that flows through hours studied. This only leaves the direct effect path open.
+
+```{r directDag, fig.cap = 'DAG highlighting the direct effect of working on passing a class', out.width = '50%'}
+knitr::include_graphics("dag/working_dag_direct.png")
+```
+
+By conditioning on hours studied, the effect of working on passing represents the effect with hours studied being the same for both the working and non-working groups. We thus remove any effect working has on passage via creating differences in hours studied between workers and non-workers.
+
+We can isolate the direct effect through a simple Bayesian logistic regression model with hours study and working status as predictors and whether the student passed as the response. The hours worked regression coefficient then drives the direct effect.
+
+```{r deMod}
+# logistic regression model to identify direct effect
+full_mod <- stan_glm(grade ~ study + work, 
+                     family = binomial('logit'),
+                     seed = 938,
+                     data = grades)
+
+```
+
+With our model in hand, we can now visualize the direct effect. One way to show it is to predict class passage for workers and non-workers, while holding hours studied the same between workers and non-workers. In other words, we can use the model to predict class passage for the two following hypothetical students. The hours worked is the mean hours worked in our simulated data.
+
+```{r}
+mean_hours <- mean(grades$study)
+
+direct_prediction <- data.frame(
+  work = work_order,
+  study = 2
+)
+
+kable(direct_prediction)
+```
+
+Here is the posterior distribution of the probability of passing the class, grouped by whether students worked.
+
+```{r dePlotDiff, fig.caption = "Direct effect: Difference in class passage probabilities between workers and non-workers, with hours studied held constant.", fig.height = 2.7, fig.width = 4}
+full_mod %>%
+  add_fitted_draws(newdata = direct_prediction, seed = 93, n = 300) %>%
+  two_group_plot(glue("Prob. of Passing based on Work Status and\nHours studied held constant at {round(mean_hours, 2)} Hours"))
+```
+
+A weakness of \@ref(fig:dePlotDiff) is that it struggles to highlight the estimated difference, and the uncertainty in the difference, in class passage probabilities between workers and non-workers. We can better highlight the difference and uncertainty in the difference by creating predictions of class passage for workers and non-workers at all values of the number of hours studied in the data set. The difference between the posterior distributions for workers and non-workers can then be calculated.
+
+```{r}
+
+full_mod_newdata <- expand_grid(study = grades$study,
+                                work = work_order) %>%
+  arrange(desc(work), study) %>%
+  as.data.frame()
+
+# find differences in posterior distributions
+direct_effect_post <- full_mod %>%
+  posterior_diff(new_df = full_mod_newdata, effect_type = 'Direct Effect')
+```
+
+```{r iePlotDiff, fig.cap = "Direct effect of working on passing the class.", fig.height = 2.5, fig.width = 4}
+posterior_diff_plot(direct_effect_post, x_limits = c(-15, 30), plot_title = 'Direct Effect of Working on Passing')
+```
+
+This gives us a much better picture of the difference in class passage probabilities between workers and non-workers. And we can also use the posterior distribution of differences to calculate probabilities such as the probability that the direct effect is positive.
+
+```{r}
+# calculate the probability that the direct effect is greater than zero
+direct_effect_post %>%
+  mutate(over_zero = ifelse(diff > 0, 1, 0)) %>%
+  summarize(over_zero = sum(over_zero) / nrow(.)) %>%
+  mutate(over_zero = glue("{round(over_zero*100, 0)}%")) %>%
+  kable(col.names = 'Prob. direct effect is positive')
+```
+
 ### Total effect the old fashioned way
+
+The total effect is the effect of working on class passage through all causal links originating with working. In figure \@ref(fig:mainDag), its the effect that goes straight from working to class passage and the effect that runs through hours studied. We calculate this effect by failing to condition on hours studied. By removing hours studied from the equation, the effect that previously traveled through hours studied now goes directly to class passage.
+
+```{r teDag, fig.cap = 'DAG highlighting the effect of working on passing a class', out.width = '50%'}
+knitr::include_graphics("dag/working_dag_total.png")
+```
+
+We can estimate the total effect by a Bayesian logistic regression model with work status as the lone predictor and class passage as the response. This is a similar model to the direct effect model, except hours studied is removed as a predictor.
 
 ```{r deMod}
 # total effect model
@@ -185,27 +286,6 @@ total_effect_post <- total_effect %>%
   posterior_diff(new_df = data.frame(work = work_order), effect_type = 'Total Effect')
 
 posterior_diff_plot(total_effect_post, x_limits = diff_limits, plot_title = 'Total Effect of Working on Passing')
-```
-
-### Direct effect the old fashioned way
-
-```{r deMod}
-full_mod <- stan_glm(grade ~ study + work, 
-                     family = binomial('logit'),
-                     seed = 938,
-                     data = grades)
-
-full_mod_newdata <- expand_grid(study = grades$study,
-                                work = work_order) %>%
-  arrange(desc(work), study) %>%
-  as.data.frame()
-```
-
-```{r iePlotDiff, fig.height = 2.5, fig.width = 4}
-direct_effect_post <- full_mod %>%
-  posterior_diff(new_df = full_mod_newdata, effect_type = 'Direct Effect')
-
-posterior_diff_plot(direct_effect_post, x_limits = c(-.15, .3), plot_title = 'Direct Effect of Working on Passing')
 ```
 
 ### Indirect effect (kind-of) the old fashioned way
