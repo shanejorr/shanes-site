@@ -54,6 +54,9 @@ post_theme <- theme_minimal() +
         axis.title = element_text(size = 10))
 
 theme_set(post_theme)
+
+# set folder to import pictures
+dag_folder <- "content/post/2020-11-25-bayesian-mediation-analysis/dag"
 ```
 
 
@@ -125,7 +128,7 @@ Let's say you want to examine the effect of working on whether a student passes 
 We can visually depict the causal relationships with the following Directed Acyclic Graph (DAG):
 
 ```{r mainDag, fig.cap = 'DAG highlighting the effect of working on passing a class', out.width = '50%'}
-knitr::include_graphics("dag/working_dag_main.png")
+knitr::include_graphics(glue("dag/working_dag_main.png"))
 ```
 
 As the graph shows, we might be interested in three different ways that working effects the probability of passing a class.
@@ -189,7 +192,7 @@ kable(head(grades))
 In figure \@ref(fig:mainDag), the direct effect of working on class passage is the causal line that does not go through hours studied. We calculate this through a single model that conditions on hours studied. By conditioning on hours studied, we block the path from working to passage that flows through hours studied. This only leaves the direct effect path open.
 
 ```{r directDag, fig.cap = 'DAG highlighting the direct effect of working on passing a class', out.width = '50%'}
-knitr::include_graphics("dag/working_dag_direct.png")
+knitr::include_graphics("dag/working_dag_direct.jpg")
 ```
 
 By conditioning on hours studied, the effect of working on passing represents the effect with hours studied being the same for both the working and non-working groups. We thus remove any effect working has on passage via creating differences in hours studied between workers and non-workers.
@@ -212,7 +215,7 @@ mean_hours <- mean(grades$study)
 
 direct_prediction <- data.frame(
   work = work_order,
-  study = 2
+  study = mean_hours
 )
 
 kable(direct_prediction)
@@ -280,7 +283,7 @@ total_effect %>%
 ```
 
 ```{r tePlotDiff, fig.height = 2.5, fig.width = 4}
-diff_limits <- c(-.1, .35)
+diff_limits <- c(-10, 35)
 
 total_effect_post <- total_effect %>%
   posterior_diff(new_df = data.frame(work = work_order), effect_type = 'Total Effect')
@@ -290,7 +293,7 @@ posterior_diff_plot(total_effect_post, x_limits = diff_limits, plot_title = 'Tot
 
 ### Indirect effect (kind-of) the old fashioned way
 
-#### Effect of working on number of hours studied
+#### Step 1: Effect of working on number of hours studied
 
 ```{r ieModel}
 # indirect effect model
@@ -308,19 +311,14 @@ indirect_effect1 %>%
   xlab('Hours worked')
 ```
 
-#### Effect of number of hours studied on working
+#### Step 2: Effect of studying on passing after incorporating the effect of working on studying
 
-```{r ieModel2}
-indirect_effect2 <- stan_glm(grade ~ study + work, 
-                         family = binomial(link = 'logit'),
-                         seed = 938,
-                         data = grades)
-```
+*Raw effect of studying on passing*
 
 ```{r iePlot2, fig.height = 3.5, fig.width = 3.5}
-ggpredict(indirect_effect2, c("study [10:35]", "work"), seed = 39) %>% 
+ggpredict(full_mod, c("study [10:35]", "work"), seed = 39) %>%
   plot() +
-  scale_color_brewer(palette = "Set2", type = "Qual", labels = c("Not working", "Working")) +
+  scale_color_brewer(palette = "Set2", type = "Qual", labels = c("Working", "Not working")) +
   labs(title = 'Probability of Passing Class',
        x = 'Hours studied',
        y = 'Probability of passing',
@@ -329,10 +327,9 @@ ggpredict(indirect_effect2, c("study [10:35]", "work"), seed = 39) %>%
         plot.title = element_text(size = 10))
 ```
 
-#### Putting it all together: Indirect effect of working on passing class
+*Effect of studying on passing, while incorporating effect of working on studying*
 
-To calculate, multiply the two coefficients.
-Issue, the hours studied coefficient will be in log-odds since it is a logistic regression model. 
+Step 1: predict studying values for workers and non-workers, while holding work status constant.
 
 ```{r}
 # posterior draws of work to study model
@@ -342,13 +339,32 @@ ie1_post_pred <- indirect_effect1 %>%
   select(work_original = work, study = .value) %>%
   mutate(work = 1)
 
+# ie1_post_pred <- ie1_post_pred %>%
+#   bind_rows(ie1_post_pred %>%
+#               mutate(work = 0))
+
+ie1_post_pred <- ie1_post_pred %>%
+  group_by(work, work_original) %>%
+  median_hdci(study) %>%
+  select(work, work_original, study)
+
 kable(head(ie1_post_pred, 10), digits = 2)
 ```
 
 ```{r}
-indirect_effect_post <- indirect_effect2 %>%
+ie1_post_pred <- data.frame(
+  work = c(1, 1),
+  study = c(25, 30),
+  work_original = c(1, 0)
+)
+
+indirect_effect_post <- full_mod %>%
   add_fitted_draws(newdata = ie1_post_pred, n = 300, seed = 76) %>%
   ungroup()
+
+indirect_effect_post %>%
+  group_by(work_original) %>%
+  median_hdci(.value)
 
 ie2_post_pred0 <- indirect_effect_post %>%
   filter(work_original == 0) %>%
@@ -373,7 +389,7 @@ indirect_effect_post %>%
 ```
 
 ```{r fig.height = 2.5, fig.width = 4}
-posterior_diff_plot(indirect_effect_post_diff, x_limits = c(0, .25), plot_title = 'Indirect Effect of Working on Passing')
+posterior_diff_plot(indirect_effect_post_diff, x_limits = c(0, 25), plot_title = 'Indirect Effect of Working on Passing')
 ```
 
 ### Compare results to `mediation` package
