@@ -368,7 +368,7 @@ wrap_plots(ppc_mod_plots, nrow = 2)
 
 ## Add attrition as a predictor
 
-```{r cache = T}
+```{r runMods2, cache = T}
 school_mod_pca_spline_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + log_attrit +
                                                                 (1 | state) + (1 | year),
                                         prior_intercept = student_t(1.25, 1, 7),
@@ -377,6 +377,8 @@ school_mod_pca_spline_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC
                                         data = bar_mod,
                                         weights = takers,
                                         family = binomial("logit"))
+
+write_rds(school_mod_pca_spline_att, 'school_mod_pca_spline_att.rds')
 
 school_mod_pca_spline2_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + ns(log_attrit, df=4) +
                                                                 (1 | state) + (1 | year),
@@ -387,7 +389,32 @@ school_mod_pca_spline2_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(P
                                         weights = takers,
                                         family = binomial("logit"))
 
-write_rds(school_mod_pca_spline, 'school_mod_pca_spline.rds')
+write_rds(school_mod_pca_spline2_att, 'school_mod_pca_spline2_att.rds')
+```
+
+```{r looCompare2}
+mod_list2 <- list(school_mod_pca_spline, school_mod_pca_spline_att, school_mod_pca_spline2_att)
+
+mod_loo_list2 <- map(mod_list2, waic)
+
+mod_loo_list2 <- list(`PCA w/o attrition` = mod_loo_list2[[1]],
+                      `PCA with attrition` = mod_loo_list2[[2]],
+                      `PCA with spline attrition` = mod_loo_list2[[3]])
+
+loo_compare(mod_loo_list2)
+```
+
+```{r}
+
+plot_titles2 <- c('PCA w/o attrition', 'PCA with attrition', 'PCA with spline attrition')
+
+ppc_mod_plots2 <- map2(mod_list2, plot_titles2, 
+                      ppc_plot, num_takers = bar_mod$takers, pass_pct = bar_mod$schoolpasspct)
+
+```
+
+```{r ppcPlots, fig.height = 3, fig.width = 8, fig.caption = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
+wrap_plots(ppc_mod_plots2, nrow = 1)
 ```
 
 ## Plot predictions and residuals
@@ -397,7 +424,7 @@ write_rds(school_mod_pca_spline, 'school_mod_pca_spline.rds')
 
 predicted_pass_draws <- bar_mod %>%
   # create posterior predictions on dataset
-  add_fitted_draws(school_mod_pca_spline, n = 200, seed = 938) %>%
+  add_fitted_draws(school_mod_pca_spline2_att, n = 200, seed = 938) %>%
   left_join(aggregate_rates(bar, c('schoolname', 'year', 'state')), by = c('schoolname', 'year', 'state')) %>%
   select(-ends_with(".y")) %>%
   # calculate residuals (actual pass rate minus predicted value)
