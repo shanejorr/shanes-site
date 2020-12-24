@@ -38,6 +38,7 @@ library(gridExtra)
 library(kableExtra)
 library(glue)
 library(patchwork)
+library(splines)
 library(bayesplot)
 library(tidyverse)
 
@@ -97,7 +98,17 @@ admiss <- read_csv(glue("{data_dir}Admissions.csv"))  %>%
   # create an indicator variable that is the sum of the standardized lsat and gpa variables
   mutate(indicator = rowSums(select(., contains('_std')))) %>%
   # standardize this indicator variable
-  mutate(indicator = scale(indicator)) %>%
+  mutate(indicator = scale(indicator))
+
+# add attrition information
+attrit <- read_csv(glue("{data_dir}Attrition.csv")) %>%
+  select(schoolname, calendaryear, pctjd1attrition) %>%
+  mutate(log_attrit = log(pctjd1attrition + 0.01),
+         log_attrit = scale(log_attrit, center = T, scale = F))
+
+# combine attrition information with 
+admiss <- admiss %>%
+  left_join(attrit, by=c('schoolname', 'calendaryear')) %>%
   select(-calendaryear)
 
 #combine bar results and admissions datasets
@@ -119,17 +130,19 @@ us_rate <- bar %>%
 
 # create dataset for modeling
 bar_mod <- bar %>%
-  select(schoolname, takers, passers, schoolpasspct, state, year, contains("_std"), indicator) %>%
+  select(schoolname, takers, passers, schoolpasspct, state, year, contains("_std"), indicator, pctjd1attrition, log_attrit) %>%
   drop_na() %>%
   # only keep school / state / year combinations with at least 10 bar takers
-  filter(takers >= 10)
+  filter(takers >= 20)
 ```
 
-## Exploration of LSAT and Undergrad GPA as predictors
+Law schools are continuously looking for the secret sauce of bar exam success. They try new programs, courses, and techniques to give their graduates an advantage on the bar exam. Are some schools better at preparing their students for the bar exam than others.
+
+## Exploration of LSAT, undergrad GPA, and attrition as predictors
 
 ### Relationship between bar passage and both undergraduate GPA and LSAT scores
 
-```{r fig.height = 7, fig.width = 6}
+```{r fig.height = 7, fig.width = 6, fig.caption = "The top plot shows the relationship between a school's median undergrad GPA and bar passage rate. The bottom plot shows the relationship between median LSAT and bar passage. Both median undergrad GPA and median LSAT correlate with bar passage."}
 # use the same alpha and size for each plot
 plot_alpha <- .5
 plot_size <- .8
@@ -155,7 +168,7 @@ lsat_plot <- ggplot(school_year_rates, aes(lsat50, pass_rate)) +
 uggpa_plot / lsat_plot
 ```
 
-## Correlation between median LSAT and median Undergrad GPA
+### Correlation between median LSAT and median undergrad GPA
 
 ```{r fig.height = 4, fig.width = 6, fig.caption = "Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line."}
 ggplot(school_year_rates, aes(scale(uggpa50), scale(lsat50))) +   
@@ -168,6 +181,46 @@ ggplot(school_year_rates, aes(scale(uggpa50), scale(lsat50))) +
        subtitle = "Values are standardized",
        x = 'Standardized median school undergraduate GPA',
        y = 'Standardized median school LSAT')
+```
+
+### Association between 1L attrition and both median LSAT and median undergrad GPA
+
+```{r fig.height = 7, fig.width = 6, fig.caption = "The top plot shows the relationship between a school's median undergrad GPA and 1L attrition. The bottom plot shows the relationship between median LSAT and 1L attrition. Both median undergrad GPA and median LSAT correlate slightly with 1L attrition."}
+
+y_atrit_label <- 'School 1L attrition rate (%)'
+
+uggpa_plot <- ggplot(school_year_rates, aes(uggpa50, pctjd1attrition)) +
+  geom_point(color = set2_colors[1], alpha = plot_alpha, size = plot_size) +
+  facet_wrap(~year, ncol=3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(title = 'Undergraduate GPA',
+       x = 'Median school undergraduate GPA',
+       y = y_atrit_label) +
+  theme(legend.position = 'none')
+
+lsat_plot <- ggplot(school_year_rates, aes(lsat50, pctjd1attrition, color = pass_rate)) +
+  geom_point(color = set2_colors[2], alpha = plot_alpha, size = plot_size) +
+  facet_wrap(~year, ncol=3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(title = 'LSAT',
+       x = 'Median school LSAT score',
+       y = y_atrit_label) +
+  theme(legend.position = 'none')
+
+uggpa_plot / lsat_plot
+```
+
+### Association between 1L attrition and bar passage
+
+```{r fig.height = 4, fig.width = 6, fig.caption = "Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line."}
+ggplot(school_year_rates, aes(pctjd1attrition, pass_rate)) +   
+  geom_point(alpha = .3, size = plot_size) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  facet_wrap(~year, ncol=3) +
+  labs(title = "Correlation Between a School's bar passage rate and 1L attrition rate",
+       x = '1L attrition rate (%)',
+       y = 'Bar passage rate (%)')
 ```
 
 ## Difference between predicted and actual bar passage
@@ -206,64 +259,59 @@ bar_pca_summary %>%
 school_mod_linear <- stan_glmer(cbind(passers, takers - passers) ~ lsat50_std + uggpa50_std + 
                                                                     (1 | state) + (1 | year),
                               prior_intercept = student_t(1.25, 1, 7),
-                              iter = 2000,
+                              iter = 1000,
                               seed = 145,
                               data = bar_mod,
+                              weights = takers,
                               family = binomial("logit"))
 
 write_rds(school_mod_linear, 'school_mod_linear.rds')
 
-school_mod_poly <- stan_glmer(cbind(passers, takers - passers) ~ poly(lsat50_std, 2) + poly(uggpa50_std, 2) + 
-                                                                  (1 | state) + (1 | year),
-                              prior_intercept = student_t(1.25, 1, 7),
-                              iter = 2000,
-                              seed = 145,
-                              data = bar_mod,
-                              family = binomial("logit"))
-
-write_rds(school_mod_poly, 'school_mod_poly.rds')
-
 school_mod_pca <- stan_glmer(cbind(passers, takers - passers) ~ PC1 + PC2 + (1 | state) + (1 | year),
                               prior_intercept = student_t(1.25, 1, 7),
-                              iter = 2000,
+                              iter = 1000,
                               seed = 145,
                               data = bar_mod,
+                             weights = takers,
                               family = binomial("logit"))
 
 write_rds(school_mod_pca, 'school_mod_pca.rds')
 
+school_mod_pca_spline <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + 
+                                                                (1 | state) + (1 | year),
+                                    prior_intercept = student_t(1.25, 1, 7),
+                                    iter = 1000,
+                                    seed = 145,
+                                    data = bar_mod,
+                                    weights = takers,
+                                    family = binomial("logit"))
+
+write_rds(school_mod_pca_spline, 'school_mod_pca_spline.rds')
+
 school_mod_indicator <- stan_glmer(cbind(passers, takers - passers) ~ indicator +
                                                                 (1 | state) + (1 | year),
                               prior_intercept = student_t(1.25, 1, 7),
-                              iter = 2000,
+                              iter = 1000,
                               seed = 145,
                               data = bar_mod,
+                              weights = takers,
                               family = binomial("logit"))
 
 write_rds(school_mod_indicator, 'school_mod_indicator.rds')
 
-school_mod_spline <- stan_glmer(cbind(passers, takers - passers) ~ splines::ns(lsat50_std, df=2) + 
-                                                                    splines::ns(uggpa50_std, df=2) + 
+school_mod_spline <- stan_glmer(cbind(passers, takers - passers) ~ ns(lsat50_std, df=4) + 
+                                                                    ns(uggpa50_std, df=4) + 
                                                                     (1 | state) + (1 | year),
                               prior_intercept = student_t(1.25, 1, 7),
-                              iter = 2000,
+                              iter = 1000,
                               seed = 145,
                               data = bar_mod,
+                              weights = takers,
                               family = binomial("logit"))
 
 write_rds(school_mod_spline, 'school_mod_spline.rds')
 
-mod_list <- list(school_mod_linear, school_mod_poly, school_mod_pca, school_mod_indicator, school_mod_spline)
-
-mod_loo_list <- map(mod_list, loo)
-
-mod_loo_list <- list(linear = mod_loo[[1]],
-                     poly = mod_loo[[2]],
-                     pca = mod_loo[[3]],
-                     indicator = mod_loo[[4]],
-                     spline = mod_loo[[5]])
-
-write_rds(mod_loo_list, "school_mod_loo.rds")
+mod_list <- list(school_mod_linear, school_mod_pca, school_mod_pca_spline, school_mod_indicator, school_mod_spline)
 
 write_rds(mod_list, 'mod_list.rds')
 ```
@@ -274,14 +322,15 @@ write_rds(mod_list, 'mod_list.rds')
 #### Difference in LOOs
 
 ```{r looCompare}
+mod_loo_list <- map(mod_list, waic)
+
+mod_loo_list <- list(linear = mod_loo_list[[1]],
+                     pca = mod_loo_list[[2]],
+                     pca_spline = mod_loo_list[[3]],
+                     indicator = mod_loo_list[[4]],
+                     spline = mod_loo_list[[5]])
 
 loo_compare(mod_loo_list)
-```
-
-#### Model weights
-
-```{r}
-loo_model_weights(mod_loo_list)
 ```
 
 #### Poserior predictive checks
@@ -293,7 +342,7 @@ ppc_plot <- function(mod, num_takers, pass_pct, plot_title) {
   
   # creates posterior predictions and then creates ppc plot
   
-  pred_draws <- posterior_predict(mod, draws = 50) %>%
+  pred_draws <- posterior_predict(mod, draws = 100) %>%
                 t()
   
   # calculate percentage probability from number of passers in prediction
@@ -306,23 +355,49 @@ ppc_plot <- function(mod, num_takers, pass_pct, plot_title) {
 }
 
 # titles for plots, in same order as models
-plot_titles <- c('Linear', 'Poly', 'PCA', 'Indicator', 'Spline')
+plot_titles <- c('Linear', 'PCA', 'PCA spline', 'Indicator', 'Spline')
 
 ppc_mod_plots <- map2(mod_list, plot_titles, 
                       ppc_plot, num_takers = bar_mod$takers, pass_pct = bar_mod$schoolpasspct)
 
 ```
 
-```{r ppcPlots, fig.height = 6, fig.width = 8}
+```{r ppcPlots, fig.height = 6, fig.width = 8, fig.caption = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
 wrap_plots(ppc_mod_plots, nrow = 2)
 ```
+
+## Add attrition as a predictor
+
+```{r cache = T}
+school_mod_pca_spline_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + log_attrit +
+                                                                (1 | state) + (1 | year),
+                                        prior_intercept = student_t(1.25, 1, 7),
+                                        iter = 1000,
+                                        seed = 145,
+                                        data = bar_mod,
+                                        weights = takers,
+                                        family = binomial("logit"))
+
+school_mod_pca_spline2_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + ns(log_attrit, df=4) +
+                                                                (1 | state) + (1 | year),
+                                        prior_intercept = student_t(1.25, 1, 7),
+                                        iter = 1000,
+                                        seed = 145,
+                                        data = bar_mod,
+                                        weights = takers,
+                                        family = binomial("logit"))
+
+write_rds(school_mod_pca_spline, 'school_mod_pca_spline.rds')
+```
+
+## Plot predictions and residuals
 
 ```{r}
 # create fitted draws and HPI of fitted draws
 
 predicted_pass_draws <- bar_mod %>%
   # create posterior predictions on dataset
-  add_fitted_draws(school_mod_pca, n = 200, seed = 938) %>%
+  add_fitted_draws(school_mod_pca_spline, n = 200, seed = 938) %>%
   left_join(aggregate_rates(bar, c('schoolname', 'year', 'state')), by = c('schoolname', 'year', 'state')) %>%
   select(-ends_with(".y")) %>%
   # calculate residuals (actual pass rate minus predicted value)
