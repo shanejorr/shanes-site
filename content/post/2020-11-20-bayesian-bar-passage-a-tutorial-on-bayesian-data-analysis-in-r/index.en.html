@@ -24,8 +24,6 @@ links:
   url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en.Rmd
 ---
 
-<link href="{{< relref "post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en.html" >}}index.en_files/anchor-sections/anchor-sections.css" rel="stylesheet" />
-<script src="{{< relref "post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en.html" >}}index.en_files/anchor-sections/anchor-sections.js"></script>
 
 
 <p>This post presents a gentle tutorial on Bayesian hierarchical modeling. After completing the tutorial you will be able create a bare-bones Bayesian hierarchical model in R, intuitively understand how it works, examine its posterior distribution, and make predictions with the model. We’ll use R to conduct the analysis, relying on the <a href="https://mc-stan.org/users/interfaces/rstanarm">rstanarm</a> package for Bayesian modeling.</p>
@@ -160,7 +158,7 @@ state_draws %&gt;%
        color = NULL) +
   theme_minimal() +
   theme(legend.position = &quot;bottom&quot;)</code></pre>
-<p><img src="{{< relref "post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en.html" >}}index.en_files/figure-html/unnamed-chunk-1-1.png" width="576" /></p>
+<p><img src="/post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en_files/figure-html/unnamed-chunk-1-1.png" width="576" /></p>
 <p>The plot highlights a couple features of Bayesian hierarchical models. First, look at Alaska. Confirming our intuition, the estimated most likely infinite takers pass rate sits a few percentage points higher than the United States rate. Also, Alaska’s wide HPI indicates the lack of data points for the state.</p>
 <p>Conversely, look at a state like California that has a lot of bar takers. Its estimated rate is almost identical to its actual rate. When a state has a lot of bar takers, there is less need to infer its estimated state rate from the United States rate. It can infer a pretty exact estimate from the state data alone.</p>
 <p>Second, notice that states with actual pass rates higher than the United States average have estimated pass rates lower than their actual rates. And the opposite is true for states with actual pass rates lower than the United States average. This reveals how hierarchical models pull the estimated state rates towards the United States rate. More generically, hierarchical models pull the group estimates towards the global estimate.</p>
@@ -202,7 +200,7 @@ bind_rows(lsat, gpa) %&gt;%
        y = &#39;School bar passage rate&#39;) +
   theme_minimal() +
   theme(legend.position=&quot;none&quot;)</code></pre>
-<p><img src="{{< relref "post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en.html" >}}index.en_files/figure-html/unnamed-chunk-3-1.png" width="480" /></p>
+<p><img src="/post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en_files/figure-html/unnamed-chunk-3-1.png" width="480" /></p>
 <p>Now, let’s model this relationship by adding the school’s median GPA and LSAT score as additional predictors and keeping state as a group-level predictor.</p>
 <pre class="r"><code># create models with GPA and LSAT, test fit, and compare
 
@@ -255,7 +253,7 @@ admis_mod_pred &lt;- tibble(
        y= NULL,
        color = NULL) +
   theme_minimal()</code></pre>
-<p><img src="{{< relref "post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en.html" >}}index.en_files/figure-html/unnamed-chunk-4-1.png" width="576" /></p>
+<p><img src="/post/2020-11-20-bayesian-bar-passage-a-tutorial-on-bayesian-data-analysis-in-r/index.en_files/figure-html/unnamed-chunk-4-1.png" width="576" /></p>
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>

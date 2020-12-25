@@ -1,0 +1,183 @@
+---
+title: Residual Analysis of Law School and Bar Passage
+author: admin
+date: '2020-12-08'
+slug: residual-analysis-of-law-school-and-bar-passage
+categories:
+  - bayesian analysis
+tags: []
+subtitle: 'Which law schools perform better than predicted on the bar exam given their median UGPA and LSAT scores?'
+summary: ''
+authors: []
+lastmod: '2020-12-08T19:43:42-05:00'
+featured: no
+image:
+  caption: '<span>Photo by <a href="https://unsplash.com/@hudsoncrafted?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Debby Hudson</a> on <a href="https://unsplash.com/s/photos/studying?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>'
+  focal_point: ''
+  preview_only: no
+projects: []
+links:
+- icon: github
+  icon_pack: fab
+  name: Github
+  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.Rmd
+---
+
+
+
+<pre class="r"><code>knitr::opts_chunk$set(echo = F,
+                      message = F,
+                      warning = F,
+                      error = F)</code></pre>
+<p>test.</p>
+<div id="exploration-of-lsat-undergrad-gpa-and-attrition-as-predictors" class="section level2">
+<h2>Exploration of LSAT, undergrad GPA, and attrition as predictors</h2>
+<div id="relationship-between-bar-passage-and-both-undergraduate-gpa-and-lsat-scores" class="section level3">
+<h3>Relationship between bar passage and both undergraduate GPA and LSAT scores</h3>
+<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-2-1.png" width="576" /></p>
+</div>
+<div id="correlation-between-median-lsat-and-median-undergrad-gpa" class="section level3">
+<h3>Correlation between median LSAT and median undergrad GPA</h3>
+<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-3-1.png" width="576" /></p>
+</div>
+<div id="association-between-1l-attrition-and-both-median-lsat-and-median-undergrad-gpa" class="section level3">
+<h3>Association between 1L attrition and both median LSAT and median undergrad GPA</h3>
+<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-4-1.png" width="576" /></p>
+</div>
+<div id="association-between-1l-attrition-and-bar-passage" class="section level3">
+<h3>Association between 1L attrition and bar passage</h3>
+<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-5-1.png" width="576" /></p>
+</div>
+</div>
+<div id="difference-between-predicted-and-actual-bar-passage" class="section level2">
+<h2>Difference between predicted and actual bar passage</h2>
+<div id="models-used" class="section level3">
+<h3>Models used</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+PC 1
+</th>
+<th style="text-align:right;">
+PC 2
+</th>
+<th style="text-align:right;">
+PC 3
+</th>
+<th style="text-align:right;">
+PC 4
+</th>
+<th style="text-align:right;">
+PC 5
+</th>
+<th style="text-align:right;">
+PC 6
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Standard deviation
+</td>
+<td style="text-align:right;">
+2.243512
+</td>
+<td style="text-align:right;">
+0.418039
+</td>
+<td style="text-align:right;">
+0.2195266
+</td>
+<td style="text-align:right;">
+0.1371341
+</td>
+<td style="text-align:right;">
+0.1080311
+</td>
+<td style="text-align:right;">
+0.0688854
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Proportion of Variance
+</td>
+<td style="text-align:right;">
+0.951210
+</td>
+<td style="text-align:right;">
+0.033030
+</td>
+<td style="text-align:right;">
+0.0091100
+</td>
+<td style="text-align:right;">
+0.0035500
+</td>
+<td style="text-align:right;">
+0.0022100
+</td>
+<td style="text-align:right;">
+0.0009000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Cumulative Proportion
+</td>
+<td style="text-align:right;">
+0.951210
+</td>
+<td style="text-align:right;">
+0.984240
+</td>
+<td style="text-align:right;">
+0.9933400
+</td>
+<td style="text-align:right;">
+0.9969000
+</td>
+<td style="text-align:right;">
+0.9991000
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="compare-models" class="section level3">
+<h3>Compare models</h3>
+<div id="difference-in-loos" class="section level4">
+<h4>Difference in LOOs</h4>
+<pre><code>##            elpd_diff se_diff
+## pca_spline    0.0       0.0 
+## pca         -50.7      18.1 
+## indicator   -76.1      22.6 
+## spline     -109.5      18.1 
+## linear     -157.8      25.8</code></pre>
+</div>
+<div id="poserior-predictive-checks" class="section level4">
+<h4>Poserior predictive checks</h4>
+<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/ppcPlots-1.png" width="768" /></p>
+</div>
+</div>
+</div>
+<div id="add-attrition-as-a-predictor" class="section level2">
+<h2>Add attrition as a predictor</h2>
+<pre><code>##                           elpd_diff se_diff
+## PCA with spline attrition   0.0       0.0  
+## PCA with attrition         -2.6       7.8  
+## PCA w/o attrition         -12.2      11.8</code></pre>
+<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/ppcPlots2-1.png" width="768" /></p>
+</div>
+<div id="plot-predictions-and-residuals" class="section level2">
+<h2>Plot predictions and residuals</h2>
+<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-11-1.png" width="960" /></p>
+<p>test test.</p>
+</div>

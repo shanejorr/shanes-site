@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = T,
                       error = F)
 ```
 
-This post presents a gentle tutorial on Bayesian hierarchical modeling. After completing the tutorial you will be able create a bare-bones Bayesian hierarchical model in R, intuitively understand how it works, examine its posterior distribution, and make predictions with the model. We'll use R to conduct the analysis, relying on the [rstanarm](https://mc-stan.org/users/interfaces/rstanarm) package for Bayesian modeling.  
+This post presents a gentle tutorial on Bayesian hierarchical modeling. After completing the tutorial you will be able create a bare-bones Bayesian hierarchical model in R, intuitively understand how it works, examine its posterior distribution, and make predictions with the model. We'll use R to conduct the analysis, relying on the [rstanarm](https://mc-stan.org/users/interfaces/rstanarm) package for Bayesian modeling.
 
 The running case study in this tutorial centers on state bar passage rates on the bar exam. After graduating law school, all law students must pass the bar exam prior to gaining their law license. It's the final step on a long journey.
 The data set contains information on law school bar passage rates - which we'll aggregate to create state passage rates - and student body characteristics such as median undergraduate GPA and median LSAT score. The LSAT is the admissions test prospective law students take. [AccessLex](http://analytix.accesslex.org/DataSet) aggregated the data and I placed it on a [GitHub repo](https://github.com/shanejorr/ABA-509-disclosures) for easy access.

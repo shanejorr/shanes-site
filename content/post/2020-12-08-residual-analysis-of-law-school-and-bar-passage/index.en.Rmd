@@ -136,8 +136,6 @@ bar_mod <- bar %>%
   filter(takers >= 20)
 ```
 
-Law schools are continuously looking for the secret sauce of bar exam success. They try new programs, courses, and techniques to give their graduates an advantage on the bar exam. Are some schools better at preparing their students for the bar exam than others.
-
 ## Exploration of LSAT, undergrad GPA, and attrition as predictors
 
 ### Relationship between bar passage and both undergraduate GPA and LSAT scores
@@ -259,20 +257,18 @@ bar_pca_summary %>%
 school_mod_linear <- stan_glmer(cbind(passers, takers - passers) ~ lsat50_std + uggpa50_std + 
                                                                     (1 | state) + (1 | year),
                               prior_intercept = student_t(1.25, 1, 7),
-                              iter = 1000,
+                              iter = 2000,
                               seed = 145,
                               data = bar_mod,
-                              weights = takers,
                               family = binomial("logit"))
 
 write_rds(school_mod_linear, 'school_mod_linear.rds')
 
 school_mod_pca <- stan_glmer(cbind(passers, takers - passers) ~ PC1 + PC2 + (1 | state) + (1 | year),
                               prior_intercept = student_t(1.25, 1, 7),
-                              iter = 1000,
+                              iter = 2000,
                               seed = 145,
                               data = bar_mod,
-                             weights = takers,
                               family = binomial("logit"))
 
 write_rds(school_mod_pca, 'school_mod_pca.rds')
@@ -280,10 +276,9 @@ write_rds(school_mod_pca, 'school_mod_pca.rds')
 school_mod_pca_spline <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + 
                                                                 (1 | state) + (1 | year),
                                     prior_intercept = student_t(1.25, 1, 7),
-                                    iter = 1000,
+                                    iter = 2000,
                                     seed = 145,
                                     data = bar_mod,
-                                    weights = takers,
                                     family = binomial("logit"))
 
 write_rds(school_mod_pca_spline, 'school_mod_pca_spline.rds')
@@ -291,10 +286,9 @@ write_rds(school_mod_pca_spline, 'school_mod_pca_spline.rds')
 school_mod_indicator <- stan_glmer(cbind(passers, takers - passers) ~ indicator +
                                                                 (1 | state) + (1 | year),
                               prior_intercept = student_t(1.25, 1, 7),
-                              iter = 1000,
+                              iter = 2000,
                               seed = 145,
                               data = bar_mod,
-                              weights = takers,
                               family = binomial("logit"))
 
 write_rds(school_mod_indicator, 'school_mod_indicator.rds')
@@ -303,10 +297,9 @@ school_mod_spline <- stan_glmer(cbind(passers, takers - passers) ~ ns(lsat50_std
                                                                     ns(uggpa50_std, df=4) + 
                                                                     (1 | state) + (1 | year),
                               prior_intercept = student_t(1.25, 1, 7),
-                              iter = 1000,
+                              iter = 2000,
                               seed = 145,
                               data = bar_mod,
-                              weights = takers,
                               family = binomial("logit"))
 
 write_rds(school_mod_spline, 'school_mod_spline.rds')
@@ -322,7 +315,7 @@ write_rds(mod_list, 'mod_list.rds')
 #### Difference in LOOs
 
 ```{r looCompare}
-mod_loo_list <- map(mod_list, waic)
+mod_loo_list <- map(mod_list, loo)
 
 mod_loo_list <- list(linear = mod_loo_list[[1]],
                      pca = mod_loo_list[[2]],
@@ -372,10 +365,9 @@ wrap_plots(ppc_mod_plots, nrow = 2)
 school_mod_pca_spline_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + log_attrit +
                                                                 (1 | state) + (1 | year),
                                         prior_intercept = student_t(1.25, 1, 7),
-                                        iter = 1000,
+                                        iter = 2000,
                                         seed = 145,
                                         data = bar_mod,
-                                        weights = takers,
                                         family = binomial("logit"))
 
 write_rds(school_mod_pca_spline_att, 'school_mod_pca_spline_att.rds')
@@ -383,10 +375,9 @@ write_rds(school_mod_pca_spline_att, 'school_mod_pca_spline_att.rds')
 school_mod_pca_spline2_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + ns(log_attrit, df=4) +
                                                                 (1 | state) + (1 | year),
                                         prior_intercept = student_t(1.25, 1, 7),
-                                        iter = 1000,
+                                        iter = 2000,
                                         seed = 145,
                                         data = bar_mod,
-                                        weights = takers,
                                         family = binomial("logit"))
 
 write_rds(school_mod_pca_spline2_att, 'school_mod_pca_spline2_att.rds')
@@ -395,7 +386,7 @@ write_rds(school_mod_pca_spline2_att, 'school_mod_pca_spline2_att.rds')
 ```{r looCompare2}
 mod_list2 <- list(school_mod_pca_spline, school_mod_pca_spline_att, school_mod_pca_spline2_att)
 
-mod_loo_list2 <- map(mod_list2, waic)
+mod_loo_list2 <- map(mod_list2, loo)
 
 mod_loo_list2 <- list(`PCA w/o attrition` = mod_loo_list2[[1]],
                       `PCA with attrition` = mod_loo_list2[[2]],
@@ -413,7 +404,7 @@ ppc_mod_plots2 <- map2(mod_list2, plot_titles2,
 
 ```
 
-```{r ppcPlots, fig.height = 3, fig.width = 8, fig.caption = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
+```{r ppcPlots2, fig.height = 3, fig.width = 8, fig.caption = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
 wrap_plots(ppc_mod_plots2, nrow = 1)
 ```
 
@@ -515,3 +506,5 @@ plot_actual + plot_residuals +
   subtitle = 'Bands are 95% credible intervals | Percentage is probability that actual rate is higher than predicted rate'
 )
 ```
+
+test test.
