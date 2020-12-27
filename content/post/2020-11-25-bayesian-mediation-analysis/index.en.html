@@ -1,0 +1,217 @@
+---
+title: A First Attempt at Bayesian Mediation Analysis
+author: Shane Orr
+date: '2020-11-25'
+slug: bayesian-mediation-analysis
+categories:
+  - bayesian analysis
+  - mediation analysis
+tags: []
+subtitle: "The same process and 'almost' the same results as non-Bayesian approaches, but cooler"
+summary: ''
+authors: []
+lastmod: '2020-11-25T18:38:02-05:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+links:
+- icon: github
+  icon_pack: fab
+  name: Github
+  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-11-25-bayesian-mediation-analysis/index.en.Rmd
+  
+draft: true
+---
+
+<link href="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/anchor-sections/anchor-sections.js"></script>
+
+
+<div id="what-is-mediation-analysis" class="section level2">
+<h2>What is mediation analysis?</h2>
+<p>Let’s say you want to examine the effect of working on whether a student passes a class. You set up a randomized controlled trial where some students are forced to work 15 hours a week and other are prohibited from working at all. But, a third variable also come into play. Working students have less time to study and this negatively impacts their probability of passing.</p>
+<p>We can visually depict the causal relationships with the following Directed Acyclic Graph (DAG):</p>
+<div class="figure"><span id="fig:mainDag"></span>
+<img src="dag/working_dag_main.png" alt="DAG highlighting the effect of working on passing a class" width="50%" />
+<p class="caption">
+Figure 1: DAG highlighting the effect of working on passing a class
+</p>
+</div>
+<p>As the graph shows, we might be interested in three different ways that working effects the probability of passing a class.</p>
+<ol style="list-style-type: decimal">
+<li><p><em>Direct Effect:</em> The direct effect is the effect that working has on class passage through a direct causal link. For example, working may impact passage through an unknown mechanism outside of hours studied. Assume we don’t know, or cannot measure, this mechanism, working will have a direct effect on class passage.</p></li>
+<li><p><em>Indirect Effect:</em> In our example, working’s indirect effect on bar passage is its effect through hours studied. Working impacts hours studied and hours studied effects class passage.</p></li>
+<li><p><em>Total Effect:</em> Not self-define, but the total effect is the overall, all things considered, effect of working on passing. It’s the direct effect plus the indirect effect.</p></li>
+</ol>
+<p>The goal of mediation analysis is to disentangle these three effects.</p>
+</div>
+<div id="untangling-the-gordian-effects-knot" class="section level2">
+<h2>Untangling the Gordian Effects Knot</h2>
+<p>We’ll simulate a data set to show the three types of effects. The fake data set includes three columns: a 0 or 1 identifying whether the student worked, a continuous number showing how many hours the student worked in the given week, and a 0 or 1 signifying whether the student passed the class.</p>
+<p>The code below creates the fake data.</p>
+<p>Here’s a sample of the data set.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">work</th>
+<th align="right">study</th>
+<th align="right">grade</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">24.32433</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">0</td>
+<td align="right">27.53596</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">49.45358</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">0</td>
+<td align="right">29.79665</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">33.88440</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="right">0</td>
+<td align="right">24.94992</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<div id="direct-effect-the-old-fashioned-way" class="section level3">
+<h3>Direct effect the old fashioned way</h3>
+<p>In figure <a href="#fig:mainDag">1</a>, the direct effect of working on class passage is the causal line that does not go through hours studied. We calculate this through a single model that conditions on hours studied. By conditioning on hours studied, we block the path from working to passage that flows through hours studied. This only leaves the direct effect path open.</p>
+<div class="figure"><span id="fig:directDag"></span>
+<img src="dag/working_dag_direct.jpg" alt="DAG highlighting the direct effect of working on passing a class" width="50%" />
+<p class="caption">
+Figure 2: DAG highlighting the direct effect of working on passing a class
+</p>
+</div>
+<p>By conditioning on hours studied, the effect of working on passing represents the effect with hours studied being the same for both the working and non-working groups. We thus remove any effect working has on passage via creating differences in hours studied between workers and non-workers.</p>
+<p>We can isolate the direct effect through a simple Bayesian logistic regression model with hours study and working status as predictors and whether the student passed as the response. The hours worked regression coefficient then drives the direct effect.</p>
+<p>With our model in hand, we can now visualize the direct effect. One way to show it is to predict class passage for workers and non-workers, while holding hours studied the same between workers and non-workers. In other words, we can use the model to predict class passage for the two following hypothetical students. The hours worked is the mean hours worked in our simulated data.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">work</th>
+<th align="right">study</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">28.14255</td>
+</tr>
+<tr class="even">
+<td align="right">0</td>
+<td align="right">28.14255</td>
+</tr>
+</tbody>
+</table>
+<p>Here is the posterior distribution of the probability of passing the class, grouped by whether students worked.</p>
+<p><img src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/figure-html/dePlotDiff-1.png" width="384" /></p>
+<p>A weakness of <a href="#fig:dePlotDiff"><strong>??</strong></a> is that it struggles to highlight the estimated difference, and the uncertainty in the difference, in class passage probabilities between workers and non-workers. We can better highlight the difference and uncertainty in the difference by creating predictions of class passage for workers and non-workers at all values of the number of hours studied in the data set. The difference between the posterior distributions for workers and non-workers can then be calculated.</p>
+<div class="figure"><span id="fig:iePlotDiff"></span>
+<img src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/figure-html/iePlotDiff-1.png" alt="Direct effect of working on passing the class." width="384" />
+<p class="caption">
+Figure 3: Direct effect of working on passing the class.
+</p>
+</div>
+<p>This gives us a much better picture of the difference in class passage probabilities between workers and non-workers. And we can also use the posterior distribution of differences to calculate probabilities such as the probability that the direct effect is positive.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Prob. direct effect is positive</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">96%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="total-effect-the-old-fashioned-way" class="section level3">
+<h3>Total effect the old fashioned way</h3>
+<p>The total effect is the effect of working on class passage through all causal links originating with working. In figure <a href="#fig:mainDag">1</a>, its the effect that goes straight from working to class passage and the effect that runs through hours studied. We calculate this effect by failing to condition on hours studied. By removing hours studied from the equation, the effect that previously traveled through hours studied now goes directly to class passage.</p>
+<div class="figure"><span id="fig:teDag"></span>
+<img src="dag/working_dag_total.png" alt="DAG highlighting the effect of working on passing a class" width="50%" />
+<p class="caption">
+Figure 4: DAG highlighting the effect of working on passing a class
+</p>
+</div>
+<p>We can estimate the total effect by a Bayesian logistic regression model with work status as the lone predictor and class passage as the response. This is a similar model to the direct effect model, except hours studied is removed as a predictor.</p>
+<p><img src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/figure-html/tePlotPosterior-1.png" width="384" /></p>
+<p><img src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/figure-html/tePlotDiff-1.png" width="384" /></p>
+</div>
+<div id="indirect-effect-kind-of-the-old-fashioned-way" class="section level3">
+<h3>Indirect effect (kind-of) the old fashioned way</h3>
+<div id="step-1-effect-of-working-on-number-of-hours-studied" class="section level4">
+<h4>Step 1: Effect of working on number of hours studied</h4>
+<p><img src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/figure-html/iePlotPosterior-1.png" width="384" /></p>
+</div>
+<div id="step-2-effect-of-studying-on-passing-after-incorporating-the-effect-of-working-on-studying" class="section level4">
+<h4>Step 2: Effect of studying on passing after incorporating the effect of working on studying</h4>
+<p><em>Raw effect of studying on passing</em></p>
+<p><img src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/figure-html/iePlot2-1.png" width="336" /></p>
+<p><em>Effect of studying on passing, while incorporating effect of working on studying</em></p>
+<p>Step 1: predict studying values for workers and non-workers, while holding work status constant.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">work</th>
+<th align="right">work_original</th>
+<th align="right">study</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">25.67</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">30.55</td>
+</tr>
+</tbody>
+</table>
+<pre><code>## # A tibble: 2 x 7
+##   work_original .value .lower .upper .width .point .interval
+##           &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;    
+## 1             0  0.542  0.481  0.611   0.95 median hdci     
+## 2             1  0.441  0.369  0.509   0.95 median hdci</code></pre>
+<p><img src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/figure-html/unnamed-chunk-7-1.png" width="384" /></p>
+<p><img src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/figure-html/unnamed-chunk-8-1.png" width="384" /></p>
+</div>
+</div>
+<div id="compare-results-to-mediation-package" class="section level3">
+<h3>Compare results to <code>mediation</code> package</h3>
+<div class="figure"><span id="fig:raceMediation"></span>
+<img src="{{< relref "post/2020-11-25-bayesian-mediation-analysis/index.en.html" >}}index.en_files/figure-html/raceMediation-1.png" alt="Direct, indirect, and total effects of working on class passage. Values are the average percentage point difference in class passage." width="480" />
+<p class="caption">
+Figure 5: Direct, indirect, and total effects of working on class passage. Values are the average percentage point difference in class passage.
+</p>
+</div>
+</div>
+</div>
+<div id="the-versitility-of-mediation-analysis" class="section level2">
+<h2>The versitility of mediation analysis</h2>
+</div>

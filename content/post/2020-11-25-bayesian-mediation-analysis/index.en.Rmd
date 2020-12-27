@@ -268,7 +268,7 @@ knitr::include_graphics("dag/working_dag_total.png")
 
 We can estimate the total effect by a Bayesian logistic regression model with work status as the lone predictor and class passage as the response. This is a similar model to the direct effect model, except hours studied is removed as a predictor.
 
-```{r deMod}
+```{r teMod}
 # total effect model
 total_effect <- stan_glm(grade ~ work, 
                            family = binomial('logit'),

@@ -23,30 +23,62 @@ links:
   url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.Rmd
 ---
 
+<link href="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/anchor-sections/anchor-sections.js"></script>
 
 
-<pre class="r"><code>knitr::opts_chunk$set(echo = F,
-                      message = F,
-                      warning = F,
-                      error = F)</code></pre>
-<p>test.</p>
+<p>Evaluating the effectiveness of law schools is challenging for two reasons. The first hurdle lies in defining effectiveness. What does it mean for one law school to provide a better legal education than other schools? Generally, this centers on producing effective lawyers, although such a definition just punts the definition of effectiveness up a level. Regardless, you cannot be an effective lawyer without actually becoming a licensed attorney. And to do this, you have to pass the bar exam. Thus, let’s make ‘preparing students to pass the bar exam’ one measure of law school effectiveness.</p>
+<p>Now for the second hurdle. How do we measure whether a school effectively prepares students for the bar exam? This question is causal in nature, as can be seen from a hypothetical. Let’s take a student deciding on which law school to attend. She knowns she is going to take the 2023 North Carolina bar exam. In evaluating law school effectiveness, we want to know her probability of bar passage in NC, based solely on her pre-law school characteristics, given various law schools. These differences in probabilities between law schools shed light on each law school’s effectiveness in preparing students for the bar exam.</p>
+<p>This post represents an attempt to answer this question. I lay out the problems with my approach at the end, but the bottom line is that I’m not convinced by my own post that it’s possible to answer this question with current data sources. But, I’ll let readers be the final judge.</p>
+<div id="overview-of-method" class="section level2">
+<h2>Overview of Method</h2>
+<p>As already stated, we want to know how well law schools prepare students for the bar exam. This post’s method is to predict each school’s bar passage rate based on school-level bar passage predictors and then measure how well the school performed against the prediction. To account for student quality, we will incorporate the school’s median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score of incoming students. This allows us to account for pre-law school factors that correlate with bar passage.</p>
+<p>We will also account for first-year attrition. The reason is that schools typically flunk-out poor performing students and these students have a low probability of bar passage. Thus, the quickest way for a school to raise it’s bar passage rate is to kick out more low-performing students. By including attrition as a predictor we ensure that a school does not perform better than expectations simply because it fails-out more students.</p>
+</div>
 <div id="exploration-of-lsat-undergrad-gpa-and-attrition-as-predictors" class="section level2">
 <h2>Exploration of LSAT, undergrad GPA, and attrition as predictors</h2>
+<p>AccessLex Institute <a href="https://analytix.accesslex.org/DataSet">aggregates the data</a> law school’s submit to the American Bar Association as required disclosures. We’ll use this data to find each school’s yearly median median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score of incoming students, attrition rate, and bar passage rate by state and year. Prior to modeling, however, we’ll examine the individual relationships between the predictors and bar passage. This will provide us initial confirmation that we should at least test them in models.</p>
+<p>All years in this analysis represent the year students took the bar exam. For admissions factors such as median undergrad GPA and LSAT this means that the years represent the median values for students who entered law school school three years prior to the stated year.</p>
 <div id="relationship-between-bar-passage-and-both-undergraduate-gpa-and-lsat-scores" class="section level3">
 <h3>Relationship between bar passage and both undergraduate GPA and LSAT scores</h3>
-<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-2-1.png" width="576" /></p>
+<p>Figure <a href="#fig:plotAdmisPredictors">1</a> shows the relationship between both median undergrad GPA (top plot) and median LSAT score (bottom plot) and bar passage. Each reveal a positive relationship between the admissions factor and bar passage.</p>
+<div class="figure"><span id="fig:plotAdmisPredictors"></span>
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAdmisPredictors-1.png" alt="The top plot shows the relationship between a school's median undergrad GPA and bar passage rate. The bottom plot shows the relationship between median LSAT and bar passage. Both median undergrad GPA and median LSAT correlate with bar passage." width="576" />
+<p class="caption">
+Figure 1: The top plot shows the relationship between a school’s median undergrad GPA and bar passage rate. The bottom plot shows the relationship between median LSAT and bar passage. Both median undergrad GPA and median LSAT correlate with bar passage.
+</p>
+</div>
 </div>
 <div id="correlation-between-median-lsat-and-median-undergrad-gpa" class="section level3">
 <h3>Correlation between median LSAT and median undergrad GPA</h3>
-<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-3-1.png" width="576" /></p>
+<p>We’ll next look at the correlation between median undergrad GPA and median LSAT. Our prior is that these two predictors are highly correlated, as the more elite a school is the higher its median undergrad GPA and LSAT. This could cause colinearity problems within our models. We’re not worried about colinearity wrecking havoc on our regression coefficients, as were focused on predictions and not the coefficient values. But, colinearity can also widen the uncertainty of predictions. This is our worry.</p>
+<p>Figure <a href="#fig:plotAdmisPredictors">1</a> reveals that median undergrad GPA and median LSAT are highly correlated. Both predictors are standardized to have a mean of 0 and standard deviation of 1. Standardizing them allows us to compare their linear relationship - the blue line - with a prefect correlation represented by a line with a slope of 1 - the red dashed line. The plot shows an extremely strong relationship between median undergrad GPA and median LSAT. The linear relationship is only slightly flatter than the perfect relationship. We’ll address the colinearity in the modeling section.</p>
+<div class="figure"><span id="fig:plotAdmisCorrelation"></span>
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAdmisCorrelation-1.png" alt="Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line." width="576" />
+<p class="caption">
+Figure 2: Correlation between each school’s standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line.
+</p>
+</div>
 </div>
 <div id="association-between-1l-attrition-and-both-median-lsat-and-median-undergrad-gpa" class="section level3">
 <h3>Association between 1L attrition and both median LSAT and median undergrad GPA</h3>
-<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-4-1.png" width="576" /></p>
+<p>We’ll also look at the association between first year (1L) attrition and both median undergrad GPA and median LSAT. Our expectation, based on prior knowledge, is that schools with lower median undergrad GPA and LSAT scores will also have higher attrition. Figure <a href="#fig:plotAttritAdmis">3</a> confirms this prior. But, the relationship is not strong enough to cause colinearity issues.</p>
+<div class="figure"><span id="fig:plotAttritAdmis"></span>
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAttritAdmis-1.png" alt="The top plot shows the relationship between a school's median undergrad GPA and 1L attrition. The bottom plot shows the relationship between median LSAT and 1L attrition. Both median undergrad GPA and median LSAT correlate slightly with 1L attrition." width="576" />
+<p class="caption">
+Figure 3: The top plot shows the relationship between a school’s median undergrad GPA and 1L attrition. The bottom plot shows the relationship between median LSAT and 1L attrition. Both median undergrad GPA and median LSAT correlate slightly with 1L attrition.
+</p>
+</div>
 </div>
 <div id="association-between-1l-attrition-and-bar-passage" class="section level3">
 <h3>Association between 1L attrition and bar passage</h3>
-<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-5-1.png" width="576" /></p>
+<p>Finally, figure <a href="#fig:plotAttritPassage">4</a> highlights the association between attrition and bar passage. Not surprisingly, it’s negative: schools with higher attrition rates have lower bar passage rates. This finding is not unexpected because we saw from figure <a href="#fig:plotAdmisPredictors">1</a> that higher median undergrad GPA and LSAT scores correlate with higher bar passage rates and <a href="#fig:plotAttritAdmis">3</a> showed us that lower median undergrad GPA and LSAT scores are associated with higher attrition rates. Putting both findings together, we assume that higher attrition rates correlate with lower bar passage rates.</p>
+<div class="figure"><span id="fig:plotAttritPassage"></span>
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAttritPassage-1.png" alt="Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line." width="576" />
+<p class="caption">
+Figure 4: Correlation between each school’s standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line.
+</p>
+</div>
 </div>
 </div>
 <div id="difference-between-predicted-and-actual-bar-passage" class="section level2">
@@ -155,29 +187,155 @@ Cumulative Proportion
 <h3>Compare models</h3>
 <div id="difference-in-loos" class="section level4">
 <h4>Difference in LOOs</h4>
-<pre><code>##            elpd_diff se_diff
-## pca_spline    0.0       0.0 
-## pca         -50.7      18.1 
-## indicator   -76.1      22.6 
-## spline     -109.5      18.1 
-## linear     -157.8      25.8</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+Model
+</th>
+<th style="text-align:right;">
+Difference in ELPD
+</th>
+<th style="text-align:right;">
+Std. Error of Difference
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+PCA spline
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PCA
+</td>
+<td style="text-align:right;">
+-52
+</td>
+<td style="text-align:right;">
+18
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Indicator
+</td>
+<td style="text-align:right;">
+-76
+</td>
+<td style="text-align:right;">
+23
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Spline
+</td>
+<td style="text-align:right;">
+-111
+</td>
+<td style="text-align:right;">
+18
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Linear
+</td>
+<td style="text-align:right;">
+-157
+</td>
+<td style="text-align:right;">
+26
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="poserior-predictive-checks" class="section level4">
 <h4>Poserior predictive checks</h4>
-<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/ppcPlots-1.png" width="768" /></p>
+<div class="figure"><span id="fig:ppcPlots"></span>
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/ppcPlots-1.png" alt="Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates." width="768" />
+<p class="caption">
+Figure 5: Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates.
+</p>
+</div>
 </div>
 </div>
 </div>
 <div id="add-attrition-as-a-predictor" class="section level2">
 <h2>Add attrition as a predictor</h2>
-<pre><code>##                           elpd_diff se_diff
-## PCA with spline attrition   0.0       0.0  
-## PCA with attrition         -2.6       7.8  
-## PCA w/o attrition         -12.2      11.8</code></pre>
-<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/ppcPlots2-1.png" width="768" /></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+Model
+</th>
+<th style="text-align:right;">
+Difference in ELPD
+</th>
+<th style="text-align:right;">
+Std. Error of Difference
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+PCA with spline attrition
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PCA with attrition
+</td>
+<td style="text-align:right;">
+-2
+</td>
+<td style="text-align:right;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PCA w/o attrition
+</td>
+<td style="text-align:right;">
+-11
+</td>
+<td style="text-align:right;">
+12
+</td>
+</tr>
+</tbody>
+</table>
+<div class="figure"><span id="fig:ppcPlots2"></span>
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/ppcPlots2-1.png" alt="Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates." width="768" />
+<p class="caption">
+Figure 6: Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates.
+</p>
+</div>
 </div>
 <div id="plot-predictions-and-residuals" class="section level2">
 <h2>Plot predictions and residuals</h2>
-<p><img src="/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en_files/figure-html/unnamed-chunk-11-1.png" width="960" /></p>
-<p>test test.</p>
+<div class="figure"><span id="fig:unnamed-chunk-7"></span>
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/unnamed-chunk-7-1.png" alt="Left plot reveals actual and predicted bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate. For almost all schools, the 95% credible intervals cross zero. This highlights that there is little we can learn from the residuals about school-level performance on the bar exam." width="960" />
+<p class="caption">
+Figure 7: Left plot reveals actual and predicted bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate. For almost all schools, the 95% credible intervals cross zero. This highlights that there is little we can learn from the residuals about school-level performance on the bar exam.
+</p>
+</div>
 </div>

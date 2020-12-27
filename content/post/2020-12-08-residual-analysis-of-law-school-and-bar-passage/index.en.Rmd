@@ -23,7 +23,7 @@ links:
   url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.Rmd
 ---
 
-```{r setup}
+```{r setup, echo = F}
 knitr::opts_chunk$set(echo = F,
                       message = F,
                       warning = F,
@@ -136,11 +136,29 @@ bar_mod <- bar %>%
   filter(takers >= 20)
 ```
 
+Evaluating the effectiveness of law schools is challenging for two reasons. The first hurdle lies in defining effectiveness. What does it mean for one law school to provide a better legal education than other schools? Generally, this centers on producing effective lawyers, although such a definition just punts the definition of effectiveness up a level. Regardless, you cannot be an effective lawyer without actually becoming a licensed attorney. And to do this, you have to pass the bar exam. Thus, let's make 'preparing students to pass the bar exam' one measure of law school effectiveness.
+
+Now for the second hurdle. How do we measure whether a school effectively prepares students for the bar exam? This question is causal in nature, as can be seen from a hypothetical. Let's take a student deciding on which law school to attend. She knowns she is going to take the 2023 North Carolina bar exam. In evaluating law school effectiveness, we want to know her probability of bar passage in NC, based solely on her pre-law school characteristics, given various law schools. These differences in probabilities between law schools shed light on each law school's effectiveness in preparing students for the bar exam.
+
+This post represents an attempt to answer this question. I lay out the problems with my approach at the end, but the bottom line is that I'm not convinced by my own post that it's possible to answer this question with current data sources. But, I'll let readers be the final judge.
+
+## Overview of Method
+
+As already stated, we want to know how well law schools prepare students for the bar exam. This post's method is to predict each school's bar passage rate based on school-level bar passage predictors and then measure how well the school performed against the prediction. To account for student quality, we will incorporate the school's median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score of incoming students. This allows us to account for pre-law school factors that correlate with bar passage.
+
+We will also account for first-year attrition. The reason is that schools typically flunk-out poor performing students and these students have a low probability of bar passage. Thus, the quickest way for a school to raise it's bar passage rate is to kick out more low-performing students. By including attrition as a predictor we ensure that a school does not perform better than expectations simply because it fails-out more students.
+
 ## Exploration of LSAT, undergrad GPA, and attrition as predictors
+
+AccessLex Institute [aggregates the data](https://analytix.accesslex.org/DataSet) law school's submit to the American Bar Association as required disclosures. We'll use this data to find each school's yearly median median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score of incoming students, attrition rate, and bar passage rate by state and year. Prior to modeling, however, we'll examine the individual relationships between the predictors and bar passage. This will provide us initial confirmation that we should at least test them in models.
+
+All years in this analysis represent the year students took the bar exam. For admissions factors such as median undergrad GPA and LSAT this means that the years represent the median values for students who entered law school school three years prior to the stated year.
 
 ### Relationship between bar passage and both undergraduate GPA and LSAT scores
 
-```{r fig.height = 7, fig.width = 6, fig.caption = "The top plot shows the relationship between a school's median undergrad GPA and bar passage rate. The bottom plot shows the relationship between median LSAT and bar passage. Both median undergrad GPA and median LSAT correlate with bar passage."}
+Figure \@ref(fig:plotAdmisPredictors) shows the relationship between both median undergrad GPA (top plot) and median LSAT score (bottom plot) and bar passage. Each reveal a positive relationship between the admissions factor and bar passage.
+
+```{r plotAdmisPredictors, fig.height = 7, fig.width = 6, fig.cap = "The top plot shows the relationship between a school's median undergrad GPA and bar passage rate. The bottom plot shows the relationship between median LSAT and bar passage. Both median undergrad GPA and median LSAT correlate with bar passage."}
 # use the same alpha and size for each plot
 plot_alpha <- .5
 plot_size <- .8
@@ -168,7 +186,11 @@ uggpa_plot / lsat_plot
 
 ### Correlation between median LSAT and median undergrad GPA
 
-```{r fig.height = 4, fig.width = 6, fig.caption = "Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line."}
+We'll next look at the correlation between median undergrad GPA and median LSAT. Our prior is that these two predictors are highly correlated, as the more elite a school is the higher its median undergrad GPA and LSAT. This could cause colinearity problems within our models. We're not worried about colinearity wrecking havoc on our regression coefficients, as were focused on predictions and not the coefficient values. But, colinearity can also widen the uncertainty of predictions. This is our worry.
+
+Figure \@ref(fig:plotAdmisPredictors) reveals that median undergrad GPA and median LSAT are highly correlated. Both predictors are standardized to have a mean of 0 and standard deviation of 1. Standardizing them allows us to compare their linear relationship - the blue line - with a prefect correlation represented by a line with a slope of 1 - the red dashed line. The plot shows an extremely strong relationship between median undergrad GPA and median LSAT. The linear relationship is only slightly flatter than the perfect relationship. We'll address the colinearity in the modeling section.
+
+```{r plotAdmisCorrelation, fig.height = 4, fig.width = 6, fig.cap = "Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line."}
 ggplot(school_year_rates, aes(scale(uggpa50), scale(lsat50))) +   
   geom_abline(intercept = 0, slope = 1, linetype = 2, size = 1,
               color = 'indianred2') +
@@ -183,7 +205,9 @@ ggplot(school_year_rates, aes(scale(uggpa50), scale(lsat50))) +
 
 ### Association between 1L attrition and both median LSAT and median undergrad GPA
 
-```{r fig.height = 7, fig.width = 6, fig.caption = "The top plot shows the relationship between a school's median undergrad GPA and 1L attrition. The bottom plot shows the relationship between median LSAT and 1L attrition. Both median undergrad GPA and median LSAT correlate slightly with 1L attrition."}
+We'll also look at the association between first year (1L) attrition and both median undergrad GPA and median LSAT. Our expectation, based on prior knowledge, is that schools with lower median undergrad GPA and LSAT scores will also have higher attrition. Figure \@ref(fig:plotAttritAdmis) confirms this prior. But, the relationship is not strong enough to cause colinearity issues.
+
+```{r plotAttritAdmis, fig.height = 7, fig.width = 6, fig.cap = "The top plot shows the relationship between a school's median undergrad GPA and 1L attrition. The bottom plot shows the relationship between median LSAT and 1L attrition. Both median undergrad GPA and median LSAT correlate slightly with 1L attrition."}
 
 y_atrit_label <- 'School 1L attrition rate (%)'
 
@@ -210,7 +234,9 @@ uggpa_plot / lsat_plot
 
 ### Association between 1L attrition and bar passage
 
-```{r fig.height = 4, fig.width = 6, fig.caption = "Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line."}
+Finally, figure \@ref(fig:plotAttritPassage) highlights the association between attrition and bar passage. Not surprisingly, it's negative: schools with higher attrition rates have lower bar passage rates. This finding is not unexpected because we saw from figure \@ref(fig:plotAdmisPredictors) that higher median undergrad GPA and LSAT scores correlate with higher bar passage rates and \@ref(fig:plotAttritAdmis) showed us that lower median undergrad GPA and LSAT scores are associated with higher attrition rates. Putting both findings together, we assume that higher attrition rates correlate with lower bar passage rates.
+
+```{r plotAttritPassage, fig.height = 4, fig.width = 6, fig.cap = "Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line."}
 ggplot(school_year_rates, aes(pctjd1attrition, pass_rate)) +   
   geom_point(alpha = .3, size = plot_size) +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
@@ -262,7 +288,7 @@ school_mod_linear <- stan_glmer(cbind(passers, takers - passers) ~ lsat50_std + 
                               data = bar_mod,
                               family = binomial("logit"))
 
-write_rds(school_mod_linear, 'school_mod_linear.rds')
+# write_rds(school_mod_linear, 'school_mod_linear.rds')
 
 school_mod_pca <- stan_glmer(cbind(passers, takers - passers) ~ PC1 + PC2 + (1 | state) + (1 | year),
                               prior_intercept = student_t(1.25, 1, 7),
@@ -271,7 +297,7 @@ school_mod_pca <- stan_glmer(cbind(passers, takers - passers) ~ PC1 + PC2 + (1 |
                               data = bar_mod,
                               family = binomial("logit"))
 
-write_rds(school_mod_pca, 'school_mod_pca.rds')
+# write_rds(school_mod_pca, 'school_mod_pca.rds')
 
 school_mod_pca_spline <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + 
                                                                 (1 | state) + (1 | year),
@@ -281,7 +307,7 @@ school_mod_pca_spline <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, d
                                     data = bar_mod,
                                     family = binomial("logit"))
 
-write_rds(school_mod_pca_spline, 'school_mod_pca_spline.rds')
+# write_rds(school_mod_pca_spline, 'school_mod_pca_spline.rds')
 
 school_mod_indicator <- stan_glmer(cbind(passers, takers - passers) ~ indicator +
                                                                 (1 | state) + (1 | year),
@@ -291,7 +317,7 @@ school_mod_indicator <- stan_glmer(cbind(passers, takers - passers) ~ indicator 
                               data = bar_mod,
                               family = binomial("logit"))
 
-write_rds(school_mod_indicator, 'school_mod_indicator.rds')
+# write_rds(school_mod_indicator, 'school_mod_indicator.rds')
 
 school_mod_spline <- stan_glmer(cbind(passers, takers - passers) ~ ns(lsat50_std, df=4) + 
                                                                     ns(uggpa50_std, df=4) + 
@@ -302,11 +328,11 @@ school_mod_spline <- stan_glmer(cbind(passers, takers - passers) ~ ns(lsat50_std
                               data = bar_mod,
                               family = binomial("logit"))
 
-write_rds(school_mod_spline, 'school_mod_spline.rds')
+# write_rds(school_mod_spline, 'school_mod_spline.rds')
 
 mod_list <- list(school_mod_linear, school_mod_pca, school_mod_pca_spline, school_mod_indicator, school_mod_spline)
 
-write_rds(mod_list, 'mod_list.rds')
+# write_rds(mod_list, 'mod_list.rds')
 ```
 
 
@@ -314,7 +340,11 @@ write_rds(mod_list, 'mod_list.rds')
 
 #### Difference in LOOs
 
+
+
 ```{r looCompare}
+#mod_list <- read_rds('rds_files/mod_list.rds')
+
 mod_loo_list <- map(mod_list, loo)
 
 mod_loo_list <- list(linear = mod_loo_list[[1]],
@@ -323,7 +353,27 @@ mod_loo_list <- list(linear = mod_loo_list[[1]],
                      indicator = mod_loo_list[[4]],
                      spline = mod_loo_list[[5]])
 
-loo_compare(mod_loo_list)
+# columns need from loo_compare
+loo_cols <- c('model', 'elpd_diff', 'se_diff')
+loo_col_names <- c('Model', 'Difference in ELPD', 'Std. Error of Difference')
+
+# titles for plots, in same order as models
+# used in plots and in mapping model names to descriptions
+plot_titles <- c('Linear', 'PCA', 'PCA spline', 'Indicator', 'Spline')
+
+# mapping of model names to descriptions
+mod_descriptions <- c(linear = plot_titles[1],
+                      pca = plot_titles[2],
+                      pca_spline = plot_titles[3],
+                      indicator = plot_titles[4],
+                      spline = plot_titles[5])
+
+loo_compare(mod_loo_list) %>%
+  as.data.frame() %>%
+  mutate(model = row.names(.),
+         model = recode(model, !!!mod_descriptions)) %>%
+  .[loo_cols] %>%
+  kable(col.names = loo_col_names, digits = 0, row.names = F)
 ```
 
 #### Poserior predictive checks
@@ -341,21 +391,19 @@ ppc_plot <- function(mod, num_takers, pass_pct, plot_title) {
   # calculate percentage probability from number of passers in prediction
   pred_draws <- t(pred_draws / num_takers)
   
-  # create plot
+  # create plotloo_cols <- c('model', 'elpd_diff', 'se_diff')
+loo_col_names <- c('Model', 'Difference in ELPD', 'Std. Error of Difference')
   ppc_dens_overlay(yrep = pred_draws, y = pass_pct) +
     ggtitle(plot_title)
   
 }
-
-# titles for plots, in same order as models
-plot_titles <- c('Linear', 'PCA', 'PCA spline', 'Indicator', 'Spline')
 
 ppc_mod_plots <- map2(mod_list, plot_titles, 
                       ppc_plot, num_takers = bar_mod$takers, pass_pct = bar_mod$schoolpasspct)
 
 ```
 
-```{r ppcPlots, fig.height = 6, fig.width = 8, fig.caption = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
+```{r ppcPlots, fig.height = 6, fig.width = 8, fig.cap = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
 wrap_plots(ppc_mod_plots, nrow = 2)
 ```
 
@@ -370,7 +418,7 @@ school_mod_pca_spline_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC
                                         data = bar_mod,
                                         family = binomial("logit"))
 
-write_rds(school_mod_pca_spline_att, 'school_mod_pca_spline_att.rds')
+# write_rds(school_mod_pca_spline_att, 'school_mod_pca_spline_att.rds')
 
 school_mod_pca_spline2_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + ns(log_attrit, df=4) +
                                                                 (1 | state) + (1 | year),
@@ -380,31 +428,41 @@ school_mod_pca_spline2_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(P
                                         data = bar_mod,
                                         family = binomial("logit"))
 
-write_rds(school_mod_pca_spline2_att, 'school_mod_pca_spline2_att.rds')
+# write_rds(school_mod_pca_spline2_att, 'school_mod_pca_spline2_att.rds')
 ```
 
 ```{r looCompare2}
-mod_list2 <- list(school_mod_pca_spline, school_mod_pca_spline_att, school_mod_pca_spline2_att)
+mod_list2 <- list(without_attrit = school_mod_pca_spline, 
+                  with_attrit = school_mod_pca_spline_att, 
+                  with_spline = school_mod_pca_spline2_att)
 
 mod_loo_list2 <- map(mod_list2, loo)
 
-mod_loo_list2 <- list(`PCA w/o attrition` = mod_loo_list2[[1]],
-                      `PCA with attrition` = mod_loo_list2[[2]],
-                      `PCA with spline attrition` = mod_loo_list2[[3]])
+plot_titles2 <- c('PCA w/o attrition', 'PCA with attrition', 'PCA with spline attrition')
 
-loo_compare(mod_loo_list2)
+# mapping of model names to descriptions
+mod_descriptions2 <- c(without_attrit = plot_titles2[1],
+                      with_attrit = plot_titles2[2],
+                      with_spline = plot_titles2[3])
+
+loo_compare(mod_loo_list2) %>%
+  as.data.frame() %>%
+  mutate(model = row.names(.),
+         model = recode(model, !!!mod_descriptions2)) %>%
+  .[loo_cols] %>%
+  kable(col.names = loo_col_names, digits = 0, row.names = F)
 ```
 
 ```{r}
 
-plot_titles2 <- c('PCA w/o attrition', 'PCA with attrition', 'PCA with spline attrition')
+
 
 ppc_mod_plots2 <- map2(mod_list2, plot_titles2, 
                       ppc_plot, num_takers = bar_mod$takers, pass_pct = bar_mod$schoolpasspct)
 
 ```
 
-```{r ppcPlots2, fig.height = 3, fig.width = 8, fig.caption = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
+```{r ppcPlots2, fig.height = 3, fig.width = 8, fig.cap = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
 wrap_plots(ppc_mod_plots2, nrow = 1)
 ```
 
@@ -497,7 +555,7 @@ plot_residuals <- predicted_pass_residual %>%
 
 ```
 
-```{r, fig.height = 25, fig.width = 10, fig.caption = "Left plot reveals actual and predicted bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate. For almost all schools, the 95% credible intervals cross zero. This highlights that there is little we can learn from the residuals about school-level performance on the bar exam."}
+```{r, fig.height = 25, fig.width = 10, fig.cap = "Left plot reveals actual and predicted bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate. For almost all schools, the 95% credible intervals cross zero. This highlights that there is little we can learn from the residuals about school-level performance on the bar exam."}
 # combine two plots and display results
 
 plot_actual + plot_residuals +
@@ -506,5 +564,3 @@ plot_actual + plot_residuals +
   subtitle = 'Bands are 95% credible intervals | Percentage is probability that actual rate is higher than predicted rate'
 )
 ```
-
-test test.
