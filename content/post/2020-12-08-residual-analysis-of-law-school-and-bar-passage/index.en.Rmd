@@ -494,31 +494,32 @@ wrap_plots(ppc_mod_plots2, nrow = 1)
 
 predicted_pass_draws <- bar_mod %>%
   # create posterior predictions on dataset
-  add_fitted_draws(school_mod_pca_spline_att, n = 200, seed = 938) %>%
-  left_join(aggregate_rates(bar, c('schoolname', 'year', 'state')), by = c('schoolname', 'year', 'state')) %>%
-  select(-ends_with(".y")) %>%
-  # calculate residuals (actual pass rate minus predicted value)
-  mutate(residual = pass_rate - .value)
+  add_predicted_draws(school_mod_pca_spline_att, n = 300, seed = 938) %>%
+  # sum the number of predicted passers for each school
+  group_by(schoolname, .draw) %>%
+  summarize(total_takers = sum(takers),
+            predicted_passers = sum(.prediction),
+            actual_passers = sum(passers)) %>%
+  # calculate actual and predicted pass rates
+  mutate(pass_rate = actual_passers / total_takers,
+         predicted_pass_rate = predicted_passers / total_takers,
+         # calculate residual
+         residual = pass_rate - predicted_pass_rate)
 
 predicted_pass_hdi <- predicted_pass_draws %>%
+  ungroup() %>%
   # we want summary statistics by school
   group_by(schoolname) %>%
-  median_hdci(.value) %>%
-  select(schoolname, .value, .lower, .upper) %>%
-  # add overall school pass rates
-  left_join(aggregate_rates(bar, 'schoolname'), by = 'schoolname') %>%
-  ungroup()
-```
+  median_hdi(predicted_pass_rate) %>%
+  # add actual pass rates to this dataset for plotting
+  left_join(aggregate_rates(bar_mod, 'schoolname'), by = 'schoolname')
 
-
-```{r}
-# calcualte HDI of residuals
+# calculate HDI of residuals
 predicted_pass_residual <- predicted_pass_draws %>%
   ungroup() %>%
   # we want summary statistics by school
   group_by(schoolname) %>%
-  median_hdci(residual) %>%
-  select(schoolname, residual, .lower, .upper)
+  median_hdi(residual)
 ```
 
 ```{r}
@@ -531,7 +532,7 @@ n_rows <- nrow(predicted_pass_hdi)
 plot_point_size <- .7
 
 plot_actual <- predicted_pass_hdi %>%
-  ggplot(aes(.value, fct_reorder(schoolname,pass_rate))) +
+  ggplot(aes(predicted_pass_rate, fct_reorder(schoolname,pass_rate))) +
   # bayesian predicted pass rate
   geom_point(alpha=.6, color = set2_colors[1], size = plot_point_size) +
   geom_vline(xintercept = us_rate, linetype = 2, alpha = .7) +
@@ -541,14 +542,14 @@ plot_actual <- predicted_pass_hdi %>%
   # bayesian 90% HPI
   geom_errorbarh(aes(xmax = .lower, xmin = .upper), color = set2_colors[1]) +
   # actual bar passage rate
-  geom_point(aes(pass_rate, fct_reorder(schoolname, desc(.value))), 
+  geom_point(aes(pass_rate, fct_reorder(schoolname, pass_rate)), 
                  color = set2_colors[2], size = plot_point_size) +
   scale_x_continuous(labels = scales::percent_format(accuracy=1)) +
   labs(x="Predicted and actual\nBar passage rates",
        y=NULL)
 ```
 
-```{r fig.height = 12}
+```{r}
 # calculate probability that predicted value is lower than actual value, to be plotted
 prob_greater_zero <- predicted_pass_draws %>%
   mutate(greater_zero = residual > 0) %>%
@@ -587,7 +588,7 @@ plot_actual + plot_residuals +
   subtitle = 'Bands are 95% credible intervals | Percentage is probability that actual rate is higher than predicted rate'
 )
 ```
-
+ 
 What do we make of the plots? For starters, simply ranking each school by its residual is ill-advised for three reasons. 
 
 1.  Schools have a lot of uncertainty in their residuals. A school's ranking will be it's true residual plus uncertainty in the residuals; the dreaded error terms in models. The higher this uncertainty is, the more that the ranking for specific schools will simply reflect randomness. Intuitively, the uncertainty is large enough to where any rankings will reflect randomness too much.
@@ -597,62 +598,35 @@ What do we make of the plots? For starters, simply ranking each school by its re
 Taking reasons two and three together, a better approach might be to compare similar schools.
 
 ```{r}
-nc_compare <- bar_mod %>%
-  filter(state == 'NC',
-         str_detect(schoolname, '^Campbell|^Elon|^North Carolina Central')) %>%
-  select(schoolname, state, year, takers, passers, schoolpasspct, PC1, PC2, log_attrit) %>%
-  arrange(schoolname, year)
-
-# create predictions
-nc_compare_preds <- posterior_epred(school_mod_pca_spline_att, newdata = nc_compare, 
-                                   draws = 200, seed = 394)
-
-# create matrix of residuals
-nc_compare_resid <- t(nc_compare$schoolpasspct - t(nc_compare_preds))
-
-# for the residuals matrix, each column is a year / school combination
-# combine all years for a given school into one column
-# use function because we will iterate every year
-f_nc_residuals <- function(campbell_resid, elon_resid, central_resid, year) {
-  
-  data.frame(
-    campbell = as.vector(nc_compare_resid[,campbell_resid]),
-    elon = as.vector(nc_compare_resid[,elon_resid]),
-    central = as.vector(nc_compare_resid[,central_resid])
-  ) %>%
-    # calculate differences between schools in residuals
-    mutate(`Campbell minus Elon`  = campbell - elon,
-           `Campbell minus NC Central` = campbell - central,
-           `Elon minus NC Central` = elon - central) %>%
-    # convert the residual comparisons to long form
-    pivot_longer(cols = contains("minus"), names_to = 'comparison', values_to = 'diff') %>%
-    mutate(year = !!year)
-}
-
-# list of parameters to iterate through
-# so residuals can be calculated by year
-resid_params <- list(
-  campbell_resid = seq(1, 6), 
-  elon_resid = seq(7, 12), 
-  central_resid = seq(13, 18), 
-  year = unique(nc_compare$year)
-)
-
-# iterate through each year and calculate difference in residuals
-nc_residuals <- pmap_df(resid_params, f_nc_residuals)
+nc_residuals <- predicted_pass_draws %>%
+  filter(str_detect(schoolname, '^Campbell|^Elon|^North Carolina Central')) %>%
+  # the school names will be turned into column names when we woden dataset,
+  # so rename schools to better column names
+  mutate(schoolname = recode(schoolname, `Campbell University` = 'campbell',
+                                         `Elon University` = 'elon',
+                                         `North Carolina Central University` = 'central')) %>%
+  pivot_wider(id_cols = .draw, names_from = 'schoolname', values_from = 'residual') %>%
+  # calculate difference in residuals
+  mutate(`Campbell minus Elon`  = campbell - elon,
+         `Campbell minus NC Central` = campbell - central,
+         `Elon minus NC Central` = elon - central) %>%
+  # put in long form so all differences are in the same column
+  pivot_longer(cols = contains("minus"), names_to = 'comparison', values_to = 'diff')
 ```
 
-```{r plotResidCompare, fig.height = 7, fig.width = 4}
-# calculate HDI of differences
+```{r plotResidCompare, fig.cap = "Difference in residuals between comparitive law schools in North Carolina. Predictions and residuals are limited to the NC bar exam.", fig.height = 3, fig.width = 4.5}
+# calculate HDI of differen4444ces
+
 nc_residuals %>%
-  ggplot(aes(x = diff, y = as.factor(year), color = comparison)) +
-  stat_pointinterval(size = .4) +
-  facet_wrap(~comparison, ncol = 1) +
+  ggplot(aes(x = diff, y = comparison)) +
+  stat_halfeye(alpha = .4, color = set2_colors[2], fill = set2_colors[2]) +
   geom_vline(xintercept = 0, linetype = 2, alpha = .4) +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_color_brewer(type = 'qualitative', palette = 'Set2') +
-  labs(title = 'Difference in Residuals Between\nComparative NC Schools',
+  labs(title = 'Differences in Residuals Between\nComparative NC Schools',
        x = 'Difference in residuals',
        y = 'Year') +
   theme(legend.position = 'none')
 ```
+
+
