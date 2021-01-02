@@ -220,7 +220,7 @@ uggpa_plot <- ggplot(school_year_rates, aes(uggpa50, pctjd1attrition)) +
        y = y_atrit_label) +
   theme(legend.position = 'none')
 
-lsat_plot <- ggplot(school_year_rates, aes(lsat50, pctjd1attrition, color = pass_rate)) +
+lsat_plot <- ggplot(school_year_rates, aes(lsat50, pctjd1attrition)) +
   geom_point(color = set2_colors[2], alpha = plot_alpha, size = plot_size) +
   facet_wrap(~year, ncol=3) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
@@ -249,9 +249,18 @@ ggplot(school_year_rates, aes(pctjd1attrition, pass_rate)) +
 
 ## Difference between predicted and actual bar passage
 
-### Models used
+### Models analyzed with admissions factors as predictors
 
+We now turn to the heart of this post. We'll predict each school's bar passage rate and see how the actual rates stack up against the predictions. But, we need a good model to do this. We know our potential predictors: median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score, and first year attrition. But, we don't know the functional form of the model that provides the best predictions.
+
+We will use two steps to search for the best model. First, we will conduct model comparison and validation on five different models the only include the undergrad GPA and LSAT predictors, along with year and state. Then, we will take this model and compare it against models with attrition as an additional predictor. We'll compare the models by testing their predictions out of sample using leave-one-out cross validation (LOO). Posterior prediction checks will also be used to ensure the fit is reasonable.
+
+All models will be Bayesian hierarchical logistic regressions. The response is a school's bar passage rate for a given state and year, with the model weighted by the number of takers. All models have the same group-level predictors: state and year. They only differ in their school-level predictors, which are as follows:
+
+1.  *Linear:* median undergraduate GPA and median LSAT score for the given graduating class year.
 ```{r pca}
+# calculate principal components for six undergrad GPA and LSAT variables.
+
 bar_pca <- bar_mod %>%
   select(contains("_std")) %>%
   prcomp() 
@@ -274,10 +283,18 @@ bar_mod <- bar_mod %>%
 pca_cols <- glue("PC {seq(1, 6)}")
 
 var_explained <- round(bar_pca_summary[[2]][3] * 100, 0)
-
-bar_pca_summary %>%
-  kable(col.names = pca_cols)
 ```
+2.  *PCA:* Figure \@ref(fig:plotAdmisPredictors) showed that median undergraduate GPA and median LSAT score are highly correlated, raising fears of colinearity. The 25th, median, and 75th percentiles of each metric are also highly correlated with themselves (the 25th percentile undergrad GPA is correlated with the median undergrad GPA). But, we do not want to throw away the percentile information. Principal Component Analysis (PCA) can be used to reduce the six highly correlated percentile variables into a smaller number of uncorrelated ones, while maintaining as much of the information in the variables as possible. The table below shows that the first two principal components contain `r var_explained`% of the variance in the six variables. By only using these two principal components as predictors, we get `r var_explained`% of the variance in the six undergrad GPA and LSAT percentile variables with only two uncorrelated variables.
+```{r}
+bar_pca_summary %>%
+  kable(col.names = pca_cols, digits = 2)
+```
+
+3. *PCA spline:* To account for possible non-linear relationships between the two PCA variables and bar passage, we'll examine a model with splines added to the two PCA variables.
+
+4. *Indicator:* Another method of dimensionality reduction is to sum all six percentile variables, creating one variable. More specifically, we will standardize the six variables and the sum them. This summed value will then be standardized and become the lone school-level predictor in the model.
+
+5. *Spline:* The model contains median undergraduate GPA and median LSAT score like model 1, but adds splines to them.
 
 ```{r barMods, cache = T, eval = T}
 school_mod_linear <- stan_glmer(cbind(passers, takers - passers) ~ lsat50_std + uggpa50_std + 
@@ -335,15 +352,12 @@ mod_list <- list(school_mod_linear, school_mod_pca, school_mod_pca_spline, schoo
 # write_rds(mod_list, 'mod_list.rds')
 ```
 
+### Compare admissions factors models by out-of-sample predictions using LOO
 
-### Compare models
-
-#### Difference in LOOs
-
-
+The table below compares each model by its expected log posterior density (ELPD). The `Difference in ELPD` column shows the difference in ELPD between the best fitting model - the model on the first row - and the model in the given row. The PCA spline model performs best. Plus, the standard error of the difference in ELPD between the best and second best model is small enough that we can have confidence that the PCA spline model did not perform best due to some randomness in the sampling draws. Assuming the model's posterior predictive check pans out, we'll start with it when adding attrition.
 
 ```{r looCompare}
-#mod_list <- read_rds('rds_files/mod_list.rds')
+mod_list <- read_rds('rds_files/mod_list.rds')
 
 mod_loo_list <- map(mod_list, loo)
 
@@ -376,7 +390,13 @@ loo_compare(mod_loo_list) %>%
   kable(col.names = loo_col_names, digits = 0, row.names = F)
 ```
 
-#### Poserior predictive checks
+### Poserior predictive checks of admissions factors models
+
+Posterior predictive checks (PPC) simulate y values, bar passage rates, from the models. Our checks simulate 200 distributions of bar passage rates and we can then compare these distributions to the actual distribution of rates. Ideally, they will align.
+
+Figure \@ref(fig:ppcPlots) shows the PPC plots. All models have the same problem: they overpredict at the 75% to 90% bar passage rates and underpredict at the tails. This is shown by the dark line (actual distribution) being lower than the light lines (simulated distributions) at the 75% to 90% range and higher than the light lines outside this point. The takeaway from the misfit models is that there will be too many predictions in the 75% to 90% range and not enough at each tail.
+
+Although not ideal, this misfit isn't fatal. Plus, adding attrition hopefully improves fit. So, let's take the PCA spline model and work in attrition.
 
 ```{r postpredictions, cache = T}
 
@@ -391,8 +411,7 @@ ppc_plot <- function(mod, num_takers, pass_pct, plot_title) {
   # calculate percentage probability from number of passers in prediction
   pred_draws <- t(pred_draws / num_takers)
   
-  # create plotloo_cols <- c('model', 'elpd_diff', 'se_diff')
-loo_col_names <- c('Model', 'Difference in ELPD', 'Std. Error of Difference')
+  # create plot
   ppc_dens_overlay(yrep = pred_draws, y = pass_pct) +
     ggtitle(plot_title)
   
@@ -409,34 +428,38 @@ wrap_plots(ppc_mod_plots, nrow = 2)
 
 ## Add attrition as a predictor
 
+Attrition will be incorporated using the natural logarithm of attrition. The natural logarithm is used because attrition rates have a right skew: most schools have attrition rates between 0% and 15%, but some schools have rates greater than 30%. Using the natural logarithm removes much of the right skew and makes the distribution more symmetrical.
+
+We'll create two different models with attrition. Each an extensions of the PCA spline model. The first adds the natural logarithm of attrition, centered, as an individual predictor. The second also includes the natural logarithm of attrition, but wraps it in a spline to model non-linearity.
+
 ```{r runMods2, cache = T}
-school_mod_pca_spline_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + log_attrit +
-                                                                (1 | state) + (1 | year),
-                                        prior_intercept = student_t(1.25, 1, 7),
-                                        iter = 2000,
-                                        seed = 145,
-                                        data = bar_mod,
-                                        family = binomial("logit"))
+school_mod_pca_spline_att <- update(school_mod_pca_spline, 
+                                    formula = . ~ ns(PC1, df=4) + ns(PC2, df=4) +
+                                                  log_attrit + (1 | state) + (1 | year))
 
-# write_rds(school_mod_pca_spline_att, 'school_mod_pca_spline_att.rds')
+school_mod_pca_spline2_att <- update(school_mod_pca_spline, 
+                                    formula = . ~ ns(PC1, df=4) + ns(PC2, df=4) +
+                                                  ns(log_attrit, df=4) + (1 | state) + (1 | year))
 
-school_mod_pca_spline2_att <- stan_glmer(cbind(passers, takers - passers) ~ ns(PC1, df=4) + ns(PC2, df=4) + ns(log_attrit, df=4) +
-                                                                (1 | state) + (1 | year),
-                                        prior_intercept = student_t(1.25, 1, 7),
-                                        iter = 2000,
-                                        seed = 145,
-                                        data = bar_mod,
-                                        family = binomial("logit"))
+write_rds(school_mod_pca_spline_att, 'school_mod_pca_spline_att.rds')
 
-# write_rds(school_mod_pca_spline2_att, 'school_mod_pca_spline2_att.rds')
+write_rds(school_mod_pca_spline2_att, 'school_mod_pca_spline2_att.rds')
 ```
+
+```{r}
+school_mod_pca_spline <- mod_list[[3]]
+school_mod_pca_spline_att <- read_rds("school_mod_pca_spline_att.rds")
+school_mod_pca_spline2_att <- read_rds("school_mod_pca_spline2_att.rds")
+```
+
+The table below compares each model based on the ELPD using leave-one-out cross validation. We see little different between the two models with attrition added, but these two models are better than the PCA spline model without attrition.
 
 ```{r looCompare2}
 mod_list2 <- list(without_attrit = school_mod_pca_spline, 
                   with_attrit = school_mod_pca_spline_att, 
                   with_spline = school_mod_pca_spline2_att)
 
-mod_loo_list2 <- map(mod_list2, loo)
+mod_loo_list2 <- map(mod_list2, loo, k_threshold = 0.7)
 
 plot_titles2 <- c('PCA w/o attrition', 'PCA with attrition', 'PCA with spline attrition')
 
@@ -453,16 +476,14 @@ loo_compare(mod_loo_list2) %>%
   kable(col.names = loo_col_names, digits = 0, row.names = F)
 ```
 
-```{r}
+Moving on to our next model check, the plot of posterior predictive checks in figure \@ref(fig:ppcPlots2) shows that the models with attrition have the same problem we encountered in figure \@ref(fig:ppcPlots). More predicted pass rates fall between 70% and 90% than would be expected given the distribution of actual bar passage rates.
 
+Despite the non-ideal fit, the PCA spline model with attrition will be used to predict bar passage rates of schools. This model performs almost identically to the PCA spline model with attrition added as a spline, but is simpler. All things equal, we'll opt for the simpler.
 
-
+```{r ppcPlots2, fig.height = 3, fig.width = 8, fig.cap = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
 ppc_mod_plots2 <- map2(mod_list2, plot_titles2, 
                       ppc_plot, num_takers = bar_mod$takers, pass_pct = bar_mod$schoolpasspct)
 
-```
-
-```{r ppcPlots2, fig.height = 3, fig.width = 8, fig.cap = "Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates."}
 wrap_plots(ppc_mod_plots2, nrow = 1)
 ```
 
@@ -473,7 +494,7 @@ wrap_plots(ppc_mod_plots2, nrow = 1)
 
 predicted_pass_draws <- bar_mod %>%
   # create posterior predictions on dataset
-  add_fitted_draws(school_mod_pca_spline2_att, n = 200, seed = 938) %>%
+  add_fitted_draws(school_mod_pca_spline_att, n = 200, seed = 938) %>%
   left_join(aggregate_rates(bar, c('schoolname', 'year', 'state')), by = c('schoolname', 'year', 'state')) %>%
   select(-ends_with(".y")) %>%
   # calculate residuals (actual pass rate minus predicted value)
@@ -555,7 +576,9 @@ plot_residuals <- predicted_pass_residual %>%
 
 ```
 
-```{r, fig.height = 25, fig.width = 10, fig.cap = "Left plot reveals actual and predicted bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate. For almost all schools, the 95% credible intervals cross zero. This highlights that there is little we can learn from the residuals about school-level performance on the bar exam."}
+With the model identified, we can compare each law school's predicted and actual bar passage rates. The comparison is highlighted in figure \@ref(fig:plotPredictions). The left plot shows the 95% credible intervals for each school's predicted bar passage rates (in red) and its actual rate (blue). The right plot, meanwhile, displays the 95% credible interval for each school's residual. The residual is the actual rate minus the predicted rate. Finally, the percentages on the right represent the probability that the school's actual rate is higher than its predicted rate. Stated differently, it's the probability that the residual is positive.
+
+```{r plotPredictions, fig.height = 25, fig.width = 10, fig.cap = "Left plot reveals actual and predicted bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate. For almost all schools, the 95% credible intervals cross zero. This highlights that there is little we can learn from the residuals about school-level performance on the bar exam."}
 # combine two plots and display results
 
 plot_actual + plot_residuals +
@@ -563,4 +586,73 @@ plot_actual + plot_residuals +
   title = 'Actual and Predicted Bar Passage Rates (left) and Residuals (right)',
   subtitle = 'Bands are 95% credible intervals | Percentage is probability that actual rate is higher than predicted rate'
 )
+```
+
+What do we make of the plots? For starters, simply ranking each school by its residual is ill-advised for three reasons. 
+
+1.  Schools have a lot of uncertainty in their residuals. A school's ranking will be it's true residual plus uncertainty in the residuals; the dreaded error terms in models. The higher this uncertainty is, the more that the ranking for specific schools will simply reflect randomness. Intuitively, the uncertainty is large enough to where any rankings will reflect randomness too much.
+2.  Schools with high LSAT and undergrad GPAs will also have high predicted bar passage rates. Since neither actual nor predicted rates can exceed 100%, this leaves schools with high LSAT and undergrad GPAs little room to outperform their predictions. The reason is that the underlying model, logistic regression, creates a linear relationship between the predictors and the log-odds of bar passage. The relationship between the predictors and the probability of bar passage, however, is non-linear since probabilities must fall between 0% and 100%. 
+3.  The predictions are only as good as the model. As figure \@ref(fig:ppcPlots2) shows, the model is not ideal. It potentially misfits by different amounts depending on the actual par passage rate.
+
+Taking reasons two and three together, a better approach might be to compare similar schools.
+
+```{r}
+nc_compare <- bar_mod %>%
+  filter(state == 'NC',
+         str_detect(schoolname, '^Campbell|^Elon|^North Carolina Central')) %>%
+  select(schoolname, state, year, takers, passers, schoolpasspct, PC1, PC2, log_attrit) %>%
+  arrange(schoolname, year)
+
+# create predictions
+nc_compare_preds <- posterior_epred(school_mod_pca_spline_att, newdata = nc_compare, 
+                                   draws = 200, seed = 394)
+
+# create matrix of residuals
+nc_compare_resid <- t(nc_compare$schoolpasspct - t(nc_compare_preds))
+
+# for the residuals matrix, each column is a year / school combination
+# combine all years for a given school into one column
+# use function because we will iterate every year
+f_nc_residuals <- function(campbell_resid, elon_resid, central_resid, year) {
+  
+  data.frame(
+    campbell = as.vector(nc_compare_resid[,campbell_resid]),
+    elon = as.vector(nc_compare_resid[,elon_resid]),
+    central = as.vector(nc_compare_resid[,central_resid])
+  ) %>%
+    # calculate differences between schools in residuals
+    mutate(`Campbell minus Elon`  = campbell - elon,
+           `Campbell minus NC Central` = campbell - central,
+           `Elon minus NC Central` = elon - central) %>%
+    # convert the residual comparisons to long form
+    pivot_longer(cols = contains("minus"), names_to = 'comparison', values_to = 'diff') %>%
+    mutate(year = !!year)
+}
+
+# list of parameters to iterate through
+# so residuals can be calculated by year
+resid_params <- list(
+  campbell_resid = seq(1, 6), 
+  elon_resid = seq(7, 12), 
+  central_resid = seq(13, 18), 
+  year = unique(nc_compare$year)
+)
+
+# iterate through each year and calculate difference in residuals
+nc_residuals <- pmap_df(resid_params, f_nc_residuals)
+```
+
+```{r plotResidCompare, fig.height = 7, fig.width = 4}
+# calculate HDI of differences
+nc_residuals %>%
+  ggplot(aes(x = diff, y = as.factor(year), color = comparison)) +
+  stat_pointinterval(size = .4) +
+  facet_wrap(~comparison, ncol = 1) +
+  geom_vline(xintercept = 0, linetype = 2, alpha = .4) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_color_brewer(type = 'qualitative', palette = 'Set2') +
+  labs(title = 'Difference in Residuals Between\nComparative NC Schools',
+       x = 'Difference in residuals',
+       y = 'Year') +
+  theme(legend.position = 'none')
 ```
