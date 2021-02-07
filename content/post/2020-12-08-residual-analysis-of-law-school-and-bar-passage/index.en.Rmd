@@ -334,7 +334,7 @@ school_mod_spline <- stan_glmer(cbind(passers, takers - passers) ~ ns(lsat50_std
                               data = bar_mod,
                               family = binomial("logit"))
 
-mod_list <- list(school_mod_linear, school_mod_pca, school_mod_pca_spline, school_mod_indicator, school_mod_spline)
+mod_list <- list(school_mod_linear, school_mod_pca, school_mod_pca_spline, school_mod_spline)
 ```
 
 ### Compare admissions factors models by out-of-sample predictions using LOO
