@@ -5,6 +5,7 @@ date: '2020-12-08'
 slug: residual-analysis-of-law-school-and-bar-passage
 categories:
   - bayesian analysis
+  - law school
 tags: []
 subtitle: "Spoiler: I don't know"
 summary: ''
@@ -25,43 +26,33 @@ links:
 
 <link href="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/anchor-sections/anchor-sections.css" rel="stylesheet" />
 <script src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/anchor-sections/anchor-sections.js"></script>
-<script src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/htmlwidgets/htmlwidgets.js"></script>
-<script src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/jquery/jquery.min.js"></script>
-<link href="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/datatables-css/datatables-crosstalk.css" rel="stylesheet" />
-<script src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/datatables-binding/datatables.js"></script>
-<link href="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/dt-core/css/jquery.dataTables.min.css" rel="stylesheet" />
-<link href="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/dt-core/css/jquery.dataTables.extra.css" rel="stylesheet" />
-<script src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/dt-core/js/jquery.dataTables.min.js"></script>
-<link href="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/crosstalk/css/crosstalk.css" rel="stylesheet" />
-<script src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/crosstalk/js/crosstalk.min.js"></script>
 
 
 <p>Evaluating the effectiveness of law schools is challenging for two reasons. The first hurdle lies in defining effectiveness. What does it mean for one law school to provide a better legal education than other schools? Generally, this centers on producing effective lawyers, although such a definition simply punts the definition of effectiveness up a level. Regardless, you cannot be an effective lawyer without actually becoming a licensed attorney. And to do this, you have to pass the bar exam. Thus, let’s make ‘preparing students to pass the bar exam’ one measure of law school effectiveness.</p>
-<p>Now for the second hurdle. How do we measure whether a school effectively prepares students for the bar exam? This question is causal in nature, as can be seen from a hypothetical. Let’s take a student deciding on which law school to attend. She knows she is going to take the 2023 North Carolina bar exam. In evaluating law school effectiveness, we want to know her probability of bar passage in NC, based solely on her pre-law school characteristics, given various law schools. These differences in probabilities between law schools shed light on each law school’s effectiveness in preparing students for the bar exam.</p>
-<p>Here is my attempt to answer this question. I lay out the problems with my approach at the end, but the bottom line is that I’m not convinced by my own post that it’s possible to answer this question with current data sources. But, I’ll let readers be the final judge.</p>
+<p>Now for the second hurdle. How do we measure whether a school effectively prepares students for the bar exam? This question is causal in nature. For example, let’s take a student deciding on which law school to attend. She knows she is going to take the 2023 North Carolina bar exam. In evaluating law school effectiveness, we want to know her probability of bar passage in NC, based solely on her pre-law school characteristics, given various law schools. These differences in probabilities between law schools shed light on each law school’s effectiveness in preparing students for the bar exam.</p>
+<p>This post is my attempt to answer this question. I lay out the problems with my approach at the end, but the bottom line is that I’m not convinced that it’s possible to answer this question with current data sources. But, I’ll let readers be the final judge.</p>
 <div id="overview-of-method" class="section level2">
 <h2>Overview of Method</h2>
-<p>As already stated, we want to know how well law schools prepare students for the bar exam. We’ll do this by predicting each school’s bar passage rate based on school-level bar passage predictors and then measure how well each school performs against its predicted passage rate. To account for student quality, we will incorporate the school’s median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score of incoming students. This allows us to account for pre-law school factors that correlate with bar passage.</p>
-<p>We’ll also account for first-year attrition. The reason is that schools typically flunk-out poor performing students and these students have a low probability of bar passage. Thus, the quickest way for a school to raise its bar passage rate is to kick out more low-performing students. By including attrition as a predictor we ensure that a school does not perform better than expectations simply because it flunks out more students.</p>
+<p>As already stated, we want to know how well law schools prepare students for the bar exam. We’ll do this by predicting each school’s bar passage rate based on school-level bar passage predictors and then measure how well each school performs against its predicted passage rate. To account for student quality, we will incorporate the school’s median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score of incoming students.</p>
+<p>We’ll also account for first-year attrition. The reason is that schools typically flunk-out poor performing students and these students have a low probability of bar passage. Thus, the quickest way for a school to raise its bar passage rate is to kick out more low-performing students.</p>
 </div>
 <div id="exploration-of-lsat-undergrad-gpa-and-attrition-as-predictors" class="section level2">
 <h2>Exploration of LSAT, undergrad GPA, and attrition as predictors</h2>
-<p>AccessLex Institute <a href="https://analytix.accesslex.org/DataSet">aggregates the data</a> law school’s submit to the American Bar Association. We’ll use this data to find each school’s yearly median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score of incoming students, attrition rate, and bar passage rate by state and year. Prior to modeling, however, we’ll examine the individual relationships between the predictors and bar passage. This will provide us initial confirmation that we should at least test them in models.</p>
-<p>Years in this analysis represent the year students took the bar exam. For admissions factors such as median undergrad GPA and LSAT this means that the years represent the median values for students who entered law school school three years prior to the stated year.</p>
+<p>AccessLex Institute <a href="https://analytix.accesslex.org/DataSet">aggregates the data</a> law school data. We’ll use this data to find each school’s yearly median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score of incoming students, attrition rate, and bar passage rate by state and year. Years in this post represent the year students took the bar exam. For admissions factors such as median undergrad GPA and LSAT this means that the years represent the median values for students who entered law school school three years prior to the stated year.</p>
 <div id="relationship-between-bar-passage-and-both-undergraduate-gpa-and-lsat-scores" class="section level3">
 <h3>Relationship between bar passage and both undergraduate GPA and LSAT scores</h3>
-<p>Figure <a href="#fig:plotAdmisPredictors">1</a> shows the relationship between both median undergrad GPA (top plot) and median LSAT score (bottom plot) and bar passage. Each reveal a positive relationship between the admissions factor and bar passage.</p>
+<p>Prior to modeling, however, we’ll examine the individual relationships between the predictors and bar passage. This will provide us initial confirmation that we should at least test them in models. Figure <a href="#fig:plotAdmisPredictors">1</a> shows the relationship between both median undergrad GPA (top plot) and median LSAT score (bottom plot) and bar passage. Each reveal a positive relationship between the admissions factor and bar passage.</p>
 <div class="figure"><span id="fig:plotAdmisPredictors"></span>
-<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAdmisPredictors-1.png" alt="The top plot shows the relationship between a school's median undergrad GPA and bar passage rate. The bottom plot shows the relationship between median LSAT and bar passage. Both median undergrad GPA and median LSAT correlate with bar passage." width="576" />
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAdmisPredictors-1.png" alt="The top plot shows the relationship between a school's median undergrad GPA and bar passage rate. The bottom plot highlights the relationship between median LSAT and bar passage. Both median undergrad GPA and median LSAT correlate with bar passage." width="576" />
 <p class="caption">
-Figure 1: The top plot shows the relationship between a school’s median undergrad GPA and bar passage rate. The bottom plot shows the relationship between median LSAT and bar passage. Both median undergrad GPA and median LSAT correlate with bar passage.
+Figure 1: The top plot shows the relationship between a school’s median undergrad GPA and bar passage rate. The bottom plot highlights the relationship between median LSAT and bar passage. Both median undergrad GPA and median LSAT correlate with bar passage.
 </p>
 </div>
 </div>
 <div id="correlation-between-median-lsat-and-median-undergrad-gpa" class="section level3">
 <h3>Correlation between median LSAT and median undergrad GPA</h3>
-<p>We’ll next look at the correlation between median undergrad GPA and median LSAT. Our prior is that these two predictors are highly correlated, as more elite schools have higher median undergrad GPAs and LSAT scores. This could cause colinearity problems within our models. We’re not worried about colinearity wrecking havoc on our regression coefficients, as we’re focused on predictions and not the coefficient values. But, colinearity can also widen the uncertainty of predictions. This is our worry.</p>
-<p>Figure <a href="#fig:plotAdmisPredictors">1</a> reveals that median undergrad GPA and median LSAT are highly correlated. Both predictors are standardized to have a mean of 0 and standard deviation of 1. Standardizing them allows us to compare their linear relationship - the blue line - with a prefect correlation represented by a line with a slope of 1 - the red dashed line. The plot shows an extremely strong relationship between median undergrad GPA and median LSAT. The linear relationship is only slightly flatter than the perfect relationship (red dashed line). We’ll address colinearity in the modeling section.</p>
+<p>We’ll next look at the correlation between median undergrad GPA and median LSAT. Our prior is that these two predictors are highly correlated, as more elite schools have higher median undergrad GPAs and LSAT scores. This could cause colinearity problems within our models, which might widen the uncertainty of predictions.</p>
+<p>Figure <a href="#fig:plotAdmisCorrelation">2</a> confirms our prior: median undergrad GPA and median LSAT are highly correlated. In the plot, both predictors are standardized to have a mean of 0 and standard deviation of 1, allowing us to compare their linear relationship - the blue line - with a prefect correlation represented by a line with a slope of 1 - the red dashed line. The plot shows an extremely strong relationship between median undergrad GPA and median LSAT. The linear relationship is only slightly flatter than the perfect relationship (red dashed line).</p>
 <div class="figure"><span id="fig:plotAdmisCorrelation"></span>
 <img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAdmisCorrelation-1.png" alt="Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line." width="576" />
 <p class="caption">
@@ -71,7 +62,7 @@ Figure 2: Correlation between each school’s standardized median LSAT and stand
 </div>
 <div id="association-between-1l-attrition-and-both-median-lsat-and-median-undergrad-gpa" class="section level3">
 <h3>Association between 1L attrition and both median LSAT and median undergrad GPA</h3>
-<p>Let’s also look at the association between first year (1L) attrition and both median undergrad GPA and median LSAT. Our expectation, based on prior knowledge, is that schools with lower median undergrad GPA and LSAT scores will also have higher attrition. Figure <a href="#fig:plotAttritAdmis">3</a> confirms this prior. But, the relationship is not strong enough to cause colinearity issues.</p>
+<p>Let’s also look at the association between first year (1L) attrition and both median undergrad GPA and median LSAT. Our expectation, based on prior knowledge, is that schools with lower median undergrad GPA and LSAT scores will also have higher attrition. Figure <a href="#fig:plotAttritAdmis">3</a> confirms this prior. But, the relationship is not too strong.</p>
 <div class="figure"><span id="fig:plotAttritAdmis"></span>
 <img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAttritAdmis-1.png" alt="The top plot shows the relationship between a school's median undergrad GPA and 1L attrition. The bottom plot shows the relationship between median LSAT and 1L attrition. Both median undergrad GPA and median LSAT correlate slightly with 1L attrition." width="576" />
 <p class="caption">
@@ -81,11 +72,11 @@ Figure 3: The top plot shows the relationship between a school’s median underg
 </div>
 <div id="association-between-1l-attrition-and-bar-passage" class="section level3">
 <h3>Association between 1L attrition and bar passage</h3>
-<p>Finally, figure <a href="#fig:plotAttritPassage">4</a> highlights the association between attrition and bar passage. Not surprisingly, it’s negative: schools with higher attrition rates have lower bar passage rates. This finding is not unexpected because we saw from figure <a href="#fig:plotAdmisPredictors">1</a> that higher median undergrad GPA and LSAT scores correlate with higher bar passage rates and <a href="#fig:plotAttritAdmis">3</a> showed us that lower median undergrad GPA and LSAT scores are associated with higher attrition rates. Putting both findings together, we assume that higher attrition rates correlate with lower bar passage rates.</p>
+<p>Finally, figure <a href="#fig:plotAttritPassage">4</a> highlights the association between attrition and bar passage. Not surprisingly, it’s negative: schools with higher attrition rates have lower bar passage rates. This finding is not unexpected because we saw from figure <a href="#fig:plotAdmisPredictors">1</a> that higher median undergrad GPA and LSAT scores correlate with higher bar passage rates and figure <a href="#fig:plotAttritAdmis">3</a> showed us that lower median undergrad GPA and LSAT scores are associated with higher attrition rates. Putting both findings together, we would assume that higher attrition rates correlate with lower bar passage rates.</p>
 <div class="figure"><span id="fig:plotAttritPassage"></span>
-<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAttritPassage-1.png" alt="Correlation between each school's standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line." width="576" />
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotAttritPassage-1.png" alt="Correlation between bar passage rates and 1L attrition. There is a slight negative relationship, but there is also a lot of variance in the relationship." width="576" />
 <p class="caption">
-Figure 4: Correlation between each school’s standardized median LSAT and standardized median undergrad GPA. Blue line is the fit line of the data, red line is a hypothetical perfect fit line - a slope of 1. LSAT and GPA are highly correlated, with the actual fit line mirroring the perfect fit line.
+Figure 4: Correlation between bar passage rates and 1L attrition. There is a slight negative relationship, but there is also a lot of variance in the relationship.
 </p>
 </div>
 </div>
@@ -94,12 +85,12 @@ Figure 4: Correlation between each school’s standardized median LSAT and stand
 <h2>Difference between predicted and actual bar passage</h2>
 <div id="models-with-admissions-factors-as-predictors" class="section level3">
 <h3>Models with admissions factors as predictors</h3>
-<p>We now turn to the heart of this post. We’ll predict each school’s bar passage rate and see how actual rates stack up against predictions. But, we need a good model to do this. We know our potential predictors: median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score, and first year attrition. But, we don’t know the functional form of the model that provides the best predictions. Do we need them all or only a couple of them?</p>
-<p>We will use two steps to search for the best model. First, we will conduct model comparison and validation on five different models that only include the undergrad GPA and LSAT predictors, along with year and state. Then, we will take this model and compare it against models with attrition as an additional predictor. We’ll compare the models by testing their predictions out of sample using leave-one-out cross validation (LOO). Posterior prediction checks will also be used to ensure the fit is reasonable.</p>
-<p>All models will be Bayesian hierarchical logistic regressions. The response is a school’s bar passage rate for a given state and year, with the model weighted by the number of takers. All models have the same group-level predictors: state and year. They only differ in their school-level predictors, which are as follows:</p>
+<p>We now turn to the heart of this post. We’ll predict each school’s bar passage rate and see how actual rates stack up against predictions. But, we need a good model to do this. We know our potential predictors: median, 25th percentile, and 75th percentile undergraduate GPA and LSAT score, and first year attrition. But, we don’t know the functional form of the model that provides the best predictions. Do we need all predictors or only a couple of them?</p>
+<p>We will use two steps to search for the best model. First, we will conduct model comparison and validation on four different models that only include the undergrad GPA and LSAT predictors, along with year and state. Then, we will take this model and compare it against models with attrition as an additional predictor. Models will be compared by testing their predictions out of sample using leave-one-out cross validation (LOO). Posterior prediction checks will also be used to ensure the fit is reasonable.</p>
+<p>All models are Bayesian hierarchical logistic regressions. The response is a school’s bar passage rate for a given state and year, with the model weighted by the number of takers. All models have the same group-level predictors: state and year. They only differ in their school-level predictors. The four initial models are below:</p>
 <ol style="list-style-type: decimal">
 <li><p><em>Linear:</em> median undergraduate GPA and median LSAT score for the given graduating class year.</p></li>
-<li><p><em>PCA:</em> Figure <a href="#fig:plotAdmisPredictors">1</a> showed that median undergraduate GPA and median LSAT score are highly correlated, raising fears of colinearity. The 25th, median, and 75th percentiles of each metric are also highly correlated with themselves (the 25th percentile undergrad GPA is correlated with the median undergrad GPA). But, we do not want to throw away the percentile information. We’ll use Principal Component Analysis (PCA) to reduce the six highly correlated percentile variables into a smaller number of uncorrelated ones, while maintaining as much of the information in the variables as possible. The table below shows that the first two principal components contain 98% of the variance in the six variables. By only using these two principal components as predictors, we get 98% of the variance in the six undergrad GPA and LSAT percentile variables with only two uncorrelated variables.</p></li>
+<li><p><em>PCA:</em> Figure <a href="#fig:plotAdmisPredictors">1</a> showed that median undergraduate GPA and median LSAT score are highly correlated, raising fears of colinearity. The 25th, median, and 75th percentiles of each metric are also highly correlated with themselves (the 25th percentile undergrad GPA is correlated with the median undergrad GPA). We’ll use Principal Component Analysis (PCA) to reduce the six highly correlated percentile variables into a smaller number of uncorrelated ones, while maintaining as much of the information in the variables as possible. The table below shows that the first two principal components contain 98% of the variance in the six LSAT and GPA variables. By only using these two principal components as predictors, we get 98% of the variance with only two uncorrelated variables.</p></li>
 </ol>
 <table>
 <thead>
@@ -203,8 +194,8 @@ Cumulative Proportion
 <li><p><em>Spline:</em> This model contains median undergraduate GPA and median LSAT score like model 1, but adds splines to them.</p></li>
 </ol>
 </div>
-<div id="compare-admissions-factors-models-by-out-of-sample-predictions-using-loo" class="section level3">
-<h3>Compare admissions factors models by out-of-sample predictions using LOO</h3>
+<div id="compare-admissions-factors-models-using-loo" class="section level3">
+<h3>Compare admissions factors models using LOO</h3>
 <p>The table below compares each model by its expected log posterior density (ELPD). The <code>Difference in ELPD</code> column shows the difference in ELPD between the best fitting model - the model on the first row - and the model in the given row. The PCA spline model performs best. Plus, the standard error of the difference in ELPD between the best and second best model is small enough that we can have confidence that the PCA spline model did not perform best due to some randomness in the sampling draws. Assuming the model’s posterior predictive check pans out, we’ll start with it when adding attrition.</p>
 <table>
 <thead>
@@ -270,21 +261,20 @@ Linear
 </div>
 <div id="poserior-predictive-checks-of-admissions-factors-models" class="section level3">
 <h3>Poserior predictive checks of admissions factors models</h3>
-<p>Posterior predictive checks (PPC) simulate y values - bar passage rates - from the models. Our checks simulate 200 distributions of bar passage rates and we can then compare these distributions to the actual distribution of rates. Ideally, they will align.</p>
+<p>Posterior predictive checks (PPC) simulate y values - bar passage rates - from the models. Our checks simulate 200 distributions of bar passage rates based on 200 model simulations. We can then compare these distributions to the actual distribution of rates. Ideally, they align.</p>
 <p>Figure <a href="#fig:ppcPlots">5</a> shows the PPC plots. All models have the same problem: they overpredict at the 75% to 90% bar passage rates and underpredict at the tails. This is shown by the dark line (actual distribution) being lower than the light lines (simulated distributions) at the 75% to 90% range and higher than the light lines outside this point. The takeaway from the misfit models is that there will be too many predictions in the 75% to 90% range and not enough at each tail.</p>
-<p>Although not ideal, this misfit isn’t fatal. Plus, adding attrition hopefully improves fit. So, let’s take the PCA spline model and work in attrition.</p>
 <div class="figure"><span id="fig:ppcPlots"></span>
-<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/ppcPlots-1.png" alt="Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates." width="768" />
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/ppcPlots-1.png" alt="Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predicted passage rates for schools is higher than the actual rates." width="768" />
 <p class="caption">
-Figure 5: Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates.
+Figure 5: Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predicted passage rates for schools is higher than the actual rates.
 </p>
 </div>
 </div>
 <div id="add-attrition-as-a-predictor" class="section level3">
 <h3>Add attrition as a predictor</h3>
-<p>We’ll incorporate attrition using the natural logarithm of attrition. The natural logarithm is used because attrition rates have a right skew: most schools have attrition rates between 0% and 15%, but some schools have rates greater than 30%. Using the natural logarithm removes much of the right skew and makes the distribution more symmetrical.</p>
-<p>We’ll create two different models with attrition. Each an extensions of the PCA spline model. The first adds the natural logarithm of attrition, centered, as an individual predictor. The second also includes the natural logarithm of attrition, but wraps it in a spline to model non-linearity.</p>
-<p>The table below compares each model based on the ELPD using leave-one-out cross validation. We see little different between the two models with attrition added, but these two models are better than the PCA spline model without attrition.</p>
+<p>Step two involves using the best model in the previous section, PCA with a spline, and adding attrition as a predictor. We’ll incorporate attrition using the natural logarithm of attrition. The natural logarithm is used because attrition rates have a right skew: most schools have attrition rates between 0% and 15%, but some schools have rates greater than 30%. Using the natural logarithm removes much of the right skew and makes the distribution more symmetrical.</p>
+<p>We’ll create two different models with attrition, each an extension of the PCA spline model. The first adds the natural logarithm of attrition, centered, as an individual predictor. The second also includes the natural logarithm of attrition, but wraps it in a spline to model non-linearity.</p>
+<p>The table below compares each model based on the ELPD using leave-one-out cross validation. We see little difference between the two models with attrition added, but these two models are better than the model without attrition.</p>
 <table>
 <thead>
 <tr>
@@ -302,7 +292,7 @@ Std. Error of Difference
 <tbody>
 <tr>
 <td style="text-align:left;">
-PCA with spline attrition
+PCA spline with attrition spline
 </td>
 <td style="text-align:right;">
 0
@@ -313,7 +303,7 @@ PCA with spline attrition
 </tr>
 <tr>
 <td style="text-align:left;">
-PCA with attrition
+PCA spline with attrition
 </td>
 <td style="text-align:right;">
 -2
@@ -324,7 +314,7 @@ PCA with attrition
 </tr>
 <tr>
 <td style="text-align:left;">
-PCA w/o attrition
+PCA spline w/o attrition
 </td>
 <td style="text-align:right;">
 -11
@@ -335,12 +325,12 @@ PCA w/o attrition
 </tr>
 </tbody>
 </table>
-<p>Moving on to our next model check, the plot of posterior predictive checks in figure <a href="#fig:ppcPlots2">6</a> shows that the models with attrition have the same problem we encountered in figure <a href="#fig:ppcPlots">5</a>. More predicted pass rates fall between 70% and 90% than would be expected given the distribution of actual bar passage rates.</p>
-<p>Despite the non-ideal fit, the PCA spline model without attrition will be used to predict bar passage rates of schools. This model performs almost identically to the PCA spline model with attrition added as a spline, but is simpler. All things equal, we’ll opt for the simpler.</p>
+<p>Moving on to the model check, the plot of posterior predictive checks in figure <a href="#fig:ppcPlots2">6</a> shows that the models with attrition have the same problem we encountered in figure <a href="#fig:ppcPlots">5</a>. More predicted pass rates fall between 70% and 90% than would be expected given the distribution of actual bar passage rates.</p>
+<p>Despite the non-ideal fit, the PCA spline model with attrition will be used to predict bar passage rates of schools. This model performs almost identically to the PCA spline model with attrition added as a spline, but is simpler. All things equal, we’ll opt for the simpler.</p>
 <div class="figure"><span id="fig:ppcPlots2"></span>
-<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/ppcPlots2-1.png" alt="Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates." width="768" />
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/ppcPlots2-1.png" alt="Posterior predictive checks. The attrition model cehcks reveal the same problem as the models without attrition - too many predictions in the 75% to 90% range." width="768" />
 <p class="caption">
-Figure 6: Posterior predictive check for all models. A problem in all models is that they fail to accurately predict at the most likely bar passage rates. We know this because at the highest points in the curve, the predictioned passage rates for schools is higher than the actual rates.
+Figure 6: Posterior predictive checks. The attrition model cehcks reveal the same problem as the models without attrition - too many predictions in the 75% to 90% range.
 </p>
 </div>
 </div>
@@ -349,9 +339,9 @@ Figure 6: Posterior predictive check for all models. A problem in all models is 
 <h2>Comparing actual and predicted bar passage rates for all US law schools</h2>
 <p>With technicalities behind use, let’s get to the results. Figure <a href="#fig:plotPredictions">7</a> compares each law school’s predicted and actual bar passage rates from 2014 to 2019. The left plot shows the 95% credible intervals for each school’s predicted bar passage rate (in red) and its actual rate (blue). The right plot, meanwhile, displays the 95% credible interval for each school’s residual. The residual is the actual rate minus the predicted rate. Finally, the percentages on the right represent the probability that the school’s actual rate is higher than its predicted rate. Stated differently, it’s the probability that the residual is positive.</p>
 <div class="figure"><span id="fig:plotPredictions"></span>
-<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotPredictions-1.png" alt="Left plot reveals actual (blue dot) and predicted (red dot) bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate. For almost all schools, the 95% credible intervals cross zero. This highlights that there is little we can learn from the residuals about school-level performance on the bar exam." width="960" />
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/plotPredictions-1.png" alt="Left plot reveals actual (blue dot) and predicted (red dot) bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate." width="960" />
 <p class="caption">
-Figure 7: Left plot reveals actual (blue dot) and predicted (red dot) bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate. For almost all schools, the 95% credible intervals cross zero. This highlights that there is little we can learn from the residuals about school-level performance on the bar exam.
+Figure 7: Left plot reveals actual (blue dot) and predicted (red dot) bar passage rates. Right plot shows residuals: actual minus predicted bar passage rates. The percentage on the right is the probability that the actual bar passage rate is higher than the predicted rate.
 </p>
 </div>
 </div>
@@ -359,17 +349,17 @@ Figure 7: Left plot reveals actual (blue dot) and predicted (red dot) bar passag
 <h2>Three problems with the methodology</h2>
 <p>What do we make of the plots? For starters, simply ranking each school by its residual is ill-advised for three reasons.</p>
 <ol style="list-style-type: decimal">
-<li>Schools have a lot of uncertainty in their residuals. A school’s ranking will be it’s true residual plus uncertainty in the residuals; the dreaded error terms in models. The higher this uncertainty is, the more that the ranking for specific schools will simply reflect randomness. Here, the uncertainty is large enough to where rankings will reflect more randomness than we are comfortable with. We illustrate this in figure <a href="#fig:plotPredictions">7</a>. It shows the University of Kentucky’s residual ranking among all 201 law schools based on 500 simulations of the model. The most likely ranking is 84 and the 90% credible interval stretches from 28 to NA. This range is too wide to be helpful.</li>
+<li>Schools have a lot of uncertainty in their residuals. A school’s ranking is it’s true residual plus uncertainty in the residuals; the dreaded error terms in models. The higher the uncertainty, the more that the ranking for specific schools will simply reflect randomness. Here, the uncertainty is large enough to where rankings will reflect more randomness than we are comfortable incorporating. Figure <a href="#fig:plotPredictions">7</a> illustrates this. It shows the University of Kentucky’s residual ranking among all 201 law schools based on 500 simulations of the model. The meidan simualted ranking is 84 and the 90% credible interval stretches from 28 to 148. This range is too wide to be helpful.</li>
 </ol>
 <div class="figure"><span id="fig:ukResidualRankPlot"></span>
-<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/ukResidualRankPlot-1.png" alt="The University of Kentucky's residual rankings from 300 model simulations. There is a wide degree of variance in ranking, making it unhelpful." width="672" />
+<img src="{{< relref "post/2020-12-08-residual-analysis-of-law-school-and-bar-passage/index.en.html" >}}index.en_files/figure-html/ukResidualRankPlot-1.png" alt="The University of Kentucky's residual rankings from 500 model simulations. There is a wide degree of variance in the rankings, making them unhelpful." width="672" />
 <p class="caption">
-Figure 8: The University of Kentucky’s residual rankings from 300 model simulations. There is a wide degree of variance in ranking, making it unhelpful.
+Figure 8: The University of Kentucky’s residual rankings from 500 model simulations. There is a wide degree of variance in the rankings, making them unhelpful.
 </p>
 </div>
 <ol start="2" style="list-style-type: decimal">
 <li><p>Schools with high LSAT and undergrad GPAs will also have high predicted bar passage rates. Since neither actual nor predicted rates can exceed 100%, this leaves schools with high LSAT and undergrad GPAs little room to outperform their predictions. When you are already at the top, you can’t go much higher.</p></li>
-<li><p>The predictions are only as good as the model. As figure <a href="#fig:ppcPlots2">6</a> shows, the model is not ideal. It potentially misfits by different amounts depending on the actual par passage rate.</p></li>
+<li><p>The predictions are only as good as the model. As figure <a href="#fig:ppcPlots2">6</a> shows, the model is not ideal. It potentially misfits by different amounts depending on the predicted bar passage rate.</p></li>
 </ol>
 </div>
 <div id="comparing-similair-schools" class="section level2">
@@ -383,11 +373,1571 @@ Figure 8: The University of Kentucky’s residual rankings from 300 model simula
 Figure 9: Difference in residuals between comparitive law schools in North Carolina. Predictions and residuals are limited to the NC bar exam.
 </p>
 </div>
-<p>OK, so this <em>might</em> be useful. But, I’m still not comfortable with it due to the problems previously mentioned. The best course of action is to scrap the whole enterprise. But, in the spirit of not letting a good analysis go to waste, I figured I would post it here for posterity.</p>
+<p>OK, so this <em>might</em> be useful. But, I’m still not comfortable with it due to the problems previously mentioned. The best course of action is to scrap the whole enterprise. But, in the spirit of learning from what goes wrong, I figured I would post it here for posterity.</p>
 </div>
 <div id="addendum-the-final-rankings-that-have-little-value" class="section level2">
 <h2>Addendum: the final rankings that have little value</h2>
-<p>If you ignored this post’s advice and want to know the actual modeled ranking, here they are. Again, you shouldn’t make much of them; I’m certainly not. And you especially shouldn’t make much of them once you see the wide 90% credible intervals. Also, going back to problem two mentioned above, notice that almost all of the top ranking schools have low LSAT / GPA combinations and low bar passage rates.</p>
-<div id="htmlwidget-1" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1">{"x":{"filter":"none","data":[["Regent University","Northern Illinois University","California Western School of Law","Syracuse University","Western State College of Law","Washington and Lee University","Liberty University","Duquesne University","Florida International University","University of La Verne","Belmont University","Concordia Law School","University of Baltimore","Southern University","McGeorge School of Law","University of Massachusetts Dartmouth","Loyola Marymount University-Los Angeles","UNT Dallas College Of Law","Lincoln Memorial University","Seton Hall University","Widener Commonwealth","Campbell University","Georgia State University","Mitchell Hamline School of Law","Quinnipiac University","St. John's University","University of Richmond","University of Southern California","Texas A&amp;M University","Pennsylvania State University-Dickinson School of Law","University of Georgia","City University of New York","Florida Coastal School of Law","University of San Diego","North Carolina Central University","Capital University","University of California-Davis","Thomas Jefferson School of Law","Gonzaga University","William and Mary Law School","Albany Law School of Union University","Florida A&amp;M University","Indiana University - Bloomington","University of New Hampshire","University of Illinois","John Marshall Law School","Santa Clara University","University of Nebraska","University of California-Irvine","New York University","Ohio Northern University","South Texas College of Law","University of Tulsa","Mercer University","Cornell University","Willamette University","Texas Tech University","Baylor University","Fordham University","University of Utah","University of Arkansas-Little Rock","St. Mary's University","University of Michigan","Vanderbilt University","St. Thomas University (Florida)","University of Iowa","University of Dayton","Cleveland State University","Mississippi College","University of Pennsylvania","Pace University","Roger Williams University","Boston University","University of Kansas","University of Virginia","William Mitchell College of Law","Faulkner University","University of California-Berkeley","Saint Louis University","University of Missouri","University of South Carolina","University of Oklahoma","University of Kentucky","Boston College","Louisiana State University","Chapman University","Ohio State University","Villanova University","Arizona Summit Law School","Drake University","Duke University","University of Alabama","University of Montana","Howard University","University of Denver","University of New Mexico","University of Oregon","University of North Dakota","Hamline University","New England Law | Boston","University of Pittsburgh","Arizona State University","Nova Southeastern University","Columbia University","University of Cincinnati","Brooklyn Law School","University of Maryland","University of Washington","University of South Dakota","Florida State University","University of Louisville","Stetson University","University of Colorado","Ave Maria School of Law","Pepperdine University","University of St. Thomas (Minnesota)","Washburn University","University of North Carolina","Harvard University","University of Missouri-Kansas City","University of Chicago","Yale University","Georgetown University","Samford University","University of Maine","West Virginia University","Case Western Reserve University","University of Hawaii","Catholic University of America","Loyola University-Chicago","University of California-Los Angeles","Touro College","Southern Methodist University","University of Akron","Drexel University","Western New England University","Loyola University-New Orleans","Michigan State University","Stanford University","Widener University-Delaware","University of Nevada - Las Vegas","Cardozo School of Law","Seattle University","Lewis and Clark College","Indiana University - Indianapolis","University of Miami","University of Notre Dame","Chicago-Kent College of Law-IIT","Northeastern University","George Mason University","University of Connecticut","Southern Illinois University-Carbondale","University of Memphis","University of Idaho","Brigham Young University","Pennsylvania State University-Penn State Law","University of Texas at Austin","Charleston School of Law","University of Florida","University of Wyoming","Wake Forest University","University of Mississippi","Texas Southern University","Charlotte School of Law","Barry University","George Washington University","Western Michigan University","University of Toledo","Temple University","University of Tennessee","University of Arkansas-Fayetteville","Wayne State University","Creighton University","University of Arizona","University of Houston","Washington University","Southwestern Law School","University of Minnesota","Vermont Law School","New York Law School","Golden Gate University","Northwestern University","Valparaiso University","Depaul University","University of Buffalo-SUNY","Northern Kentucky University","Suffolk University","Emory University","Oklahoma City University","University of Detroit Mercy","Rutgers University","Whittier Law School","University of California-Hastings","Elon University","Atlanta's John Marshall Law School","Tulane University","Hofstra University","Appalachian School of Law","University of San Francisco","American University","District of Columbia"],[1,2,3,3,3,6,7,8,8,10,11,11,11,14,15,16,17,18,19,20,20,22,22,24,25,25,25,28,29,30,30,32,32,34,35,36,37,38,39,39,41,41,41,41,45,46,47,48,49,50,51,52,52,54,55,55,57,58,58,58,61,62,62,64,65,65,67,68,68,68,71,72,73,73,73,73,77,77,79,79,79,82,83,84,85,86,87,87,89,89,89,92,93,94,95,96,97,98,99,99,99,102,103,104,105,106,107,108,109,110,111,112,112,114,115,115,115,118,119,120,121,122,123,123,125,126,127,128,129,129,131,132,133,134,135,135,137,137,137,137,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,155,157,158,159,159,159,162,163,164,165,165,165,168,169,169,171,171,173,173,175,176,177,177,177,180,181,182,183,184,184,186,186,188,189,190,191,191,193,194,195,195,197,198,199,200,200],[1,1,1,1,1,1,1,3,3,1,2,1,7,4,6,1,10,1,1,8,3,5,10,1,5,13,8,13,15,1,17,11,13,14,10,12,17,11,8,17,18,11,14,5,16,24,19,16,13,44,1,32,12,15,33,12,28,26,37,12,13,23,38,29,18,22,12,22,8,46,32,14,45,23,47,17,9,46,30,29,23,37,28,51,34,34,48,40,26,18,52,46,15,20,41,20,36,17,16,35,42,48,52,83,52,65,56,66,17,69,40,75,61,30,52,46,35,73,98,58,88,98,100,55,32,38,60,39,57,78,94,73,90,68,74,48,74,86,101,66,55,96,82,87,78,100,88,96,91,88,83,77,77,69,97,34,126,80,122,51,102,87,100,80,110,139,117,96,130,121,92,131,96,115,138,144,142,145,95,147,122,159,121,160,155,148,159,166,145,157,164,157,179,167,176,182,190,30,197,199,198],[7,11,10,11,13,19,108,20,19,46,35,105,29,47,43,77,36,110.5,149,48,79,56,49,111,79,51,72,63,70,194,69,88,82,74,105,98,89,94,110,83,93,104,92,124,86,93,97,110,109,75,168,99,123,117,95,144,104,107.5,90,118,143,113,89,109,122,120,158,133,148,103,129,156,110,131,103,164,156,109,120,126,130,123,148,122,132,137,127,137,155,151,120,138,170,160,139,148,168,184,193,147,152,146,151,124,163,139,155,153,195,154,175,165,161,184,162,168,173,161,130,162,141,144,142,182,191,194,170,189,186,163,152,177,161,177,180,191,179,174,160,187,190,160,175,188,175,170,182,169,175,182,183,195,192,195,186,198,166,197,175,198,191,192,191,196,193,174,184,197,184,193,197,193,198,195,185,185,192,188,199,190,195,188,198,194,195,199,193,193,198,198,198,198,197,200,199,197,198,201,201,201,201]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>School<\/th>\n      <th>Most likely rank<\/th>\n      <th>90% lower bound<\/th>\n      <th>90% upper bound<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[1,2,3]}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<p>If you ignored this post’s advice and want to know the actual modeled ranking, here you go. Again, you shouldn’t make much of them; I’m not. And you especially shouldn’t make much of them once you see the wide 90% credible intervals. Also, going back to problem two mentioned above, notice that almost all of the top ranking schools have low LSAT / GPA combinations and low bar passage rates.</p>
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#acyaivwydc .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#acyaivwydc .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#acyaivwydc .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#acyaivwydc .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#acyaivwydc .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#acyaivwydc .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#acyaivwydc .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#acyaivwydc .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#acyaivwydc .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#acyaivwydc .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#acyaivwydc .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#acyaivwydc .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#acyaivwydc .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#acyaivwydc .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#acyaivwydc .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#acyaivwydc .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#acyaivwydc .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#acyaivwydc .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#acyaivwydc .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#acyaivwydc .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#acyaivwydc .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#acyaivwydc .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#acyaivwydc .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#acyaivwydc .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#acyaivwydc .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#acyaivwydc .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#acyaivwydc .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#acyaivwydc .gt_left {
+  text-align: left;
+}
+
+#acyaivwydc .gt_center {
+  text-align: center;
+}
+
+#acyaivwydc .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#acyaivwydc .gt_font_normal {
+  font-weight: normal;
+}
+
+#acyaivwydc .gt_font_bold {
+  font-weight: bold;
+}
+
+#acyaivwydc .gt_font_italic {
+  font-style: italic;
+}
+
+#acyaivwydc .gt_super {
+  font-size: 65%;
+}
+
+#acyaivwydc .gt_footnote_marks {
+  font-style: italic;
+  font-size: 65%;
+}
+</style>
+<div id="acyaivwydc" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+  
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1"></th>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">Rank</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2">
+        <span class="gt_column_spanner">90% Credible Interval</span>
+      </th>
+    </tr>
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">Lower bound</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">Upper bound</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr>
+      <td class="gt_row gt_left gt_stub">Regent University</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">7</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Northern Illinois University</td>
+      <td class="gt_row gt_right">2</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">11</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">California Western School of Law</td>
+      <td class="gt_row gt_right">3</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">10</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Syracuse University</td>
+      <td class="gt_row gt_right">3</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">11</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Western State College of Law</td>
+      <td class="gt_row gt_right">3</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">13</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Washington and Lee University</td>
+      <td class="gt_row gt_right">6</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">19</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Liberty University</td>
+      <td class="gt_row gt_right">7</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">108</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Duquesne University</td>
+      <td class="gt_row gt_right">8</td>
+      <td class="gt_row gt_right">3</td>
+      <td class="gt_row gt_right">20</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Florida International University</td>
+      <td class="gt_row gt_right">8</td>
+      <td class="gt_row gt_right">3</td>
+      <td class="gt_row gt_right">19</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of La Verne</td>
+      <td class="gt_row gt_right">10</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">46</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Belmont University</td>
+      <td class="gt_row gt_right">11</td>
+      <td class="gt_row gt_right">2</td>
+      <td class="gt_row gt_right">35</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Concordia Law School</td>
+      <td class="gt_row gt_right">11</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">105</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Baltimore</td>
+      <td class="gt_row gt_right">11</td>
+      <td class="gt_row gt_right">7</td>
+      <td class="gt_row gt_right">29</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Southern University</td>
+      <td class="gt_row gt_right">14</td>
+      <td class="gt_row gt_right">4</td>
+      <td class="gt_row gt_right">47</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">McGeorge School of Law</td>
+      <td class="gt_row gt_right">15</td>
+      <td class="gt_row gt_right">6</td>
+      <td class="gt_row gt_right">43</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Massachusetts Dartmouth</td>
+      <td class="gt_row gt_right">16</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Loyola Marymount University-Los Angeles</td>
+      <td class="gt_row gt_right">17</td>
+      <td class="gt_row gt_right">10</td>
+      <td class="gt_row gt_right">36</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">UNT Dallas College Of Law</td>
+      <td class="gt_row gt_right">18</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">110</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Lincoln Memorial University</td>
+      <td class="gt_row gt_right">19</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">149</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Seton Hall University</td>
+      <td class="gt_row gt_right">20</td>
+      <td class="gt_row gt_right">8</td>
+      <td class="gt_row gt_right">48</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Widener Commonwealth</td>
+      <td class="gt_row gt_right">20</td>
+      <td class="gt_row gt_right">3</td>
+      <td class="gt_row gt_right">79</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Campbell University</td>
+      <td class="gt_row gt_right">22</td>
+      <td class="gt_row gt_right">5</td>
+      <td class="gt_row gt_right">56</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Georgia State University</td>
+      <td class="gt_row gt_right">22</td>
+      <td class="gt_row gt_right">10</td>
+      <td class="gt_row gt_right">49</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Mitchell Hamline School of Law</td>
+      <td class="gt_row gt_right">24</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">111</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Quinnipiac University</td>
+      <td class="gt_row gt_right">25</td>
+      <td class="gt_row gt_right">5</td>
+      <td class="gt_row gt_right">79</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">St. John's University</td>
+      <td class="gt_row gt_right">25</td>
+      <td class="gt_row gt_right">13</td>
+      <td class="gt_row gt_right">51</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Richmond</td>
+      <td class="gt_row gt_right">25</td>
+      <td class="gt_row gt_right">8</td>
+      <td class="gt_row gt_right">72</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Southern California</td>
+      <td class="gt_row gt_right">28</td>
+      <td class="gt_row gt_right">13</td>
+      <td class="gt_row gt_right">63</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Texas A&amp;M University</td>
+      <td class="gt_row gt_right">29</td>
+      <td class="gt_row gt_right">15</td>
+      <td class="gt_row gt_right">70</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Pennsylvania State University-Dickinson School of Law</td>
+      <td class="gt_row gt_right">30</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">194</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Georgia</td>
+      <td class="gt_row gt_right">30</td>
+      <td class="gt_row gt_right">17</td>
+      <td class="gt_row gt_right">69</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">City University of New York</td>
+      <td class="gt_row gt_right">32</td>
+      <td class="gt_row gt_right">11</td>
+      <td class="gt_row gt_right">88</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Florida Coastal School of Law</td>
+      <td class="gt_row gt_right">32</td>
+      <td class="gt_row gt_right">13</td>
+      <td class="gt_row gt_right">82</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of San Diego</td>
+      <td class="gt_row gt_right">34</td>
+      <td class="gt_row gt_right">14</td>
+      <td class="gt_row gt_right">74</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">North Carolina Central University</td>
+      <td class="gt_row gt_right">35</td>
+      <td class="gt_row gt_right">10</td>
+      <td class="gt_row gt_right">105</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Capital University</td>
+      <td class="gt_row gt_right">36</td>
+      <td class="gt_row gt_right">12</td>
+      <td class="gt_row gt_right">98</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of California-Davis</td>
+      <td class="gt_row gt_right">37</td>
+      <td class="gt_row gt_right">17</td>
+      <td class="gt_row gt_right">89</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Thomas Jefferson School of Law</td>
+      <td class="gt_row gt_right">38</td>
+      <td class="gt_row gt_right">11</td>
+      <td class="gt_row gt_right">94</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Gonzaga University</td>
+      <td class="gt_row gt_right">39</td>
+      <td class="gt_row gt_right">8</td>
+      <td class="gt_row gt_right">110</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">William and Mary Law School</td>
+      <td class="gt_row gt_right">39</td>
+      <td class="gt_row gt_right">17</td>
+      <td class="gt_row gt_right">83</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Albany Law School of Union University</td>
+      <td class="gt_row gt_right">41</td>
+      <td class="gt_row gt_right">18</td>
+      <td class="gt_row gt_right">93</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Florida A&amp;M University</td>
+      <td class="gt_row gt_right">41</td>
+      <td class="gt_row gt_right">11</td>
+      <td class="gt_row gt_right">104</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Indiana University - Bloomington</td>
+      <td class="gt_row gt_right">41</td>
+      <td class="gt_row gt_right">14</td>
+      <td class="gt_row gt_right">92</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of New Hampshire</td>
+      <td class="gt_row gt_right">41</td>
+      <td class="gt_row gt_right">5</td>
+      <td class="gt_row gt_right">124</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Illinois</td>
+      <td class="gt_row gt_right">45</td>
+      <td class="gt_row gt_right">16</td>
+      <td class="gt_row gt_right">86</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">John Marshall Law School</td>
+      <td class="gt_row gt_right">46</td>
+      <td class="gt_row gt_right">24</td>
+      <td class="gt_row gt_right">93</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Santa Clara University</td>
+      <td class="gt_row gt_right">47</td>
+      <td class="gt_row gt_right">19</td>
+      <td class="gt_row gt_right">97</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Nebraska</td>
+      <td class="gt_row gt_right">48</td>
+      <td class="gt_row gt_right">16</td>
+      <td class="gt_row gt_right">110</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of California-Irvine</td>
+      <td class="gt_row gt_right">49</td>
+      <td class="gt_row gt_right">13</td>
+      <td class="gt_row gt_right">109</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">New York University</td>
+      <td class="gt_row gt_right">50</td>
+      <td class="gt_row gt_right">44</td>
+      <td class="gt_row gt_right">75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Ohio Northern University</td>
+      <td class="gt_row gt_right">51</td>
+      <td class="gt_row gt_right">1</td>
+      <td class="gt_row gt_right">168</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">South Texas College of Law</td>
+      <td class="gt_row gt_right">52</td>
+      <td class="gt_row gt_right">32</td>
+      <td class="gt_row gt_right">99</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Tulsa</td>
+      <td class="gt_row gt_right">52</td>
+      <td class="gt_row gt_right">12</td>
+      <td class="gt_row gt_right">123</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Mercer University</td>
+      <td class="gt_row gt_right">54</td>
+      <td class="gt_row gt_right">15</td>
+      <td class="gt_row gt_right">117</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Cornell University</td>
+      <td class="gt_row gt_right">55</td>
+      <td class="gt_row gt_right">33</td>
+      <td class="gt_row gt_right">95</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Willamette University</td>
+      <td class="gt_row gt_right">55</td>
+      <td class="gt_row gt_right">12</td>
+      <td class="gt_row gt_right">144</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Texas Tech University</td>
+      <td class="gt_row gt_right">57</td>
+      <td class="gt_row gt_right">28</td>
+      <td class="gt_row gt_right">104</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Baylor University</td>
+      <td class="gt_row gt_right">58</td>
+      <td class="gt_row gt_right">26</td>
+      <td class="gt_row gt_right">108</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Fordham University</td>
+      <td class="gt_row gt_right">58</td>
+      <td class="gt_row gt_right">37</td>
+      <td class="gt_row gt_right">90</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Utah</td>
+      <td class="gt_row gt_right">58</td>
+      <td class="gt_row gt_right">12</td>
+      <td class="gt_row gt_right">118</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Arkansas-Little Rock</td>
+      <td class="gt_row gt_right">61</td>
+      <td class="gt_row gt_right">13</td>
+      <td class="gt_row gt_right">143</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">St. Mary's University</td>
+      <td class="gt_row gt_right">62</td>
+      <td class="gt_row gt_right">23</td>
+      <td class="gt_row gt_right">113</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Michigan</td>
+      <td class="gt_row gt_right">62</td>
+      <td class="gt_row gt_right">38</td>
+      <td class="gt_row gt_right">89</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Vanderbilt University</td>
+      <td class="gt_row gt_right">64</td>
+      <td class="gt_row gt_right">29</td>
+      <td class="gt_row gt_right">109</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">St. Thomas University (Florida)</td>
+      <td class="gt_row gt_right">65</td>
+      <td class="gt_row gt_right">18</td>
+      <td class="gt_row gt_right">122</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Iowa</td>
+      <td class="gt_row gt_right">65</td>
+      <td class="gt_row gt_right">22</td>
+      <td class="gt_row gt_right">120</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Dayton</td>
+      <td class="gt_row gt_right">67</td>
+      <td class="gt_row gt_right">12</td>
+      <td class="gt_row gt_right">158</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Cleveland State University</td>
+      <td class="gt_row gt_right">68</td>
+      <td class="gt_row gt_right">22</td>
+      <td class="gt_row gt_right">133</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Mississippi College</td>
+      <td class="gt_row gt_right">68</td>
+      <td class="gt_row gt_right">8</td>
+      <td class="gt_row gt_right">148</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Pennsylvania</td>
+      <td class="gt_row gt_right">68</td>
+      <td class="gt_row gt_right">46</td>
+      <td class="gt_row gt_right">103</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Pace University</td>
+      <td class="gt_row gt_right">71</td>
+      <td class="gt_row gt_right">32</td>
+      <td class="gt_row gt_right">129</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Roger Williams University</td>
+      <td class="gt_row gt_right">72</td>
+      <td class="gt_row gt_right">14</td>
+      <td class="gt_row gt_right">156</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Boston University</td>
+      <td class="gt_row gt_right">73</td>
+      <td class="gt_row gt_right">45</td>
+      <td class="gt_row gt_right">110</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Kansas</td>
+      <td class="gt_row gt_right">73</td>
+      <td class="gt_row gt_right">23</td>
+      <td class="gt_row gt_right">131</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Virginia</td>
+      <td class="gt_row gt_right">73</td>
+      <td class="gt_row gt_right">47</td>
+      <td class="gt_row gt_right">103</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">William Mitchell College of Law</td>
+      <td class="gt_row gt_right">73</td>
+      <td class="gt_row gt_right">17</td>
+      <td class="gt_row gt_right">164</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Faulkner University</td>
+      <td class="gt_row gt_right">77</td>
+      <td class="gt_row gt_right">9</td>
+      <td class="gt_row gt_right">156</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of California-Berkeley</td>
+      <td class="gt_row gt_right">77</td>
+      <td class="gt_row gt_right">46</td>
+      <td class="gt_row gt_right">109</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Saint Louis University</td>
+      <td class="gt_row gt_right">79</td>
+      <td class="gt_row gt_right">30</td>
+      <td class="gt_row gt_right">120</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Missouri</td>
+      <td class="gt_row gt_right">79</td>
+      <td class="gt_row gt_right">29</td>
+      <td class="gt_row gt_right">126</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of South Carolina</td>
+      <td class="gt_row gt_right">79</td>
+      <td class="gt_row gt_right">23</td>
+      <td class="gt_row gt_right">130</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Oklahoma</td>
+      <td class="gt_row gt_right">82</td>
+      <td class="gt_row gt_right">37</td>
+      <td class="gt_row gt_right">123</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Kentucky</td>
+      <td class="gt_row gt_right">83</td>
+      <td class="gt_row gt_right">28</td>
+      <td class="gt_row gt_right">148</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Boston College</td>
+      <td class="gt_row gt_right">84</td>
+      <td class="gt_row gt_right">51</td>
+      <td class="gt_row gt_right">122</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Louisiana State University</td>
+      <td class="gt_row gt_right">85</td>
+      <td class="gt_row gt_right">34</td>
+      <td class="gt_row gt_right">132</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Chapman University</td>
+      <td class="gt_row gt_right">86</td>
+      <td class="gt_row gt_right">34</td>
+      <td class="gt_row gt_right">137</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Ohio State University</td>
+      <td class="gt_row gt_right">87</td>
+      <td class="gt_row gt_right">48</td>
+      <td class="gt_row gt_right">127</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Villanova University</td>
+      <td class="gt_row gt_right">87</td>
+      <td class="gt_row gt_right">40</td>
+      <td class="gt_row gt_right">137</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Arizona Summit Law School</td>
+      <td class="gt_row gt_right">89</td>
+      <td class="gt_row gt_right">26</td>
+      <td class="gt_row gt_right">155</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Drake University</td>
+      <td class="gt_row gt_right">89</td>
+      <td class="gt_row gt_right">18</td>
+      <td class="gt_row gt_right">151</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Duke University</td>
+      <td class="gt_row gt_right">89</td>
+      <td class="gt_row gt_right">52</td>
+      <td class="gt_row gt_right">120</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Alabama</td>
+      <td class="gt_row gt_right">92</td>
+      <td class="gt_row gt_right">46</td>
+      <td class="gt_row gt_right">138</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Montana</td>
+      <td class="gt_row gt_right">93</td>
+      <td class="gt_row gt_right">15</td>
+      <td class="gt_row gt_right">170</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Howard University</td>
+      <td class="gt_row gt_right">94</td>
+      <td class="gt_row gt_right">20</td>
+      <td class="gt_row gt_right">160</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Denver</td>
+      <td class="gt_row gt_right">95</td>
+      <td class="gt_row gt_right">41</td>
+      <td class="gt_row gt_right">139</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of New Mexico</td>
+      <td class="gt_row gt_right">96</td>
+      <td class="gt_row gt_right">20</td>
+      <td class="gt_row gt_right">148</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Oregon</td>
+      <td class="gt_row gt_right">97</td>
+      <td class="gt_row gt_right">36</td>
+      <td class="gt_row gt_right">168</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of North Dakota</td>
+      <td class="gt_row gt_right">98</td>
+      <td class="gt_row gt_right">17</td>
+      <td class="gt_row gt_right">184</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Hamline University</td>
+      <td class="gt_row gt_right">99</td>
+      <td class="gt_row gt_right">16</td>
+      <td class="gt_row gt_right">193</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">New England Law | Boston</td>
+      <td class="gt_row gt_right">99</td>
+      <td class="gt_row gt_right">35</td>
+      <td class="gt_row gt_right">147</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Pittsburgh</td>
+      <td class="gt_row gt_right">99</td>
+      <td class="gt_row gt_right">42</td>
+      <td class="gt_row gt_right">152</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Arizona State University</td>
+      <td class="gt_row gt_right">102</td>
+      <td class="gt_row gt_right">48</td>
+      <td class="gt_row gt_right">146</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Nova Southeastern University</td>
+      <td class="gt_row gt_right">103</td>
+      <td class="gt_row gt_right">52</td>
+      <td class="gt_row gt_right">151</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Columbia University</td>
+      <td class="gt_row gt_right">104</td>
+      <td class="gt_row gt_right">83</td>
+      <td class="gt_row gt_right">124</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Cincinnati</td>
+      <td class="gt_row gt_right">105</td>
+      <td class="gt_row gt_right">52</td>
+      <td class="gt_row gt_right">163</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Brooklyn Law School</td>
+      <td class="gt_row gt_right">106</td>
+      <td class="gt_row gt_right">65</td>
+      <td class="gt_row gt_right">139</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Maryland</td>
+      <td class="gt_row gt_right">107</td>
+      <td class="gt_row gt_right">56</td>
+      <td class="gt_row gt_right">155</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Washington</td>
+      <td class="gt_row gt_right">108</td>
+      <td class="gt_row gt_right">66</td>
+      <td class="gt_row gt_right">153</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of South Dakota</td>
+      <td class="gt_row gt_right">109</td>
+      <td class="gt_row gt_right">17</td>
+      <td class="gt_row gt_right">195</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Florida State University</td>
+      <td class="gt_row gt_right">110</td>
+      <td class="gt_row gt_right">69</td>
+      <td class="gt_row gt_right">154</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Louisville</td>
+      <td class="gt_row gt_right">111</td>
+      <td class="gt_row gt_right">40</td>
+      <td class="gt_row gt_right">175</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Stetson University</td>
+      <td class="gt_row gt_right">112</td>
+      <td class="gt_row gt_right">75</td>
+      <td class="gt_row gt_right">165</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Colorado</td>
+      <td class="gt_row gt_right">112</td>
+      <td class="gt_row gt_right">61</td>
+      <td class="gt_row gt_right">161</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Ave Maria School of Law</td>
+      <td class="gt_row gt_right">114</td>
+      <td class="gt_row gt_right">30</td>
+      <td class="gt_row gt_right">184</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Pepperdine University</td>
+      <td class="gt_row gt_right">115</td>
+      <td class="gt_row gt_right">52</td>
+      <td class="gt_row gt_right">162</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of St. Thomas (Minnesota)</td>
+      <td class="gt_row gt_right">115</td>
+      <td class="gt_row gt_right">46</td>
+      <td class="gt_row gt_right">168</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Washburn University</td>
+      <td class="gt_row gt_right">115</td>
+      <td class="gt_row gt_right">35</td>
+      <td class="gt_row gt_right">173</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of North Carolina</td>
+      <td class="gt_row gt_right">118</td>
+      <td class="gt_row gt_right">73</td>
+      <td class="gt_row gt_right">161</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Harvard University</td>
+      <td class="gt_row gt_right">119</td>
+      <td class="gt_row gt_right">98</td>
+      <td class="gt_row gt_right">130</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Missouri-Kansas City</td>
+      <td class="gt_row gt_right">120</td>
+      <td class="gt_row gt_right">58</td>
+      <td class="gt_row gt_right">162</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Chicago</td>
+      <td class="gt_row gt_right">121</td>
+      <td class="gt_row gt_right">88</td>
+      <td class="gt_row gt_right">141</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Yale University</td>
+      <td class="gt_row gt_right">122</td>
+      <td class="gt_row gt_right">98</td>
+      <td class="gt_row gt_right">144</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Georgetown University</td>
+      <td class="gt_row gt_right">123</td>
+      <td class="gt_row gt_right">100</td>
+      <td class="gt_row gt_right">142</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Samford University</td>
+      <td class="gt_row gt_right">123</td>
+      <td class="gt_row gt_right">55</td>
+      <td class="gt_row gt_right">182</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Maine</td>
+      <td class="gt_row gt_right">125</td>
+      <td class="gt_row gt_right">32</td>
+      <td class="gt_row gt_right">191</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">West Virginia University</td>
+      <td class="gt_row gt_right">126</td>
+      <td class="gt_row gt_right">38</td>
+      <td class="gt_row gt_right">194</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Case Western Reserve University</td>
+      <td class="gt_row gt_right">127</td>
+      <td class="gt_row gt_right">60</td>
+      <td class="gt_row gt_right">170</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Hawaii</td>
+      <td class="gt_row gt_right">128</td>
+      <td class="gt_row gt_right">39</td>
+      <td class="gt_row gt_right">189</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Catholic University of America</td>
+      <td class="gt_row gt_right">129</td>
+      <td class="gt_row gt_right">57</td>
+      <td class="gt_row gt_right">186</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Loyola University-Chicago</td>
+      <td class="gt_row gt_right">129</td>
+      <td class="gt_row gt_right">78</td>
+      <td class="gt_row gt_right">163</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of California-Los Angeles</td>
+      <td class="gt_row gt_right">131</td>
+      <td class="gt_row gt_right">94</td>
+      <td class="gt_row gt_right">152</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Touro College</td>
+      <td class="gt_row gt_right">132</td>
+      <td class="gt_row gt_right">73</td>
+      <td class="gt_row gt_right">177</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Southern Methodist University</td>
+      <td class="gt_row gt_right">133</td>
+      <td class="gt_row gt_right">90</td>
+      <td class="gt_row gt_right">161</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Akron</td>
+      <td class="gt_row gt_right">134</td>
+      <td class="gt_row gt_right">68</td>
+      <td class="gt_row gt_right">177</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Drexel University</td>
+      <td class="gt_row gt_right">135</td>
+      <td class="gt_row gt_right">74</td>
+      <td class="gt_row gt_right">180</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Western New England University</td>
+      <td class="gt_row gt_right">135</td>
+      <td class="gt_row gt_right">48</td>
+      <td class="gt_row gt_right">191</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Loyola University-New Orleans</td>
+      <td class="gt_row gt_right">137</td>
+      <td class="gt_row gt_right">74</td>
+      <td class="gt_row gt_right">179</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Michigan State University</td>
+      <td class="gt_row gt_right">137</td>
+      <td class="gt_row gt_right">86</td>
+      <td class="gt_row gt_right">174</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Stanford University</td>
+      <td class="gt_row gt_right">137</td>
+      <td class="gt_row gt_right">101</td>
+      <td class="gt_row gt_right">160</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Widener University-Delaware</td>
+      <td class="gt_row gt_right">137</td>
+      <td class="gt_row gt_right">66</td>
+      <td class="gt_row gt_right">187</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Nevada - Las Vegas</td>
+      <td class="gt_row gt_right">141</td>
+      <td class="gt_row gt_right">55</td>
+      <td class="gt_row gt_right">190</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Cardozo School of Law</td>
+      <td class="gt_row gt_right">142</td>
+      <td class="gt_row gt_right">96</td>
+      <td class="gt_row gt_right">160</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Seattle University</td>
+      <td class="gt_row gt_right">143</td>
+      <td class="gt_row gt_right">82</td>
+      <td class="gt_row gt_right">175</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Lewis and Clark College</td>
+      <td class="gt_row gt_right">144</td>
+      <td class="gt_row gt_right">87</td>
+      <td class="gt_row gt_right">188</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Indiana University - Indianapolis</td>
+      <td class="gt_row gt_right">145</td>
+      <td class="gt_row gt_right">78</td>
+      <td class="gt_row gt_right">175</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Miami</td>
+      <td class="gt_row gt_right">146</td>
+      <td class="gt_row gt_right">100</td>
+      <td class="gt_row gt_right">170</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Notre Dame</td>
+      <td class="gt_row gt_right">147</td>
+      <td class="gt_row gt_right">88</td>
+      <td class="gt_row gt_right">182</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Chicago-Kent College of Law-IIT</td>
+      <td class="gt_row gt_right">148</td>
+      <td class="gt_row gt_right">96</td>
+      <td class="gt_row gt_right">169</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Northeastern University</td>
+      <td class="gt_row gt_right">149</td>
+      <td class="gt_row gt_right">91</td>
+      <td class="gt_row gt_right">175</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">George Mason University</td>
+      <td class="gt_row gt_right">150</td>
+      <td class="gt_row gt_right">88</td>
+      <td class="gt_row gt_right">182</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Connecticut</td>
+      <td class="gt_row gt_right">151</td>
+      <td class="gt_row gt_right">83</td>
+      <td class="gt_row gt_right">183</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Southern Illinois University-Carbondale</td>
+      <td class="gt_row gt_right">152</td>
+      <td class="gt_row gt_right">77</td>
+      <td class="gt_row gt_right">195</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Memphis</td>
+      <td class="gt_row gt_right">153</td>
+      <td class="gt_row gt_right">77</td>
+      <td class="gt_row gt_right">192</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Idaho</td>
+      <td class="gt_row gt_right">154</td>
+      <td class="gt_row gt_right">69</td>
+      <td class="gt_row gt_right">195</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Brigham Young University</td>
+      <td class="gt_row gt_right">155</td>
+      <td class="gt_row gt_right">97</td>
+      <td class="gt_row gt_right">186</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Pennsylvania State University-Penn State Law</td>
+      <td class="gt_row gt_right">155</td>
+      <td class="gt_row gt_right">34</td>
+      <td class="gt_row gt_right">198</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Texas at Austin</td>
+      <td class="gt_row gt_right">157</td>
+      <td class="gt_row gt_right">126</td>
+      <td class="gt_row gt_right">166</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Charleston School of Law</td>
+      <td class="gt_row gt_right">158</td>
+      <td class="gt_row gt_right">80</td>
+      <td class="gt_row gt_right">197</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Florida</td>
+      <td class="gt_row gt_right">159</td>
+      <td class="gt_row gt_right">122</td>
+      <td class="gt_row gt_right">175</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Wyoming</td>
+      <td class="gt_row gt_right">159</td>
+      <td class="gt_row gt_right">51</td>
+      <td class="gt_row gt_right">198</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Wake Forest University</td>
+      <td class="gt_row gt_right">159</td>
+      <td class="gt_row gt_right">102</td>
+      <td class="gt_row gt_right">191</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Mississippi</td>
+      <td class="gt_row gt_right">162</td>
+      <td class="gt_row gt_right">87</td>
+      <td class="gt_row gt_right">192</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Texas Southern University</td>
+      <td class="gt_row gt_right">163</td>
+      <td class="gt_row gt_right">100</td>
+      <td class="gt_row gt_right">191</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Charlotte School of Law</td>
+      <td class="gt_row gt_right">164</td>
+      <td class="gt_row gt_right">80</td>
+      <td class="gt_row gt_right">196</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Barry University</td>
+      <td class="gt_row gt_right">165</td>
+      <td class="gt_row gt_right">110</td>
+      <td class="gt_row gt_right">193</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">George Washington University</td>
+      <td class="gt_row gt_right">165</td>
+      <td class="gt_row gt_right">139</td>
+      <td class="gt_row gt_right">174</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Western Michigan University</td>
+      <td class="gt_row gt_right">165</td>
+      <td class="gt_row gt_right">117</td>
+      <td class="gt_row gt_right">184</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Toledo</td>
+      <td class="gt_row gt_right">168</td>
+      <td class="gt_row gt_right">96</td>
+      <td class="gt_row gt_right">197</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Temple University</td>
+      <td class="gt_row gt_right">169</td>
+      <td class="gt_row gt_right">130</td>
+      <td class="gt_row gt_right">184</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Tennessee</td>
+      <td class="gt_row gt_right">169</td>
+      <td class="gt_row gt_right">121</td>
+      <td class="gt_row gt_right">193</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Arkansas-Fayetteville</td>
+      <td class="gt_row gt_right">171</td>
+      <td class="gt_row gt_right">92</td>
+      <td class="gt_row gt_right">197</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Wayne State University</td>
+      <td class="gt_row gt_right">171</td>
+      <td class="gt_row gt_right">131</td>
+      <td class="gt_row gt_right">193</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Creighton University</td>
+      <td class="gt_row gt_right">173</td>
+      <td class="gt_row gt_right">96</td>
+      <td class="gt_row gt_right">198</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Arizona</td>
+      <td class="gt_row gt_right">173</td>
+      <td class="gt_row gt_right">115</td>
+      <td class="gt_row gt_right">195</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Houston</td>
+      <td class="gt_row gt_right">175</td>
+      <td class="gt_row gt_right">138</td>
+      <td class="gt_row gt_right">185</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Washington University</td>
+      <td class="gt_row gt_right">176</td>
+      <td class="gt_row gt_right">144</td>
+      <td class="gt_row gt_right">185</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Southwestern Law School</td>
+      <td class="gt_row gt_right">177</td>
+      <td class="gt_row gt_right">142</td>
+      <td class="gt_row gt_right">192</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Minnesota</td>
+      <td class="gt_row gt_right">177</td>
+      <td class="gt_row gt_right">145</td>
+      <td class="gt_row gt_right">188</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Vermont Law School</td>
+      <td class="gt_row gt_right">177</td>
+      <td class="gt_row gt_right">95</td>
+      <td class="gt_row gt_right">199</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">New York Law School</td>
+      <td class="gt_row gt_right">180</td>
+      <td class="gt_row gt_right">147</td>
+      <td class="gt_row gt_right">190</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Golden Gate University</td>
+      <td class="gt_row gt_right">181</td>
+      <td class="gt_row gt_right">122</td>
+      <td class="gt_row gt_right">195</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Northwestern University</td>
+      <td class="gt_row gt_right">182</td>
+      <td class="gt_row gt_right">159</td>
+      <td class="gt_row gt_right">188</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Valparaiso University</td>
+      <td class="gt_row gt_right">183</td>
+      <td class="gt_row gt_right">121</td>
+      <td class="gt_row gt_right">198</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Depaul University</td>
+      <td class="gt_row gt_right">184</td>
+      <td class="gt_row gt_right">160</td>
+      <td class="gt_row gt_right">194</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Buffalo-SUNY</td>
+      <td class="gt_row gt_right">184</td>
+      <td class="gt_row gt_right">155</td>
+      <td class="gt_row gt_right">195</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Northern Kentucky University</td>
+      <td class="gt_row gt_right">186</td>
+      <td class="gt_row gt_right">148</td>
+      <td class="gt_row gt_right">199</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Suffolk University</td>
+      <td class="gt_row gt_right">186</td>
+      <td class="gt_row gt_right">159</td>
+      <td class="gt_row gt_right">193</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Emory University</td>
+      <td class="gt_row gt_right">188</td>
+      <td class="gt_row gt_right">166</td>
+      <td class="gt_row gt_right">193</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Oklahoma City University</td>
+      <td class="gt_row gt_right">189</td>
+      <td class="gt_row gt_right">145</td>
+      <td class="gt_row gt_right">198</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of Detroit Mercy</td>
+      <td class="gt_row gt_right">190</td>
+      <td class="gt_row gt_right">157</td>
+      <td class="gt_row gt_right">198</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Rutgers University</td>
+      <td class="gt_row gt_right">191</td>
+      <td class="gt_row gt_right">164</td>
+      <td class="gt_row gt_right">198</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Whittier Law School</td>
+      <td class="gt_row gt_right">191</td>
+      <td class="gt_row gt_right">157</td>
+      <td class="gt_row gt_right">198</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of California-Hastings</td>
+      <td class="gt_row gt_right">193</td>
+      <td class="gt_row gt_right">179</td>
+      <td class="gt_row gt_right">197</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Elon University</td>
+      <td class="gt_row gt_right">194</td>
+      <td class="gt_row gt_right">167</td>
+      <td class="gt_row gt_right">200</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Atlanta's John Marshall Law School</td>
+      <td class="gt_row gt_right">195</td>
+      <td class="gt_row gt_right">176</td>
+      <td class="gt_row gt_right">199</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Tulane University</td>
+      <td class="gt_row gt_right">195</td>
+      <td class="gt_row gt_right">182</td>
+      <td class="gt_row gt_right">197</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Hofstra University</td>
+      <td class="gt_row gt_right">197</td>
+      <td class="gt_row gt_right">190</td>
+      <td class="gt_row gt_right">198</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">Appalachian School of Law</td>
+      <td class="gt_row gt_right">198</td>
+      <td class="gt_row gt_right">30</td>
+      <td class="gt_row gt_right">201</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">University of San Francisco</td>
+      <td class="gt_row gt_right">199</td>
+      <td class="gt_row gt_right">197</td>
+      <td class="gt_row gt_right">201</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">American University</td>
+      <td class="gt_row gt_right">200</td>
+      <td class="gt_row gt_right">199</td>
+      <td class="gt_row gt_right">201</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_stub">District of Columbia</td>
+      <td class="gt_row gt_right">200</td>
+      <td class="gt_row gt_right">198</td>
+      <td class="gt_row gt_right">201</td>
+    </tr>
+  </tbody>
+  
+  
+</table></div>
 </div>
