@@ -1,0 +1,120 @@
+---
+title: Exploratory Analysis of North Carolina Traffic Stop Data
+author: ''
+date: '2021-02-17'
+slug: exploratory-analysis-of-north-carolina-traffic-stop-data
+categories:
+  - eda
+  - traffic stops
+  - data visualization
+tags: []
+subtitle: 'Visualizing traffic stops in North Carolina'
+summary: ''
+authors: []
+lastmod: '2021-02-17T19:08:49-05:00'
+featured: no
+image:
+  caption: '<span>Photo by <a href="https://unsplash.com/@introspectivedsgn?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Erik Mclean</a> on <a href="https://unsplash.com/s/photos/police-car?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>'
+  focal_point: ''
+  preview_only: no
+projects: []
+links:
+- icon: github
+  icon_pack: fab
+  name: Github
+  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2021-02-17-exploratory-analysis-of-north-carolina-traffic-stop-data/index.en.Rmd
+  
+draft: true
+---
+
+```{r setup, echo = F}
+knitr::opts_chunk$set(echo = F,
+                      message = F,
+                      warning = F,
+                      error = F)
+```
+
+```{r importLibraries}
+library(glue)
+library(gt)
+library(vroom)
+library(tidycensus) # bring in population and race
+library(lubridate)
+library(tidyverse)
+```
+
+```{r importData, eval = F, echo = F}
+# city_dataset_links <- c(
+# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_charlotte_2020_04_01.csv.gz",
+# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_charlotte_2020_04_01.csv.gz",
+# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_fayetteville_2020_04_01.csv.gz",
+# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_greensboro_2020_04_01.csv.gz",
+# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_raleigh_2020_04_01.csv.gz",
+# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_winston-salem_2020_04_01.csv.gz"
+# )
+
+nc_stops <- vroom('/home/shane/Documents/nc_statewide_2020_04_01.csv.zip',
+                  col_select = -contains('raw'))
+
+# nc_stops <- map_df(city_dataset_links, vroom, col_select = -contains('raw'))
+
+nc_stops <- nc_stops %>%
+  filter(date > '2005-01-01') %>%
+  mutate(year = year(date)) %>%
+  group_by(department_name, year) %>%
+  sample_frac(.02) %>%
+  ungroup()
+
+write_rds(nc_stops, 'nc_stops.rds')
+```
+
+
+```{r}
+nc_stops <- read_rds('nc_stops.rds')
+
+nc_stops <- nc_stops %>%
+  # remove string so that it matches with census data
+  mutate(county_name = str_remove_all(county_name, ' County'))
+```
+
+```{r}
+# census information ----------------
+
+# recode integers fo dates to years
+recode_date <- c(
+  `3` = 2010,
+  `4` = 2011,
+  `5` = 2012,
+  `6` = 2013,
+  `7` = 2014,
+  `8` = 2015
+)
+
+# import population data by county and race
+county_pop <- get_estimates(geography = "county", state = 'NC',
+                            product = 'population', 
+                            breakdown = 'RACE',
+                            time_series = T,
+                            year = 2018) %>%
+  # only keep 2010 - 2015
+  filter(DATE %in% seq(3, 8)) %>%
+  # recode date
+  mutate(DATE = recode(DATE, !!!recode_date)) %>%
+  # remove string so that it matches with traffic stop data
+  mutate(NAME = str_remove_all(NAME, ' County, North Carolina'))
+```
+
+```{r}
+# per capita number of stops ----------------
+
+# calculate number of stops overall by year
+per_capita_stops <- nc_stops %>%
+  group_by(county_name, year) %>%
+  filter(between(year, 2010, 2014), !is.na(county_name)) %>%
+  count() %>%
+  arrange(year, desc(n)) %>%
+  left_join(county_pop[county_pop$variable == 'POP',], 
+            by = c('year' = 'DATE', 'county_name' = 'NAME')) %>%
+  # calculate stops per 100 people
+  mutate(stops_per = n/(value/100))
+```
