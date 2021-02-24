@@ -38,9 +38,21 @@ knitr::opts_chunk$set(echo = F,
 library(glue)
 library(gt)
 library(vroom)
-library(tidycensus) # bring in population and race
+library(tidycensus)
 library(lubridate)
+library(highcharter)
 library(tidyverse)
+```
+
+```{r}
+# create ggplot theme for this post
+post_theme <- theme_minimal() +
+  theme(legend.position = 'bottom',
+        plot.title = element_text(size = 11),
+        plot.subtitle = element_text(size = 10),
+        axis.title = element_text(size = 10))
+
+theme_set(post_theme)
 ```
 
 ```{r importData, eval = F, echo = F}
@@ -74,11 +86,14 @@ nc_stops <- read_rds('nc_stops.rds')
 
 nc_stops <- nc_stops %>%
   # remove string so that it matches with census data
-  mutate(county_name = str_remove_all(county_name, ' County'))
+  mutate(county_name = str_remove_all(county_name, ' County'),
+         # rename misspelled county name
+         county_name = str_replace_all(county_name, 'Tyrell', 'Tyrrell'))
+  
 ```
 
 ```{r}
-# census information ----------------
+# census and shapefile information ----------------
 
 # recode integers fo dates to years
 recode_date <- c(
@@ -101,8 +116,13 @@ county_pop <- get_estimates(geography = "county", state = 'NC',
   # recode date
   mutate(DATE = recode(DATE, !!!recode_date)) %>%
   # remove string so that it matches with traffic stop data
-  mutate(NAME = str_remove_all(NAME, ' County, North Carolina'))
+  mutate(NAME = str_remove_all(NAME, ' County, North Carolina')) %>%
+  # make density and population different columns
+  pivot_wider(id_cols = c('NAME', 'DATE', 'GEOID'),
+              names_from = 'variable', values_from = 'value')
 ```
+
+## Number of stops per 100 residents
 
 ```{r}
 # per capita number of stops ----------------
@@ -112,9 +132,110 @@ per_capita_stops <- nc_stops %>%
   group_by(county_name, year) %>%
   filter(between(year, 2010, 2014), !is.na(county_name)) %>%
   count() %>%
+  mutate(n = n / .02) %>% # delete
   arrange(year, desc(n)) %>%
-  left_join(county_pop[county_pop$variable == 'POP',], 
+  left_join(county_pop, 
             by = c('year' = 'DATE', 'county_name' = 'NAME')) %>%
   # calculate stops per 100 people
-  mutate(stops_per = n/(value/100))
+  mutate(stops_per = n/(POP/100))
+
+# get most recent year
+recent_year <- max(nc_stops$year)
 ```
+
+### Counties with the most stops per 100 residents
+
+```{r fig.width = 5, fig.height = 14}
+# title and tooltip for stops per 100 plots
+stops_per_title <-   "North Carolina Traffic Stops Per 100 Residents in 2014"
+stops_per_tooltip <- "<b>{point.county_name}</b><br>Stops per 100 residents: <b>{point.stops_tooltip}</b>"
+
+per_capita_stops_recent <- per_capita_stops %>%
+  filter(year == !!recent_year) %>%
+  # round stops in new column for tooltip
+  mutate(stops_tooltip = round(stops_per, 1))
+
+per_capita_stops_recent %>%
+  arrange(desc(stops_per)) %>%
+  hchart(., "bar", hcaes(x = county_name, y = stops_per)) %>%
+    hc_xAxis(labels = list(enabled = FALSE),
+             title = list(text = 'North Carolina counties')) %>%
+    hc_yAxis(title = list(text = "Stops per 100 residents")) %>%
+    hc_tooltip(
+      headerFormat = "",
+      pointFormat = stops_per_tooltip
+    ) %>%
+  hc_title(text = stops_per_title) %>% 
+  hc_subtitle(text = "Hover over bars to see county name")
+```
+
+### Map of stops per 100 residents
+
+```{r}
+
+# get geoJSON map data for NC counties
+nc_mapdata <- get_data_from_map(download_map_data("countries/us/us-nc-all"))
+
+hcmap(
+  "countries/us/us-nc-all",
+  data = per_capita_stops_recent,
+  value = "stops_per",
+  joinBy = c("fips", "GEOID"),
+  dataLabels = list(enabled = FALSE),
+  borderColor = "#FAFAFA",
+  borderWidth = 0.1,
+  tooltip = list(
+      headerFormat = "",
+      pointFormat = stops_per_tooltip
+    )
+  ) %>%
+  hc_title(text = stops_per_title) %>% 
+  hc_subtitle(text = "Hover over county to see county name and rate")
+```
+
+### Relationship between county population density and number of stops
+
+```{r}
+per_capita_stops_recent %>%
+  mutate(density_tooltip = round(DENSITY, 0)) %>%
+  hchart(., "scatter", hcaes(x = DENSITY, y = n)) %>%
+  hc_xAxis(type = 'logarithmic') %>%
+  hc_yAxis(type = 'logarithmic') %>%
+  hc_tooltip(
+      headerFormat = "",
+      pointFormat = "<b>{point.county_name}</b><br># of Stops: <b>{point.n}</b><br>Density: <b>{point.density_tooltip}</b>"
+    )
+```
+
+```{r}
+ggplot(per_capita_stops_recent, aes(DENSITY, n)) +
+  geom_point(color = single_plot_color) +
+  scale_x_log10() +
+  scale_y_log10() +
+  geom_smooth(color = 'black', se = F) +
+  labs(title = 'Relationship Between Traffic Stops and Pop. Density',
+       subtitle = 'Each Dot is A North Carolina County',
+       x = 'County population density',
+       y = 'Number of traffic stops in 2014')
+```
+
+### Relationship between percentage majority and stops per 100
+
+```{r}
+county_pop_race <- get_estimates(geography = "county", state = 'NC',
+                            product = 'characteristics', 
+                            breakdown = 'RACE',
+                            breakdown_labels = T,
+                            time_series = T,
+                            year = 2018) %>%
+  # only keep 2014
+  filter(DATE == 7) %>%
+  # remove string so that it matches with traffic stop data
+  mutate(NAME = str_remove_all(NAME, ' County, North Carolina'))
+```
+
+### Search Rates
+
+
+
+### Hit Rates
