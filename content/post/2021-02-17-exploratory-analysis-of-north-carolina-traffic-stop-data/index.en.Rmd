@@ -1,20 +1,22 @@
 ---
-title: Exploratory Analysis of North Carolina Traffic Stop Data
+title: "Exploratory Analysis of North Carolina Traffic Stop Data"
 author: ''
 date: '2021-02-17'
 slug: exploratory-analysis-of-north-carolina-traffic-stop-data
 categories:
-  - eda
-  - traffic stops
-  - data visualization
+- eda
+- traffic stops
+- Highcharts
+- data visualization
 tags: []
-subtitle: 'Visualizing traffic stops in North Carolina'
+subtitle: Visualizing traffic stops in North Carolina
 summary: ''
 authors: []
 lastmod: '2021-02-17T19:08:49-05:00'
 featured: no
 image:
-  caption: '<span>Photo by <a href="https://unsplash.com/@introspectivedsgn?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Erik Mclean</a> on <a href="https://unsplash.com/s/photos/police-car?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>'
+  caption: <span>Photo by <a href="https://unsplash.com/@introspectivedsgn?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Erik
+    Mclean</a> on <a href="https://unsplash.com/s/photos/police-car?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>
   focal_point: ''
   preview_only: no
 projects: []
@@ -23,8 +25,7 @@ links:
   icon_pack: fab
   name: Github
   url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2021-02-17-exploratory-analysis-of-north-carolina-traffic-stop-data/index.en.Rmd
-  
-draft: true
+draft: yes
 ---
 
 ```{r setup, echo = F}
@@ -41,6 +42,10 @@ library(vroom)
 library(tidycensus)
 library(lubridate)
 library(highcharter)
+library(scales)
+library(leaflet)
+library(tigris)
+library(widgetframe)
 library(tidyverse)
 ```
 
@@ -55,26 +60,24 @@ post_theme <- theme_minimal() +
 theme_set(post_theme)
 ```
 
-```{r importData, eval = F, echo = F}
+```{r importData, cache = T}
 nc_stops <- vroom('/home/shane/Documents/nc_statewide_2020_04_01.csv.zip',
                   col_select = -contains('raw'))
+
+# get 2009 - 2013 5 year and aggregate
+pop_years <- seq(2009, 2013, 1)
+
+n_years <- length(pop_years)
 
 nc_stops <- nc_stops %>%
   filter(str_detect(reason_for_stop, "^Speed")) %>%
   mutate(year = year(date)) %>%
-  # only keep between years 2010 and 2013 
-  # (2010 is first year of population data and 2013 is final full year of stop data)
-  filter(between(year, 2010, 2013)) %>%
-  group_by(department_name, year) %>%
-  sample_frac(.5) %>%
-  ungroup()
-
-write_rds(nc_stops, 'nc_stops.rds')
+  # only keep between years 2009 and 2013 
+  # 2013 is final full year of stop data
+  filter(year %in% !!pop_years)
 ```
 
 ```{r}
-nc_stops <- read_rds('nc_stops.rds')
-
 nc_stops <- nc_stops %>%
   # remove string so that it matches with census data
   mutate(county_name = str_remove_all(county_name, ' County'),
@@ -98,7 +101,6 @@ recode_date <- c(
 # import population data by county and race
 county_pop <- get_estimates(geography = "county", state = 'NC',
                             product = 'population', 
-                            breakdown = 'RACE',
                             time_series = T,
                             year = 2018) %>%
   # remove string so that it matches with census data
@@ -131,17 +133,24 @@ per_capita_stops <- nc_stops %>%
   # calculate stops per 100 people
   mutate(stops_per = n/(POP/100)) %>%
   # round stops in new column for tooltip
-  mutate(stops_tooltip = round(stops_per, 1))
+  mutate(stops_tooltip = round(stops_per, 1)) %>%
+  # create additional data points for tooltip
+  mutate(year_pop = number((POP/!!n_years), accuracy = 1, big.mark = ','),
+         year_stops = number((n/!!n_years), accuracy = 1, big.mark = ','))
 ```
 
 ## Counties with the most stops per 100 residents
 
 ```{r fig.width = 5, fig.height = 14}
 # title and tooltip for stops per 100 plots
-stops_per_title <-   "North Carolina Speeding Stops Per 100 Residents Per Year 2010 - 2013"
-stops_per_tooltip <- "<b>{point.county_name}</b><br>Stops per 100 residents: <b>{point.stops_tooltip}</b>"
+stops_per_title <-   "North Carolina County Speeding Stops Per 100 Residents: 2009 - 2013"
 
-per_capita_stops %>%
+stops_per_tooltip <- "<b>{point.county_name}</b><br>
+                      Stops per 100 residents: <b>{point.stops_tooltip}</b><br>
+                      Population: <b>{point.year_pop}</b><br>
+                      Stops per year: <b>{point.year_stops}</b>"
+
+h_couty_bar <- per_capita_stops %>%
   arrange(desc(stops_per)) %>%
   hchart(., "bar", hcaes(x = county_name, y = stops_per)) %>%
     hc_xAxis(labels = list(enabled = FALSE),
@@ -153,13 +162,15 @@ per_capita_stops %>%
     ) %>%
   hc_title(text = stops_per_title) %>% 
   hc_subtitle(text = "Hover over bars to see county name")
+
+frameWidget(h_couty_bar, height = 400, width = '95%')
 ```
 
 ### Map of stops per 100 residents
 
 ```{r}
 # chloropath map of speeding stops per 100 residents by NC county
-hcmap(
+h_county_cloro <- hcmap(
   "countries/us/us-nc-all",
   data = per_capita_stops,
   value = "stops_per",
@@ -174,12 +185,14 @@ hcmap(
   ) %>%
   hc_title(text = stops_per_title) %>% 
   hc_subtitle(text = "Hover over county to see county name and rate")
+
+frameWidget(h_county_cloro, height = 400, width = '95%')
 ```
 
 ## Relationship between county population density and number of stops
 
 ```{r}
-per_capita_stops %>%
+h_county_scatter <- per_capita_stops %>%
   mutate(density_tooltip = round(DENSITY, 0)) %>%
   hchart(., "scatter", hcaes(x = DENSITY, y = stops_per)) %>%
     hc_xAxis(type = 'logarithmic') %>%
@@ -190,21 +203,17 @@ per_capita_stops %>%
                       <br>Density: <b>{point.density_tooltip}</b>"
       ) %>%
     hc_title(text = "Relationship between county population density and per capita speeding stops") %>% 
-    hc_subtitle(text = "Each dot is a North Carolina county | Data reflects 2010 - 2014") %>%
+    hc_subtitle(text = "Each dot is a North Carolina county | Data reflects 2009 - 2013") %>%
     hc_xAxis(title = list(text = 'County population density')) %>%
     hc_yAxis(title = list(text = "Number of speeding stops per 100 residents")) 
+
+frameWidget(h_county_scatter, height = 300, width = '95%')
 ```
 
 ## Days with the highest number of stops
 
 ```{r}
 # create dataset of daily aggregate number of of stops for all NC
-
-# mark counties as interstate counties
-# i_40 <- c('Haywood', 'Buncombe', 'McDowell', 'Burke', 'Catawba', 'Iredell', 'Davie', 'Forsyth', 'Guilford', 
-#           'Alamance', 'Orange', 'Durham', 'Wake', 'Johnston', 'Sampson', 'Duplin', 'Pender', 'New Hanover')
-# 
-# i_95 <- c('Robeson', 'Cumberland', 'Harnett', 'Johnston', 'Wilson', 'Nash', 'Halifax', 'Northampton')
 
 daily_stops <- nc_stops %>%
   filter(year == max(year)) %>%
@@ -223,7 +232,7 @@ daily_stops$date_tooltip <- glue("{month.abb[month(daily_stops$date)]} {day(dail
 
 ```{r}
 # line plot of daily stops
-hchart(daily_stops, 'line', hcaes(x = date, y = n)) %>% 
+h_county_daily <- hchart(daily_stops, 'line', hcaes(x = date, y = n)) %>% 
   hc_xAxis(type = "datetime") %>%
   hc_tooltip(
     headerFormat = "",
@@ -248,23 +257,124 @@ hchart(daily_stops, 'line', hcaes(x = date, y = n)) %>%
            value = datetime_to_timestamp(as.Date('2013-05-27')), dashStyle = 'Dash')
     )
   )
+
+frameWidget(h_county_daily, height = 300, width = '95%')
 ```
 
-## Relationship between percentage majority and stops per 100
+## Stops by department
 
 ```{r}
-county_pop_race <- get_estimates(geography = "county", state = 'NC',
-                            product = 'characteristics', 
-                            breakdown = 'RACE',
-                            breakdown_labels = T,
-                            time_series = T,
-                            year = 2018) %>%
-  # only keep 2014
-  filter(DATE == 7) %>%
-  # remove string so that it matches with traffic stop data
-  mutate(NAME = str_remove_all(NAME, ' County, North Carolina'))
+# create city-level stop and population dataset
+
+# get city populations
+
+place_pop <- map_df(pop_years, function(yr) {
+    get_acs(year = yr,
+            survey = "acs5", 
+            geography = "place", state = "NC", 
+            variables = "B01003_001") %>%
+    mutate(year = !!yr)
+}) %>%
+  # only keep cities with five years of population data
+  group_by(GEOID) %>%
+  mutate(n = n()) %>%
+  filter(n == !!n_years) %>%
+  # sum all five years of populations
+  # we can do this because traffic stops will be summed for the entire five years
+  group_by(GEOID, NAME) %>%
+  summarize(pop = sum(estimate)) %>%
+  # only keep towns with at least 7,500 people
+  ungroup() %>%
+  filter((pop/!!n_years) > 5000) %>%
+  # clean up city names so they match traffic stop names
+  mutate(NAME = str_remove_all(NAME, ", North Carolina"),
+         NAME = str_remove_all(NAME, " town| city| CDP| village"),
+         NAME = str_replace_all(NAME, "Charlotte", "Charlotte-Mecklenburg"))
+
+# get department data
+dept_stops <- nc_stops %>%
+  # only keep local police departments
+  filter(!is.na(department_name),
+         str_detect(department_name, 'Police Dep')) %>%
+  filter(!str_detect(department_name, 'College|University'),
+         !str_detect(department_name, '^NC|^UNC'),
+         !str_detect(department_name, 'Hospital')) %>%
+  # clean up department names to match population dataset
+  mutate(department_name = str_remove_all(department_name, " Police Department"),
+         department_name = str_trim(department_name)) %>%
+  # aggregate number of stops by department
+  group_by(department_name) %>%
+  count() %>%  
+  # merge in population data
+  left_join(place_pop, by = c('department_name' = 'NAME')) %>%
+  # only keep departments where we have popualtion data
+  drop_na(pop) %>%
+  mutate(year_pop = number((pop/!!n_years), accuracy = 1, big.mark = ','),
+         year_stops = number((n/!!n_years), accuracy = 1, big.mark = ','),
+         stops_per = n/(pop/100),
+         stops_per_tooltip = round(stops_per, 1))
 ```
 
-### Search Rates
+```{r fig.width = 5, fig.height = 14}
+# plot stops per 100 for each city
 
-### Hit Rates
+# title and tooltip for stops per 100 plots
+stops_per_title <-   "North Carolina City Speeding Stops Per 100 Residents: 2009 - 2013"
+stops_per_tooltip <- "<b>{point.department_name}</b><br>
+                      Stops per 100 residents: <b>{point.stops_per_tooltip}</b><br>
+                      Population: <b>{point.year_pop}</b><br>
+                      Stops per year: <b>{point.year_stops}</b>"
+
+h_city_bar <- dept_stops %>%
+  arrange(desc(stops_per)) %>%
+  hchart(., "bar", hcaes(x = department_name, y = stops_per)) %>%
+    hc_xAxis(labels = list(enabled = FALSE),
+             title = list(text = 'North Carolina cities')) %>%
+    hc_yAxis(title = list(text = "Stops per 100 residents")) %>%
+    hc_tooltip(
+      headerFormat = "",
+      pointFormat = stops_per_tooltip
+    ) %>%
+  hc_title(text = stops_per_title) %>% 
+  hc_subtitle(text = "Hover over bars to see city name")
+
+frameWidget(h_city_bar, height = 450, width = '95%')
+```
+
+
+```{r}
+# get place data
+nc_places <- places("North Carolina", progress_bar = FALSE) %>%
+  # only keep places that are in the stop dataset
+  filter(GEOID %in% !!dept_stops$GEOID)
+
+# merge place data with stop dataset
+dept_stops_geo <- dept_stops %>%
+  left_join(nc_places, by = 'GEOID') %>%
+    mutate(across(starts_with("INTPT"), ~as.numeric(.)))
+```
+
+```{r}
+# create leaflet map of places
+
+# popup label
+city_labels <- labs <- lapply(seq(nrow(dept_stops_geo)), function(i) {
+  paste0( '<b>', dept_stops_geo[i, "department_name"], '</b><br>', 
+          'Stops per 100 residents: <b>',  dept_stops_geo[i, "stops_per_tooltip"], '</b><br>',
+          'Population: <b>', dept_stops_geo[i, "year_pop"], '</b><br>',
+          'Stops per year: : <b>', dept_stops_geo[i, "year_stops"], '</b>') 
+})
+
+l <- dept_stops_geo %>%
+  rename(lng = INTPTLON, lat = INTPTLAT) %>%
+  leaflet() %>% 
+  setView(lng = -79.0193, lat = 35.7596, zoom = 7) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addCircleMarkers(
+   radius = ~stops_per,
+   label = lapply(city_labels, htmltools::HTML),
+   stroke = FALSE, fillOpacity = 0.3
+  )
+
+frameWidget(l, height = '400')
+```
