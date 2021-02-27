@@ -56,30 +56,21 @@ theme_set(post_theme)
 ```
 
 ```{r importData, eval = F, echo = F}
-# city_dataset_links <- c(
-# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_charlotte_2020_04_01.csv.gz",
-# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_charlotte_2020_04_01.csv.gz",
-# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_fayetteville_2020_04_01.csv.gz",
-# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_greensboro_2020_04_01.csv.gz",
-# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_raleigh_2020_04_01.csv.gz",
-# "https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_winston-salem_2020_04_01.csv.gz"
-# )
-
 nc_stops <- vroom('/home/shane/Documents/nc_statewide_2020_04_01.csv.zip',
                   col_select = -contains('raw'))
 
-# nc_stops <- map_df(city_dataset_links, vroom, col_select = -contains('raw'))
-
 nc_stops <- nc_stops %>%
-  filter(date > '2005-01-01') %>%
+  filter(str_detect(reason_for_stop, "^Speed")) %>%
   mutate(year = year(date)) %>%
+  # only keep between years 2010 and 2013 
+  # (2010 is first year of population data and 2013 is final full year of stop data)
+  filter(between(year, 2010, 2013)) %>%
   group_by(department_name, year) %>%
-  sample_frac(.02) %>%
+  sample_frac(.5) %>%
   ungroup()
 
 write_rds(nc_stops, 'nc_stops.rds')
 ```
-
 
 ```{r}
 nc_stops <- read_rds('nc_stops.rds')
@@ -89,7 +80,6 @@ nc_stops <- nc_stops %>%
   mutate(county_name = str_remove_all(county_name, ' County'),
          # rename misspelled county name
          county_name = str_replace_all(county_name, 'Tyrell', 'Tyrrell'))
-  
 ```
 
 ```{r}
@@ -111,51 +101,47 @@ county_pop <- get_estimates(geography = "county", state = 'NC',
                             breakdown = 'RACE',
                             time_series = T,
                             year = 2018) %>%
-  # only keep 2010 - 2015
-  filter(DATE %in% seq(3, 8)) %>%
-  # recode date
-  mutate(DATE = recode(DATE, !!!recode_date)) %>%
+  # remove string so that it matches with census data
+  # only keep 2010 - 2014
+  filter(DATE %in% seq(3, 6)) %>%
   # remove string so that it matches with traffic stop data
   mutate(NAME = str_remove_all(NAME, ' County, North Carolina')) %>%
   # make density and population different columns
   pivot_wider(id_cols = c('NAME', 'DATE', 'GEOID'),
-              names_from = 'variable', values_from = 'value')
-```
+              names_from = 'variable', values_from = 'value') %>%
+  # aggregate 2010 - 2014 so it can be merged with aggregated stop data
+  # sum population so we can divide by total stops between 2010-2014
+  group_by(NAME, GEOID) %>%
+  summarize(POP = sum(POP),
+            DENSITY = mean(DENSITY))
 
-## Number of stops per 100 residents
+```
 
 ```{r}
 # per capita number of stops ----------------
 
 # calculate number of stops overall by year
 per_capita_stops <- nc_stops %>%
-  group_by(county_name, year) %>%
-  filter(between(year, 2010, 2014), !is.na(county_name)) %>%
+  filter(!is.na(county_name)) %>%
+  group_by(county_name) %>%
   count() %>%
-  mutate(n = n / .02) %>% # delete
-  arrange(year, desc(n)) %>%
+  arrange(county_name) %>%
   left_join(county_pop, 
-            by = c('year' = 'DATE', 'county_name' = 'NAME')) %>%
+            by = c('county_name' = 'NAME')) %>%
   # calculate stops per 100 people
-  mutate(stops_per = n/(POP/100))
-
-# get most recent year
-recent_year <- max(nc_stops$year)
+  mutate(stops_per = n/(POP/100)) %>%
+  # round stops in new column for tooltip
+  mutate(stops_tooltip = round(stops_per, 1))
 ```
 
-### Counties with the most stops per 100 residents
+## Counties with the most stops per 100 residents
 
 ```{r fig.width = 5, fig.height = 14}
 # title and tooltip for stops per 100 plots
-stops_per_title <-   "North Carolina Traffic Stops Per 100 Residents in 2014"
+stops_per_title <-   "North Carolina Speeding Stops Per 100 Residents Per Year 2010 - 2013"
 stops_per_tooltip <- "<b>{point.county_name}</b><br>Stops per 100 residents: <b>{point.stops_tooltip}</b>"
 
-per_capita_stops_recent <- per_capita_stops %>%
-  filter(year == !!recent_year) %>%
-  # round stops in new column for tooltip
-  mutate(stops_tooltip = round(stops_per, 1))
-
-per_capita_stops_recent %>%
+per_capita_stops %>%
   arrange(desc(stops_per)) %>%
   hchart(., "bar", hcaes(x = county_name, y = stops_per)) %>%
     hc_xAxis(labels = list(enabled = FALSE),
@@ -172,13 +158,10 @@ per_capita_stops_recent %>%
 ### Map of stops per 100 residents
 
 ```{r}
-
-# get geoJSON map data for NC counties
-nc_mapdata <- get_data_from_map(download_map_data("countries/us/us-nc-all"))
-
+# chloropath map of speeding stops per 100 residents by NC county
 hcmap(
   "countries/us/us-nc-all",
-  data = per_capita_stops_recent,
+  data = per_capita_stops,
   value = "stops_per",
   joinBy = c("fips", "GEOID"),
   dataLabels = list(enabled = FALSE),
@@ -193,33 +176,81 @@ hcmap(
   hc_subtitle(text = "Hover over county to see county name and rate")
 ```
 
-### Relationship between county population density and number of stops
+## Relationship between county population density and number of stops
 
 ```{r}
-per_capita_stops_recent %>%
+per_capita_stops %>%
   mutate(density_tooltip = round(DENSITY, 0)) %>%
-  hchart(., "scatter", hcaes(x = DENSITY, y = n)) %>%
-  hc_xAxis(type = 'logarithmic') %>%
-  hc_yAxis(type = 'logarithmic') %>%
-  hc_tooltip(
-      headerFormat = "",
-      pointFormat = "<b>{point.county_name}</b><br># of Stops: <b>{point.n}</b><br>Density: <b>{point.density_tooltip}</b>"
-    )
+  hchart(., "scatter", hcaes(x = DENSITY, y = stops_per)) %>%
+    hc_xAxis(type = 'logarithmic') %>%
+    hc_tooltip(
+        headerFormat = "",
+        pointFormat = "<b>{point.county_name}</b>
+                      <br># of Stops: <b>{point.n}</b>
+                      <br>Density: <b>{point.density_tooltip}</b>"
+      ) %>%
+    hc_title(text = "Relationship between county population density and per capita speeding stops") %>% 
+    hc_subtitle(text = "Each dot is a North Carolina county | Data reflects 2010 - 2014") %>%
+    hc_xAxis(title = list(text = 'County population density')) %>%
+    hc_yAxis(title = list(text = "Number of speeding stops per 100 residents")) 
+```
+
+## Days with the highest number of stops
+
+```{r}
+# create dataset of daily aggregate number of of stops for all NC
+
+# mark counties as interstate counties
+# i_40 <- c('Haywood', 'Buncombe', 'McDowell', 'Burke', 'Catawba', 'Iredell', 'Davie', 'Forsyth', 'Guilford', 
+#           'Alamance', 'Orange', 'Durham', 'Wake', 'Johnston', 'Sampson', 'Duplin', 'Pender', 'New Hanover')
+# 
+# i_95 <- c('Robeson', 'Cumberland', 'Harnett', 'Johnston', 'Wilson', 'Nash', 'Halifax', 'Northampton')
+
+daily_stops <- nc_stops %>%
+  filter(year == max(year)) %>%
+  # get daily totals for each interstate group
+  drop_na(date) %>%
+  count(date) %>%
+  # calculate percentage of total number of stops
+  ungroup() %>%
+  mutate(total_stops = sum(n),
+         perc_total = n / total_stops) %>%
+  arrange(date)
+
+# create abbreviated month and day for tooltip
+daily_stops$date_tooltip <- glue("{month.abb[month(daily_stops$date)]} {day(daily_stops$date)}, {year(daily_stops$date)}")
 ```
 
 ```{r}
-ggplot(per_capita_stops_recent, aes(DENSITY, n)) +
-  geom_point(color = single_plot_color) +
-  scale_x_log10() +
-  scale_y_log10() +
-  geom_smooth(color = 'black', se = F) +
-  labs(title = 'Relationship Between Traffic Stops and Pop. Density',
-       subtitle = 'Each Dot is A North Carolina County',
-       x = 'County population density',
-       y = 'Number of traffic stops in 2014')
+# line plot of daily stops
+hchart(daily_stops, 'line', hcaes(x = date, y = n)) %>% 
+  hc_xAxis(type = "datetime") %>%
+  hc_tooltip(
+    headerFormat = "",
+    pointFormat = "<b>{point.date_tooltip}</b>
+                      <br>Number of stops: <b>{point.n}</b>"
+  ) %>%
+  hc_title(text = 'Number Of Speeding Stops Per Day in North Carolina - 2013') %>% 
+  hc_yAxis(title = list(text = '# of stops')) %>%
+  hc_xAxis(title = list(text = NULL)) %>%
+  # add lines and bands for dates
+  hc_xAxis(
+    plotLines = list(
+      list(label = list(text = "July 4th"), color = "#7F7F7F", width = 2, zIndex = 1,
+           value = datetime_to_timestamp(as.Date('2013-07-04')), dashStyle = 'Dash'),
+      list(label = list(text = "Christmas"), color = "#7F7F7F", width = 2, zIndex = 2,
+           value = datetime_to_timestamp(as.Date('2013-12-25')), dashStyle = 'Dash'),
+      list(label = list(text = "Labor Day"), color = "#7F7F7F", width = 2, zIndex = 3,
+           value = datetime_to_timestamp(as.Date('2013-09-02')), dashStyle = 'Dash'),
+      list(label = list(text = "Thanksgiving"), color = "#7F7F7F", width = 2, zIndex = 4,
+           value = datetime_to_timestamp(as.Date('2013-11-28')), dashStyle = 'Dash'),
+      list(label = list(text = "Memorial Day"), color = "#7F7F7F", width = 2, zIndex = 5,
+           value = datetime_to_timestamp(as.Date('2013-05-27')), dashStyle = 'Dash')
+    )
+  )
 ```
 
-### Relationship between percentage majority and stops per 100
+## Relationship between percentage majority and stops per 100
 
 ```{r}
 county_pop_race <- get_estimates(geography = "county", state = 'NC',
@@ -235,7 +266,5 @@ county_pop_race <- get_estimates(geography = "county", state = 'NC',
 ```
 
 ### Search Rates
-
-
 
 ### Hit Rates
