@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Analysis of North Carolina Traffic Stop Data"
+title: "How Often Do People Get Pulled Over for Speeding in North Carolina?"
 author: ''
 date: '2021-02-17'
 slug: exploratory-analysis-of-north-carolina-traffic-stop-data
@@ -9,7 +9,7 @@ categories:
 - Highcharts
 - data visualization
 tags: []
-subtitle: Visualizing traffic stops in North Carolina
+subtitle: Visualizing speeding stops in North Carolina
 summary: ''
 authors: []
 lastmod: '2021-02-17T19:08:49-05:00'
@@ -58,7 +58,25 @@ post_theme <- theme_minimal() +
         axis.title = element_text(size = 10))
 
 theme_set(post_theme)
+
+# standard credits to all to all high charts plots
+
+# credits to be used on all plots
+add_credits <- function(hc) {
+  hc %>%
+    hc_credits(
+      enabled = TRUE,
+      text = "Data source: The Stanford Open Policing Project | US Census Bureau Pop. Estimates",
+      href = FALSE
+  )
+}
 ```
+
+We all have preconceptions about cops and speeding tickets. That small town is a speed trap. There are more cops out on holidays like the 4th of July and Memorial Day, just waiting to pull people over. Don't get a red sports car because you are more likely to get a speeding ticket. But, do we know if any of these preconceptions are true?
+
+[The Stanford Open Policing Project](https://openpolicing.stanford.edu/) built a repository of traffic stop data. The repository contains data from over 40 states. One of the states with the most complete data is my home state, North Carolina, where there are data from over 24 million police stops. 
+
+We'll take a first look at the NC data in this post. Focusing on stops for speeding, we'll look at which counties and cities have the most speeding stops per 100 residents and which days see the most stops. We may not answer any of the pressing questions from the introduction, but this post will give us a starting point in answering deeper questions in later posts.
 
 ```{r importData, cache = T}
 nc_stops <- vroom('/home/shane/Documents/nc_statewide_2020_04_01.csv.zip',
@@ -119,6 +137,8 @@ county_pop <- get_estimates(geography = "county", state = 'NC',
 
 ```
 
+## Which counties have the most speeding stops?
+
 ```{r}
 # per capita number of stops ----------------
 
@@ -139,9 +159,13 @@ per_capita_stops <- nc_stops %>%
          year_stops = number((n/!!n_years), accuracy = 1, big.mark = ','))
 ```
 
-## Counties with the most stops per 100 residents
+We'll start by looking at speeding stops per 100 residents in each county. Mathematically, this is the number of stops for speeding within in a county divided by the county's population, times 100. In calculating the number of stops, all departments are included: state troopers, county sheriffs, and local police departments. As long as the stop occurred in the county, it's counted. Data from 2009 to 2013 - the last year of complete data - are aggregated. Values represent the average yearly stops per 100 residents among these four years.
 
-```{r fig.width = 5, fig.height = 14}
+### Map of stops per county
+
+The map below shows each county's speeding stops per 100 residents. No associations pop out from the map. Rates are not higher along the cost than in the mountains, I-40 counties do not have higher rates, border counties do not have higher rates, etc. Nothing stands out.
+
+```{r}
 # title and tooltip for stops per 100 plots
 stops_per_title <-   "North Carolina County Speeding Stops Per 100 Residents: 2009 - 2013"
 
@@ -150,25 +174,6 @@ stops_per_tooltip <- "<b>{point.county_name}</b><br>
                       Population: <b>{point.year_pop}</b><br>
                       Stops per year: <b>{point.year_stops}</b>"
 
-h_couty_bar <- per_capita_stops %>%
-  arrange(desc(stops_per)) %>%
-  hchart(., "bar", hcaes(x = county_name, y = stops_per)) %>%
-    hc_xAxis(labels = list(enabled = FALSE),
-             title = list(text = 'North Carolina counties')) %>%
-    hc_yAxis(title = list(text = "Stops per 100 residents")) %>%
-    hc_tooltip(
-      headerFormat = "",
-      pointFormat = stops_per_tooltip
-    ) %>%
-  hc_title(text = stops_per_title) %>% 
-  hc_subtitle(text = "Hover over bars to see county name")
-
-frameWidget(h_couty_bar, height = 400, width = '95%')
-```
-
-### Map of stops per 100 residents
-
-```{r}
 # chloropath map of speeding stops per 100 residents by NC county
 h_county_cloro <- hcmap(
   "countries/us/us-nc-all",
@@ -184,12 +189,60 @@ h_county_cloro <- hcmap(
     )
   ) %>%
   hc_title(text = stops_per_title) %>% 
-  hc_subtitle(text = "Hover over county to see county name and rate")
+  hc_subtitle(text = "Hover over county to see county name and rate") %>%
+  add_credits()
 
 frameWidget(h_county_cloro, height = 400, width = '95%')
 ```
 
-## Relationship between county population density and number of stops
+### Bar chart of stops per county
+
+The bar chart below lets us get a better feel for the distribution in values between counties. We see a large amount of variation. Looking at both extremes in the distribution, Camden's stops per 100 residents is over 10 times the state rate and Mitchell's is less than a tenth of the state rate. 
+
+Part of the inter-county differences are explained by random variation. And for this factor, [we would expect](http://www.stat.columbia.edu/~gelman/research/published/allmaps.pdf) counties with smaller populations to have more random variation. Because of this, it's not a surprise that small-population counties typically make up the extreme values on both tails of the distribution. However, Camden's is reeeaaaalllly extreme. Unfortunately, answering the why question is beyond this post's scope.
+
+```{r}
+# calcualte state-level rate to add to bar chart
+nc_avg_stops_per <- per_capita_stops %>%
+  ungroup() %>%
+  summarize(
+    n = sum(n),
+    POP = sum(POP),
+    stops_per = n/(POP/100)
+  ) %>%
+  select(stops_per) %>%
+  .[[1]]
+
+
+# bar chart of county stops per 100 residents
+h_couty_bar <- per_capita_stops %>%
+  arrange(desc(stops_per)) %>%
+  hchart(., "bar", hcaes(x = county_name, y = stops_per)) %>%
+    hc_xAxis(labels = list(enabled = FALSE),
+             title = list(text = 'North Carolina counties')) %>%
+    hc_yAxis(title = list(text = "Stops per 100 residents"),
+              # add north carolina average as vertical line
+             plotLines = list(
+               list(label = list(text = "NC stops per 100", verticalAlign = 'middle', textAlign = 'left'), 
+                    color = "#7F7F7F", width = 2, zIndex = 5,
+                    value = nc_avg_stops_per, dashStyle = 'Dash'))
+             ) %>%
+    hc_tooltip(
+      headerFormat = "",
+      pointFormat = stops_per_tooltip
+    ) %>%
+  hc_title(text = stops_per_title) %>% 
+  hc_subtitle(text = "Hover over bars to see county name") %>%
+  add_credits()
+
+frameWidget(h_couty_bar, height = 400, width = '95%')
+```
+
+### Relationship between county population density and number of stops
+
+To further look into the relationship between county populations and the number of stops, the next plot highlights the association between each county's population density (x-axis) and the number of stops per resident (y-axis). However, there is no association. If you were to overlay a single fit line on the points, that line would be horizontal.
+
+Now, there is more variation in low-population density counties. But again, this is expected because the lower populations bring more randomness.
 
 ```{r}
 h_county_scatter <- per_capita_stops %>%
@@ -198,70 +251,22 @@ h_county_scatter <- per_capita_stops %>%
     hc_xAxis(type = 'logarithmic') %>%
     hc_tooltip(
         headerFormat = "",
-        pointFormat = "<b>{point.county_name}</b>
-                      <br># of Stops: <b>{point.n}</b>
-                      <br>Density: <b>{point.density_tooltip}</b>"
+        pointFormat = stops_per_tooltip
       ) %>%
     hc_title(text = "Relationship between county population density and per capita speeding stops") %>% 
     hc_subtitle(text = "Each dot is a North Carolina county | Data reflects 2009 - 2013") %>%
     hc_xAxis(title = list(text = 'County population density')) %>%
-    hc_yAxis(title = list(text = "Number of speeding stops per 100 residents")) 
+    hc_yAxis(title = list(text = "Number of speeding stops per 100 residents")) %>%
+    add_credits()
 
 frameWidget(h_county_scatter, height = 300, width = '95%')
 ```
 
-## Days with the highest number of stops
+## Which cities have the most speeding stops?
 
-```{r}
-# create dataset of daily aggregate number of of stops for all NC
+We'll now move from counties to cities and towns. The data set only includes the stop's county, it does not record the city. But, the department is included. For example, Winston-Salem Police Department is one department. To look at stops per city, we'll calculate the number of stops each town or city police department made. Thus, our city aggregates will not include stops by state troopers and county sheriffs. Therefore, we're looking not at which cities have the highest number of stops per 100 residents, but which local police departments make the most stops per 100 residents.
 
-daily_stops <- nc_stops %>%
-  filter(year == max(year)) %>%
-  # get daily totals for each interstate group
-  drop_na(date) %>%
-  count(date) %>%
-  # calculate percentage of total number of stops
-  ungroup() %>%
-  mutate(total_stops = sum(n),
-         perc_total = n / total_stops) %>%
-  arrange(date)
-
-# create abbreviated month and day for tooltip
-daily_stops$date_tooltip <- glue("{month.abb[month(daily_stops$date)]} {day(daily_stops$date)}, {year(daily_stops$date)}")
-```
-
-```{r}
-# line plot of daily stops
-h_county_daily <- hchart(daily_stops, 'line', hcaes(x = date, y = n)) %>% 
-  hc_xAxis(type = "datetime") %>%
-  hc_tooltip(
-    headerFormat = "",
-    pointFormat = "<b>{point.date_tooltip}</b>
-                      <br>Number of stops: <b>{point.n}</b>"
-  ) %>%
-  hc_title(text = 'Number Of Speeding Stops Per Day in North Carolina - 2013') %>% 
-  hc_yAxis(title = list(text = '# of stops')) %>%
-  hc_xAxis(title = list(text = NULL)) %>%
-  # add lines and bands for dates
-  hc_xAxis(
-    plotLines = list(
-      list(label = list(text = "July 4th"), color = "#7F7F7F", width = 2, zIndex = 1,
-           value = datetime_to_timestamp(as.Date('2013-07-04')), dashStyle = 'Dash'),
-      list(label = list(text = "Christmas"), color = "#7F7F7F", width = 2, zIndex = 2,
-           value = datetime_to_timestamp(as.Date('2013-12-25')), dashStyle = 'Dash'),
-      list(label = list(text = "Labor Day"), color = "#7F7F7F", width = 2, zIndex = 3,
-           value = datetime_to_timestamp(as.Date('2013-09-02')), dashStyle = 'Dash'),
-      list(label = list(text = "Thanksgiving"), color = "#7F7F7F", width = 2, zIndex = 4,
-           value = datetime_to_timestamp(as.Date('2013-11-28')), dashStyle = 'Dash'),
-      list(label = list(text = "Memorial Day"), color = "#7F7F7F", width = 2, zIndex = 5,
-           value = datetime_to_timestamp(as.Date('2013-05-27')), dashStyle = 'Dash')
-    )
-  )
-
-frameWidget(h_county_daily, height = 300, width = '95%')
-```
-
-## Stops by department
+Only cities with over 5,000 people are included. And of course, we only include cities where we have both population and traffic stop data.
 
 ```{r}
 # create city-level stop and population dataset
@@ -315,32 +320,9 @@ dept_stops <- nc_stops %>%
          stops_per_tooltip = round(stops_per, 1))
 ```
 
-```{r fig.width = 5, fig.height = 14}
-# plot stops per 100 for each city
+### Map of stops per city by local police departments
 
-# title and tooltip for stops per 100 plots
-stops_per_title <-   "North Carolina City Speeding Stops Per 100 Residents: 2009 - 2013"
-stops_per_tooltip <- "<b>{point.department_name}</b><br>
-                      Stops per 100 residents: <b>{point.stops_per_tooltip}</b><br>
-                      Population: <b>{point.year_pop}</b><br>
-                      Stops per year: <b>{point.year_stops}</b>"
-
-h_city_bar <- dept_stops %>%
-  arrange(desc(stops_per)) %>%
-  hchart(., "bar", hcaes(x = department_name, y = stops_per)) %>%
-    hc_xAxis(labels = list(enabled = FALSE),
-             title = list(text = 'North Carolina cities')) %>%
-    hc_yAxis(title = list(text = "Stops per 100 residents")) %>%
-    hc_tooltip(
-      headerFormat = "",
-      pointFormat = stops_per_tooltip
-    ) %>%
-  hc_title(text = stops_per_title) %>% 
-  hc_subtitle(text = "Hover over bars to see city name")
-
-frameWidget(h_city_bar, height = 450, width = '95%')
-```
-
+The map below shows the number of speeding stops per 100 city residents for each police department. The circle size corresponds to the number of speeding stops per 100 residents, with larger circles representing more stops per 100 residents. I'm not sure if there is anything of interest in terms of spatial relationships, but readers can draw their own conclusions.
 
 ```{r}
 # get place data
@@ -377,4 +359,91 @@ l <- dept_stops_geo %>%
   )
 
 frameWidget(l, height = '400')
+```
+
+### Bar chart of stops per city
+
+The next graph shows the distribution of stops per 100 residents by local police departments. Like the county distributions, there is a large amount of variation. It's tempting to tell ourselves just-so stories to explain the variation and those stories might even be correct. For example, Aberdeen and Jacksonville have two of the three highest rates. That's gotta be those military kids, right? We'll this could be true. But, further analysis is needed to justify the story.
+
+```{r}
+# plot stops per 100 for each city
+
+# title and tooltip for stops per 100 plots
+stops_per_title <-   "North Carolina City Speeding Stops Per 100 Residents: 2009 - 2013"
+stops_per_tooltip <- "<b>{point.department_name}</b><br>
+                      Stops per 100 residents: <b>{point.stops_per_tooltip}</b><br>
+                      Population: <b>{point.year_pop}</b><br>
+                      Stops per year: <b>{point.year_stops}</b>"
+
+h_city_bar <- dept_stops %>%
+  arrange(desc(stops_per)) %>%
+  hchart(., "bar", hcaes(x = department_name, y = stops_per)) %>%
+    hc_xAxis(labels = list(enabled = FALSE),
+             title = list(text = 'North Carolina cities')) %>%
+    hc_yAxis(title = list(text = "Stops per 100 residents")) %>%
+    hc_tooltip(
+      headerFormat = "",
+      pointFormat = stops_per_tooltip
+    ) %>%
+  hc_title(text = stops_per_title) %>% 
+  hc_subtitle(text = "Hover over bars to see city name") %>%
+  add_credits()
+
+frameWidget(h_city_bar, height = 450, width = '95%')
+```
+
+## Days with the highest number of stops
+
+Finally, let's look at which days have the highest number of speeding stops in the graph below. Memorial Day, 4th of July, and Labor day show spikes in the number of speeding stops. Actually, the Memorial Day spike spans the whole weekend, from Friday to Monday. And the Thanksgiving jump also incorporates Black Friday. Finally, there is an additional spike in late March, which could be spring break related.
+
+As an important caveat, these spikes do not tell us whether we are more likely to get pulled over on the days with spikes. The spikes could occur for two reasons: (1) more people are out driving, and / or (2) police place a greater emphasis on pulling over speeders. We would need data on the number of drivers each day to disentangle the two reasons. And that might be another blog post.
+
+```{r}
+# create dataset of daily aggregate number of of stops for all NC
+
+daily_stops <- nc_stops %>%
+  filter(year == max(year)) %>%
+  # get daily totals for each interstate group
+  drop_na(date) %>%
+  count(date) %>%
+  # calculate percentage of total number of stops
+  ungroup() %>%
+  mutate(total_stops = sum(n),
+         perc_total = n / total_stops) %>%
+  arrange(date)
+
+# create abbreviated month and day for tooltip
+daily_stops$date_tooltip <- glue("{month.abb[month(daily_stops$date)]} {day(daily_stops$date)}, {year(daily_stops$date)}")
+```
+
+```{r}
+# line plot of daily stops
+h_county_daily <- hchart(daily_stops, 'line', hcaes(x = date, y = n)) %>% 
+  hc_xAxis(type = "datetime") %>%
+  hc_tooltip(
+    headerFormat = "",
+    pointFormat = "<b>{point.date_tooltip}</b>
+                      <br>Number of stops: <b>{point.n}</b>"
+  ) %>%
+  hc_title(text = 'Number Of Speeding Stops Per Day in North Carolina - 2013') %>% 
+  hc_yAxis(title = list(text = '# of stops')) %>%
+  hc_xAxis(title = list(text = NULL)) %>%
+  # add lines and bands for dates
+  hc_xAxis(
+    plotLines = list(
+      list(label = list(text = "July 4th"), color = "#7F7F7F", width = 2, zIndex = 1,
+           value = datetime_to_timestamp(as.Date('2013-07-04')), dashStyle = 'Dash'),
+      list(label = list(text = "Christmas"), color = "#7F7F7F", width = 2, zIndex = 2,
+           value = datetime_to_timestamp(as.Date('2013-12-25')), dashStyle = 'Dash'),
+      list(label = list(text = "Labor Day"), color = "#7F7F7F", width = 2, zIndex = 3,
+           value = datetime_to_timestamp(as.Date('2013-09-02')), dashStyle = 'Dash'),
+      list(label = list(text = "Thanksgiving"), color = "#7F7F7F", width = 2, zIndex = 4,
+           value = datetime_to_timestamp(as.Date('2013-11-28')), dashStyle = 'Dash'),
+      list(label = list(text = "Memorial Day"), color = "#7F7F7F", width = 2, zIndex = 5,
+           value = datetime_to_timestamp(as.Date('2013-05-27')), dashStyle = 'Dash')
+    )
+  ) %>%
+  add_credits()
+
+frameWidget(h_county_daily, height = 300, width = '95%')
 ```
