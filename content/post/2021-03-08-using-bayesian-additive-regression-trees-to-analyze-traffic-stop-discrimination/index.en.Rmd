@@ -1,0 +1,159 @@
+---
+title: Using Bayesian Additive Regression Trees to Analyze Traffic Stop Discrimination
+author: ''
+date: '2021-03-08'
+slug: using-bayesian-additive-regression-trees-to-analyze-traffic-stop-discrimination
+categories:
+  - bayesian analysis
+  - traffic stops
+  - Bayesian Additive Regression Trees
+tags: []
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2021-03-08T19:22:36-05:00'
+featured: no
+image:
+  caption: '<span>Photo by <a href="https://unsplash.com/@gerandeklerk?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Geran de Klerk</a> on <a href="https://unsplash.com/s/photos/forest?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>'
+  focal_point: ''
+  preview_only: no
+projects: []
+links:
+- icon: github
+  icon_pack: fab
+  name: Github
+  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2021-03-08-using-bayesian-additive-regression-trees-to-analyze-traffic-stop-discrimination/index.en.Rmd
+draft: yes
+---
+
+```{r setup, echo = F}
+knitr::opts_chunk$set(echo = T,
+                      message = F,
+                      warning = F,
+                      error = F)
+```
+
+```{r}
+# create ggplot theme for this post
+post_theme <- theme_minimal() +
+  theme(legend.position = 'bottom',
+        plot.title = element_text(size = 11),
+        plot.subtitle = element_text(size = 10),
+        axis.title = element_text(size = 10))
+
+theme_set(post_theme)
+
+# standard credits to all to all high charts plots
+
+# credits to be used on all plots
+add_credits <- function(hc) {
+  hc %>%
+    hc_credits(
+      enabled = TRUE,
+      text = "Data source: The Stanford Open Policing Project | US Census Bureau Pop. Estimates",
+      href = FALSE
+  )
+}
+```
+
+```{r importLibraries}
+library(glue)
+library(gt)
+library(vroom)
+library(tidycensus)
+library(lubridate)
+library(highcharter)
+library(scales)
+library(leaflet)
+library(tigris)
+library(widgetframe)
+library(tidyverse)
+```
+
+## Stops per 100 residents for black and white drivers
+
+```{r importData, eval = F, cache = T}
+# download entire state traffic stop dataset
+nc_stops <- vroom('https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_statewide_2020_04_01.csv.gz',
+                  col_select = -contains('raw'))
+
+# get 2009 - 2013 5 year and aggregate
+pop_years <- seq(2009, 2013, 1)
+
+n_years <- length(pop_years)
+
+nc_stops <- nc_stops %>%
+  mutate(year = year(date)) %>%
+  # only keep between years 2009 and 2013 
+  # 2013 is final full year of stop data
+  filter(year %in% !!pop_years)
+
+nc_stops %>%
+  group_by(year, county_name) %>%
+  sample_frac(.20) %>%
+  write_rds('nc_stops.rds')
+```
+
+```{r}
+nc_stops <- read_rds('nc_stops.rds')
+```
+
+```{r importCensus, cache = T}
+# census and shapefile information ----------------
+# recode integers fo dates to years
+recode_date <- c(
+  `3` = 2010,
+  `4` = 2011,
+  `5` = 2012,
+  `6` = 2013,
+  `7` = 2014,
+  `8` = 2015
+)
+
+# import population data by county and race
+county_pop <- get_estimates(geography = "county", state = 'NC',
+                            product = 'characteristics', 
+                            breakdown = c('RACE', 'HISP'),
+                            breakdown_labels = T,
+                            time_series = T,
+                            year = 2018) 
+
+# calculate aggregate percentage of population by race
+county_pop_agg <- county_pop %>%
+  # aggregate population by race for each county
+  group_by(GEOID, NAME, RACE, HISP) %>%
+  summarize(agg_pop = sum(value)) %>%
+  ungroup() %>%
+  group_by(GEOID, NAME) %>%
+  # the max value comes from the row with the total county pop
+  mutate(total_pop = max(agg_pop)) %>%
+  ungroup() %>%
+  # calculate percentage total
+  mutate(perc_pop_agg = agg_pop / total_pop) %>%
+  # only keep white, black, and hispanic
+  filter(# 'Both Hisp Origins' aggregates Hisp and non-Hisp for a race; we do not need the aggregate
+         HISP != 'Both Hispanic Origins') %>%
+  # make the All Races  race that is Hisp the Hisp race
+  mutate(RACE = ifelse(RACE == 'All races' & HISP == 'Hispanic', 'Hispanic / Latino', RACE)) %>%
+  # only need white, black, and hispanic
+  filter(RACE %in% c('White alone', 'Black alone', 'Hispanic / Latino'),
+         # do not need hispanic breakdown by race
+         RACE == 'Hispanic / Latino' | HISP == 'Non-Hispanic') %>%
+  # remove 'alone' phrase from race
+  mutate(RACE = str_remove_all(RACE, ' alone'),
+         # remove string so that it matches with traffic stop data
+         NAME = str_remove_all(NAME, ' County, North Carolina')) %>%
+  # don't need the hispanic column anymore
+  select(-HISP)
+
+# %>%
+#   # make density and population different columns
+#   pivot_wider(id_cols = c('NAME', 'DATE', 'GEOID'),
+#               names_from = 'variable', values_from = 'value') %>%
+#   # aggregate 2010 - 2014 so it can be merged with aggregated stop data
+#   # sum population so we can divide by total stops between 2010-2014
+#   group_by(NAME, GEOID) %>%
+#   summarize(POP = sum(POP),
+#             DENSITY = mean(DENSITY))
+```
+```

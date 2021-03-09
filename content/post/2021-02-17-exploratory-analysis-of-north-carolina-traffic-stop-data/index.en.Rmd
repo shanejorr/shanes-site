@@ -78,8 +78,9 @@ We all have preconceptions about cops and speeding tickets. That small town is a
 
 We'll take a first look at the NC data in this post. Focusing on stops for speeding, we'll look at which counties and cities have the most speeding stops per 100 residents and which days see the most stops. We may not answer any of the pressing questions from the introduction, but this post will give us a starting point in answering deeper questions in later posts.
 
-```{r importData, cache = T}
-nc_stops <- vroom('/home/shane/Documents/nc_statewide_2020_04_01.csv.zip',
+```{r importData}
+# download entire state traffic stop dataset
+nc_stops <- vroom('https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_statewide_2020_04_01.csv.gz',
                   col_select = -contains('raw'))
 
 # get 2009 - 2013 5 year and aggregate
