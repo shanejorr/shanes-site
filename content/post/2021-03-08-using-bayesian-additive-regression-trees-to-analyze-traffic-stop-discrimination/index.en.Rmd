@@ -33,6 +33,20 @@ knitr::opts_chunk$set(echo = T,
                       error = F)
 ```
 
+```{r importLibraries}
+library(glue)
+library(gt)
+library(vroom)
+library(tidycensus)
+library(lubridate)
+library(highcharter)
+library(scales)
+library(leaflet)
+library(tigris)
+library(widgetframe)
+library(tidyverse)
+```
+
 ```{r}
 # create ggplot theme for this post
 post_theme <- theme_minimal() +
@@ -54,21 +68,46 @@ add_credits <- function(hc) {
       href = FALSE
   )
 }
+
+scatter_stops_per <- function(df, second_race, plot_title, y_title) {
+  
+  # scatter plot of stops per 100 residents for white and black / hispanic drivers
+  # second_race is the race to compare with white
+  
+  # max axis point
+  max_point <- 45
+  
+  # tooltip
+  scatter_tooltip <- "<b>{point.county_name}</b><br>
+                      Stops per 100 residents (Black): <b>{point.black}</b><br>
+                      Stops per 100 residents (White): <b>{point.white}</b><br>
+                      Stops per 100 residents (Hispanic): <b>{point.hispanic}</b><br>
+                      County population (2013): <b>{point.value}</b><br>"
+  
+  df %>%
+    hchart("scatter", hcaes(x = 'white', y = .data[[second_race]])) %>%
+    hc_add_series(name = 'line',
+                  data = data.frame(
+                    x = seq(1, max_point, 1),
+                    y = seq(1, max_point, 1),
+                    type = 'line',
+                    marker = list(enabled = FALSE)
+                  )) %>%
+    # remove tooltip for line
+    hc_plotOptions(line = list(enableMouseTracking = FALSE)) %>%
+    hc_xAxis(min = 1, max = max_point, type = 'logarithmic',
+             title = list(text = 'Stops per 100 residents for White drivers')) %>% 
+    hc_yAxis(min = 1, max = max_point, type = 'logarithmic',
+             title = list(text = y_title)) %>%
+    hc_tooltip(
+        headerFormat = "",
+        pointFormat = scatter_tooltip
+    ) %>%
+    hc_title(text = plot_title)
+}
 ```
 
-```{r importLibraries}
-library(glue)
-library(gt)
-library(vroom)
-library(tidycensus)
-library(lubridate)
-library(highcharter)
-library(scales)
-library(leaflet)
-library(tigris)
-library(widgetframe)
-library(tidyverse)
-```
+
 
 ## Stops per 100 residents for black and white drivers
 
@@ -77,14 +116,14 @@ library(tidyverse)
 nc_stops <- vroom('https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_statewide_2020_04_01.csv.gz',
                   col_select = -contains('raw'))
 
-# get 2009 - 2013 5 year and aggregate
+# get 2010 - 2013 5 year and aggregate
 pop_years <- seq(2009, 2013, 1)
 
 n_years <- length(pop_years)
 
 nc_stops <- nc_stops %>%
   mutate(year = year(date)) %>%
-  # only keep between years 2009 and 2013 
+  # only keep between years 2010 and 2013 
   # 2013 is final full year of stop data
   filter(year %in% !!pop_years)
 
@@ -99,8 +138,9 @@ nc_stops <- read_rds('nc_stops.rds')
 ```
 
 ```{r importCensus, cache = T}
-# census and shapefile information ----------------
-# recode integers fo dates to years
+# racial populations by county from census ----------------
+
+# recode integers for dates to years
 recode_date <- c(
   `3` = 2010,
   `4` = 2011,
@@ -110,50 +150,110 @@ recode_date <- c(
   `8` = 2015
 )
 
-# import population data by county and race
+# get 2013 overall county populations
 county_pop <- get_estimates(geography = "county", state = 'NC',
-                            product = 'characteristics', 
-                            breakdown = c('RACE', 'HISP'),
-                            breakdown_labels = T,
+                            product = 'population', 
                             time_series = T,
-                            year = 2018) 
+                            year = 2018) %>%
+  # only keep 2013 and only keep population (not density)
+  filter(DATE == 6,
+         variable == 'POP') %>%
+  mutate(NAME = str_remove_all(NAME, ' County, North Carolina')) %>%
+  select(NAME, value)
+
+# import population data by county and race
+county_pop_race <- get_estimates(geography = "county", state = 'NC',
+                                product = 'characteristics', 
+                                breakdown = c('RACE', 'HISP'),
+                                breakdown_labels = T,
+                                time_series = T,
+                                year = 2018) 
 
 # calculate aggregate percentage of population by race
-county_pop_agg <- county_pop %>%
+county_pop_agg <- county_pop_race %>%
+  # only keep 2010 - 2013
+  filter(between(DATE, 3, 6)) %>%
   # aggregate population by race for each county
   group_by(GEOID, NAME, RACE, HISP) %>%
   summarize(agg_pop = sum(value)) %>%
   ungroup() %>%
-  group_by(GEOID, NAME) %>%
-  # the max value comes from the row with the total county pop
-  mutate(total_pop = max(agg_pop)) %>%
-  ungroup() %>%
-  # calculate percentage total
-  mutate(perc_pop_agg = agg_pop / total_pop) %>%
-  # only keep white, black, and hispanic
-  filter(# 'Both Hisp Origins' aggregates Hisp and non-Hisp for a race; we do not need the aggregate
-         HISP != 'Both Hispanic Origins') %>%
+  filter(HISP != 'Both Hispanic Origins') %>%
   # make the All Races  race that is Hisp the Hisp race
-  mutate(RACE = ifelse(RACE == 'All races' & HISP == 'Hispanic', 'Hispanic / Latino', RACE)) %>%
+  mutate(RACE = ifelse(RACE == 'All races' & HISP == 'Hispanic', 'Hispanic', RACE)) %>%
   # only need white, black, and hispanic
-  filter(RACE %in% c('White alone', 'Black alone', 'Hispanic / Latino'),
+  filter(RACE %in% c('White alone', 'Black alone', 'Hispanic'),
          # do not need hispanic breakdown by race
-         RACE == 'Hispanic / Latino' | HISP == 'Non-Hispanic') %>%
+         RACE == 'Hispanic' | HISP == 'Non-Hispanic') %>%
   # remove 'alone' phrase from race
   mutate(RACE = str_remove_all(RACE, ' alone'),
+         # make lower case and remove latino to match traffic stops
+         RACE = str_to_lower(RACE),
          # remove string so that it matches with traffic stop data
          NAME = str_remove_all(NAME, ' County, North Carolina')) %>%
   # don't need the hispanic column anymore
   select(-HISP)
-
-# %>%
-#   # make density and population different columns
-#   pivot_wider(id_cols = c('NAME', 'DATE', 'GEOID'),
-#               names_from = 'variable', values_from = 'value') %>%
-#   # aggregate 2010 - 2014 so it can be merged with aggregated stop data
-#   # sum population so we can divide by total stops between 2010-2014
-#   group_by(NAME, GEOID) %>%
-#   summarize(POP = sum(POP),
-#             DENSITY = mean(DENSITY))
 ```
+
+```{r stopsByRace}
+# calculate stops per race --------------
+
+# save list of stop reasons to be uses in text
+stop_reasons <- unique(nc_stops$reason_for_stop)
+
+stops_by_race <- nc_stops %>%
+  # calculate number of stops by race (numerator)
+  group_by(county_name, subject_race) %>%
+  summarize(num_stops_race = n()) %>%
+  # calculate percentage of stops by race
+  ungroup() %>%
+  # stops per 100 people
+  #mutate(stops_per = (num_stops_race*100) / agg_pop) %>%
+  # only need three races; not enough data for others
+  filter(subject_race %in% c('black', 'white', 'hispanic')) %>%
+  # only keep counties with a minimum of 100 stops for each race
+  group_by(county_name) %>%
+  mutate(min_num = min(num_stops_race)) %>%
+  ungroup() %>%
+  filter(min_num >= 500) %>%
+  drop_na(county_name) %>%
+  mutate(county_name = str_remove_all(county_name, ' County'),
+         # correct spelling mistake
+         county_name = str_replace(county_name, 'Tyrell', 'Tyrrell')) %>%
+  drop_na(county_name) %>%
+  # combine stops by race percentages and racial population percentages
+  left_join(county_pop_agg, 
+            by = c('county_name' = 'NAME', 'subject_race' = 'RACE')) %>%
+  # number of stops per 100 people
+  mutate(stops_per = round(num_stops_race / (agg_pop / 100), 2)) %>%
+  # convert to wide form where each race is in a different column
+  # needed for plotting
+  pivot_wider(id_cols = 'county_name', 
+              names_from = 'subject_race',
+              values_from = "stops_per") %>%
+  # combine county populations
+  left_join(county_pop,
+            by = c('county_name' = 'NAME')) %>%
+  mutate(value = number(value, accuracy = 1, big.mark = ',')) %>%
+  # Alleghany is odd outlier, so remove
+  filter(county_name != 'Alleghany')
+```
+
+```{r plotStopsRace}
+# scatter plot of race and perc. stops compared to overall perc. pop.
+
+bw_stops_title <- 'Comparing Stops Per 100 Residents for Black and White Drivers'
+bw_y_title <- 'Stops per 100 residents for Black drivers'
+bw_scatter_plot <- scatter_stops_per(stops_by_race, 'black', bw_stops_title, bw_y_title)
+
+hw_stops_title <- 'Comparing Stops Per 100 Residents for Hispanic and White Drivers'
+hw_y_title <- 'Stops per 100 residents for Hispanic drivers'
+hw_scatter_plot <- scatter_stops_per(stops_by_race, 'hispanic', hw_stops_title, hw_y_title) %>%
+  add_credits()
+
+hw_grid(
+  bw_scatter_plot, hw_scatter_plot,
+  ncol = 2, rowheight = 300
+)
+
+
 ```
