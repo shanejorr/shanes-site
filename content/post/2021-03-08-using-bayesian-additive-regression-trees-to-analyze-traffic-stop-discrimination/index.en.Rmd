@@ -44,6 +44,10 @@ library(scales)
 library(leaflet)
 library(tigris)
 library(widgetframe)
+library(tigris)
+library(sf)
+library(suncalc)
+library(bartCause)
 library(tidyverse)
 ```
 
@@ -77,15 +81,25 @@ scatter_stops_per <- function(df, second_race, plot_title, y_title) {
   # max axis point
   max_point <- 45
   
+  # find out if white or minority group is higher, used for colors above or below line
+  df[['diff']] <- ifelse(df[['white']] < df[[second_race]], 1, 0)
+  
+  # assign color to each row
+  color_palette <- c('#4e79a7', '#f28e2b')
+  df[['colors']] <- colorize(df[['diff']], color_palette)
+  
   # tooltip
   scatter_tooltip <- "<b>{point.county_name}</b><br>
                       Stops per 100 residents (Black): <b>{point.black}</b><br>
                       Stops per 100 residents (White): <b>{point.white}</b><br>
                       Stops per 100 residents (Hispanic): <b>{point.hispanic}</b><br>
-                      County population (2013): <b>{point.value}</b><br>"
+                      County population (2013): <b>{point.value_tooltip}</b><br>"
   
   df %>%
-    hchart("scatter", hcaes(x = 'white', y = .data[[second_race]])) %>%
+    hchart(
+      "bubble", 
+      hcaes(x = 'white', y = .data[[second_race]], size = value, color = colors)
+    ) %>%
     hc_add_series(name = 'line',
                   data = data.frame(
                     x = seq(1, max_point, 1),
@@ -94,7 +108,9 @@ scatter_stops_per <- function(df, second_race, plot_title, y_title) {
                     marker = list(enabled = FALSE)
                   )) %>%
     # remove tooltip for line
-    hc_plotOptions(line = list(enableMouseTracking = FALSE)) %>%
+    hc_plotOptions(line = list(enableMouseTracking = FALSE),
+                   bubble = list(opacity = .85,
+                                 minSize = "1%", maxSize = "7%")) %>%
     hc_xAxis(min = 1, max = max_point, type = 'logarithmic',
              title = list(text = 'Stops per 100 residents for White drivers')) %>% 
     hc_yAxis(min = 1, max = max_point, type = 'logarithmic',
@@ -104,6 +120,12 @@ scatter_stops_per <- function(df, second_race, plot_title, y_title) {
         pointFormat = scatter_tooltip
     ) %>%
     hc_title(text = plot_title)
+}
+
+# extract time from date time
+time_to_minute <- function(time) {
+  # minutes since midnight
+  hour(time) * 60 + minute(time)
 }
 ```
 
@@ -136,6 +158,8 @@ nc_stops %>%
 ```{r}
 nc_stops <- read_rds('nc_stops.rds')
 ```
+
+## Comparing Stops Per 100 Residents Among Racial Groups
 
 ```{r importCensus, cache = T}
 # racial populations by county from census ----------------
@@ -233,19 +257,21 @@ stops_by_race <- nc_stops %>%
   # combine county populations
   left_join(county_pop,
             by = c('county_name' = 'NAME')) %>%
-  mutate(value = number(value, accuracy = 1, big.mark = ',')) %>%
+  mutate(value_tooltip = number(value, accuracy = 1, big.mark = ',')) %>%
   # Alleghany is odd outlier, so remove
-  filter(county_name != 'Alleghany')
+  filter(!county_name %in% c('Alleghany'))
+
 ```
 
 ```{r plotStopsRace}
 # scatter plot of race and perc. stops compared to overall perc. pop.
 
-bw_stops_title <- 'Comparing Stops Per 100 Residents for Black and White Drivers'
+
+bw_stops_title <- 'Stops Per 100 Residents for Black and White Drivers'
 bw_y_title <- 'Stops per 100 residents for Black drivers'
 bw_scatter_plot <- scatter_stops_per(stops_by_race, 'black', bw_stops_title, bw_y_title)
 
-hw_stops_title <- 'Comparing Stops Per 100 Residents for Hispanic and White Drivers'
+hw_stops_title <- 'Stops Per 100 Residents for Hispanic and White Drivers'
 hw_y_title <- 'Stops per 100 residents for Hispanic drivers'
 hw_scatter_plot <- scatter_stops_per(stops_by_race, 'hispanic', hw_stops_title, hw_y_title) %>%
   add_credits()
@@ -254,6 +280,128 @@ hw_grid(
   bw_scatter_plot, hw_scatter_plot,
   ncol = 2, rowheight = 300
 )
+```
+
+## Veil Of Darkenss Test
+
+```{r}
+# get centroid of every county -----------------
 
 
+# get county shapefiles and centroids
+nc_counties <- counties(state = 'NC', cb = T)
+
+# find centroid of each county by using it's boundaries
+nc_counties$lon<-st_coordinates(st_centroid(nc_counties))[,1]
+nc_counties$lat<-st_coordinates(st_centroid(nc_counties))[,2]
+
+# drop shapefile column
+nc_counties$geometry <- NULL
+
+nc_counties <- nc_counties %>%
+  ungroup() %>%
+  select(GEOID, NAME, lon, lat)
+
+# get sunlight times for each county
+
+# extend dataset to include a county row for each day
+# neede because function to calcualte sunset requires date column in dataframe
+days_seq <- seq(as.Date(min(nc_stops$date)), as.Date(max(nc_stops$date)), "days")
+
+nc_counties_sunset <- map_df(days_seq, function(day) {
+  nc_counties %>%
+    mutate(date = !!day) %>%
+    getSunlightTimes(
+      data = .,
+      keep = c("sunset", "dusk"), 
+      tz = 'EST'
+    )
+}) %>%
+  mutate(
+    sunset_minute = time_to_minute(sunset),
+    dusk_minute = time_to_minute(dusk),
+    date = ymd(str_sub(date, 1, 10))
+) %>% 
+  # join county names
+  left_join(nc_counties, by = c('lon', 'lat'))
+```
+
+```{r}
+# merge dusk times with nc stops dataset
+
+# NOTE: is not filtering times correctly
+nc_stops_veil <- nc_stops %>%
+  drop_na(time) %>%
+  mutate(county_name = str_remove_all(county_name, ' County')) %>%
+  left_join(nc_counties_sunset, 
+            by = c('county_name' = 'NAME', 'date')) %>%
+  mutate(
+    minute = time_to_minute(time),
+    minutes_after_dark = minute - dusk_minute,
+    is_dark = minute > dusk_minute
+  ) %>%
+  ungroup() %>%
+  group_by(county_name) %>%
+  mutate(
+    min_dusk_minute = min(dusk_minute),
+    max_dusk_minute = max(dusk_minute),
+    is_black = subject_race == "black"
+  ) %>% 
+  filter(
+    # Filter to get only the intertwilight period
+    minute >= min_dusk_minute,
+    minute <= max_dusk_minute,
+    # Remove ambigous period between sunset and dusk
+    !(minute > sunset_minute & minute < dusk_minute),
+    # Compare only white and black drivers
+    subject_race %in% c("black", "white")
+  ) %>%
+  select(date, time, sunset, dusk, contains('minute'), is_dark, everything()) %>%
+  drop_na(is_black, is_dark, minute, subject_age, subject_sex, county_name) %>%
+  mutate(county_name = factor(county_name)) %>%
+  group_by(county_name) %>%
+  sample_frac(.2)
+```
+
+```{r eval = F}
+# BART Analysis
+bart_mod <- bartc(
+  response = is_black,
+  treatment = is_dark,
+  confounders = minute + subject_age + subject_sex + county_name,
+  data = nc_stops_veil,
+  estimand = 'ate',
+  n.chains = 4
+)
+
+bart_mod_county <- bartc(
+  response = is_black,
+  treatment = is_dark,
+  confounders = minute + subject_age + subject_sex + county_name,
+  data = nc_stops_veil,
+  estimand = 'ate',
+  group.by = county_name,
+  use.ranef = T,
+  group.effects = T, # change to see effects by county
+  n.chains = 4
+)
+
+write_rds(
+  list(overall_mod = bart_mod,
+       county_mod = bart_mod_county),
+  'mods.rds'
+)
+```
+
+```{r}
+mods <- read_rds('mods.rds')
+
+bart_mod <- mods[[1]]
+bart_mod_county <- mods[[2]]
+
+summary(bart_mod, ci.style = 'hpd')
+
+plot_indiv(bart_mod)
+
+summary(bart_mod_county)
 ```
