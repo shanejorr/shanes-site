@@ -35,19 +35,18 @@ knitr::opts_chunk$set(echo = T,
 
 ```{r importLibraries}
 library(glue)
-library(gt)
 library(vroom)
+library(modelr)
 library(tidycensus)
 library(lubridate)
 library(highcharter)
 library(scales)
 library(leaflet)
-library(tigris)
 library(widgetframe)
+library(suncalc)
 library(tigris)
 library(sf)
-library(suncalc)
-library(bartCause)
+library(BART)
 library(tidyverse)
 ```
 
@@ -359,9 +358,95 @@ nc_stops_veil <- nc_stops %>%
   select(date, time, sunset, dusk, contains('minute'), is_dark, everything()) %>%
   drop_na(is_black, is_dark, minute, subject_age, subject_sex, county_name) %>%
   mutate(county_name = factor(county_name)) %>%
-  group_by(county_name) %>%
-  sample_frac(.2)
+  group_by(county_name, is_black, is_dark) %>%
+  sample_frac(.1)
 ```
+
+### BART ###
+
+```{r}
+# prediction dataset for all of NC
+
+x_vars <- c('minute', 'subject_age',  'subject_sex', 'county_name', 'is_dark', 'year')
+
+predictors <- nc_stops_veil %>%
+  ungroup() %>%
+  select(!!x_vars) %>%
+  mutate(across(c('subject_sex', 'county_name', 'year'), ~as.factor(.))) %>%
+  as.data.frame()
+
+response <- as.numeric(nc_stops_veil$is_black)
+
+prediction_df <- predictors %>%
+  data_grid(
+    minute = seq_range(minute, n = 15, trim = .1),
+    subject_age = 30,
+    subject_sex = 'male',
+    county_name = county_name,
+    is_dark = c(TRUE, FALSE),
+    year = as.factor(2013)
+  ) %>%
+  mutate(across(c('subject_sex', 'county_name', 'year'), ~as.factor(.))) %>%
+  as.data.frame()
+
+bart_mod <- mc.pbart(
+  x.train = predictors, 
+  y.train = response, 
+  x.test = prediction_df, 
+  ndpost = 200, 
+  mc.cores = 4,
+  cont = FALSE,
+  seed = 99
+)
+
+all_predictions <- bart_mod$prob.train
+county_predictions <- bart_mod$prob.test
+```
+
+```{r}
+# find the difference between 
+
+avg_prob_is_black <- function(pred_matrix, vec_with_dark, use_dark_cols) {
+  
+  pred_df <- as.data.frame(pred_matrix)
+  
+  pred_df <- pred_df[vec_with_dark == use_dark_cols]
+  
+  pred_df %>%
+    summarize_all(mean) %>%
+    as_vector()
+}
+
+# mean difference in dark
+post_dark <- avg_prob_is_black(county_predictions, prediction_df$is_dark, T)
+post_light <- avg_prob_is_black(county_predictions, prediction_df$is_dark, F)
+post_diff <- post_dark - post_light
+
+median_hdci(post_diff)
+
+county_df <- as.data.frame(county_predictions)
+
+```
+
+### BartMachine ###
+
+```{r}
+x_vars <- c('minute', 'subject_age',  'subject_sex', 'county_name', 'is_dark', 'year')
+
+bart_mod <- bartMachine(
+  X = as.data.frame(nc_stops_veil[x_vars]), 
+  y = as.factor(nc_stops_veil$is_black),
+  flush_indices_to_save_RAM = TRUE,
+  seed = 9384
+)
+
+oos_stats <- k_fold_cv(X, y, k_folds = 10)
+oos_stats$confusion_matrix
+
+pd_plot(bart_mod, j = 'is_dark')
+```
+
+#### BartCause ########
 
 ```{r eval = F}
 # BART Analysis
@@ -399,9 +484,15 @@ mods <- read_rds('mods.rds')
 bart_mod <- mods[[1]]
 bart_mod_county <- mods[[2]]
 
-summary(bart_mod, ci.style = 'hpd')
+sum <- summary(bart_mod, ci.style = 'hpd')
 
-plot_indiv(bart_mod)
+sum$ci.info
 
-summary(bart_mod_county)
+plot_indiv(bart_mod_county)
+a <- bart_mod_county[4]
+sum <- summary(bart_mod_county)
+names(bart_mod_county)
+
+a <- as.data.frame(a)
 ```
+
