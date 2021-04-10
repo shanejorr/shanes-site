@@ -47,13 +47,14 @@ library(tigris)
 library(sf)
 library(BART)
 library(tidybayes)
-library(rstanarm)
+library(rsample)
 library(tidyverse)
 
-options(mc.cores = parallel::detectCores())
 ```
 
-```{r}
+```{r customFunctions}
+# custom functions --------------------------
+
 # create ggplot theme for this post
 post_theme <- theme_minimal() +
   theme(legend.position = 'bottom',
@@ -129,13 +130,39 @@ time_to_minute <- function(time) {
   # minutes since midnight
   hour(time) * 60 + minute(time)
 }
+
+create_train_test_sets <- function(split_partition, predictor_variables, train_or_test = 'train') {
+  
+  # create train and testing datasets
+  
+  if (train_or_test == 'train') {
+    
+    pred_df <- training(split_partition)
+    
+  } else if (train_or_test == 'test') {
+    
+    pred_df <- testing(split_partition)
+    
+  } else {
+    stop("train_or_test must be either 'train' or 'test'")
+  }
+  
+  pred_df %>%
+      ungroup() %>%
+      # only keep predictors (required for BART)
+      select(!!predictor_variables) %>%
+      as.data.frame()
+  
+}
 ```
 
 
 
 ## Stops per 100 residents for black and white drivers
 
-```{r importData, eval = F, cache = T}
+```{r importData, cache = T}
+# downlaod traffic stop data --------------------------
+
 # download entire state traffic stop dataset
 nc_stops <- vroom('https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_statewide_2020_04_01.csv.gz',
                   col_select = -contains('raw'))
@@ -150,15 +177,6 @@ nc_stops <- nc_stops %>%
   # only keep between years 2010 and 2013 
   # 2013 is final full year of stop data
   filter(year %in% !!pop_years)
-
-nc_stops %>%
-  group_by(year, county_name) %>%
-  sample_frac(.20) %>%
-  write_rds('nc_stops.rds')
-```
-
-```{r}
-nc_stops <- read_rds('nc_stops.rds')
 ```
 
 ## Comparing Stops Per 100 Residents Among Racial Groups
@@ -266,7 +284,7 @@ stops_by_race <- nc_stops %>%
 ```
 
 ```{r plotStopsRace}
-# scatter plot of race and perc. stops compared to overall perc. pop.
+# scatter plot of race and perc. stops compared to overall perc. pop ----------
 
 
 bw_stops_title <- 'Stops Per 100 Residents for Black and White Drivers'
@@ -286,9 +304,10 @@ hw_grid(
 
 ## Veil Of Darkenss Test
 
-```{r}
-# get centroid of every county -----------------
+```{r minutesToDuskDataset}
+# create dataset for veil of darkness test -----------------------
 
+# get centroid of every county
 
 # get county shapefiles and centroids
 nc_counties <- counties(state = 'NC', cb = T)
@@ -326,10 +345,6 @@ nc_counties_sunset <- map_df(days_seq, function(day) {
 ) %>% 
   # join county names
   left_join(nc_counties, by = c('lon', 'lat'))
-```
-
-```{r}
-# merge dusk times with nc stops dataset
 
 # only keep the 20 most populated counties
 most_pop_counties <- county_pop %>%
@@ -337,6 +352,7 @@ most_pop_counties <- county_pop %>%
   head(20) %>%
   .[[1]]
 
+# merge dusk times with nc stops dataset
 nc_stops_veil <- nc_stops %>%
   drop_na(time) %>%
   mutate(county_name = str_remove_all(county_name, ' County')) %>%
@@ -372,61 +388,115 @@ nc_stops_veil <- nc_stops %>%
   drop_na(is_black, is_dark, minute, subject_age, subject_sex, county_name) %>%
   mutate(county_name = factor(county_name),
          year = as.factor(year))
+
+# remove items to save RAM
+rm(county_pop_race)
+rm(nc_stops)
+rm(nc_counties_sunset)
+
 ```
 
 ### BART ###
 
-```{r}
-# prediction dataset for all of NC
+```{r testAndTrainData}
+# create test and train datasets -------------------
 
-x_vars <- c('minute', 'subject_age',  'subject_sex', 'county_name', 'is_dark', 'year')
+# only keep the variables we need to make the train and test sets not take up as much RAM
+vars <- c('minute', 'subject_age', 'subject_sex', 'county_name', 'is_dark', 'year', 'is_black')
+partition_group_vars <- seq(4, 7, 1)
 
-# training dataset (original data)
-predictors <- nc_stops_veil %>%
+# BART requires categoricals with more than one level to be factors
+model_df <- nc_stops_veil %>% 
   ungroup() %>%
-  select(!!x_vars) %>%
-  mutate(across(c('subject_sex', 'county_name', 'year'), ~as.factor(.))) %>%
-  as.data.frame()
+  select(!!vars) %>%
+  drop_na() %>%
+  mutate(across(c('subject_sex', 'county_name', 'year'), ~as.factor(.)))
 
-# save number of rows to use later
-n <- nrow(predictors)
+response_train <- as.numeric(model_df$is_black)
+
+predictor_df <- model_df %>% 
+  select(-is_black) %>%
+  as.data.frame()
 
 # dataset to create potential outcomes
 # contains each column of the original dataset twice - one with dark, one with not-dark
-test_data <- predictors %>%
+ate_data <- model_df %>%
   mutate(is_dark = T) %>%
   bind_rows(
-    predictors %>%
+    model_df %>%
       mutate(is_dark = F)
-  )
+  ) %>%
+  select(-is_black) %>%
+  as.data.frame()
+```
 
-response <- as.numeric(nc_stops_veil$is_black)
 
-# prediction_df <- predictors %>%
-#   data_grid(
-#     minute = as.integer(seq_range(minute, n = 15, trim = .1)),
-#     subject_age = 30,
-#     subject_sex = subject_sex,
-#     county_name = county_name,
-#     is_dark = c(TRUE, FALSE),
-#     year = year
-#   ) %>%
-#   mutate(across(c('subject_sex', 'county_name', 'year'), ~as.factor(.))) %>%
-#   filter(subject_sex == 'male',
-#          year == 2013) %>%
-#   as.data.frame()
+```{r bartMod, cache = T}
+# run BART model --------------------------------
 
 bart_mod <- mc.pbart(
-  x.train = predictors, 
-  y.train = response, 
-  x.test = test_data, 
+  x.train = predictor_df, 
+  y.train = response_train, 
+  x.test = ate_data, 
+  keeptrainfits = F,
   ndpost = 200, 
   mc.cores = 4,
   cont = FALSE,
   seed = 99
 )
 
-posterior_predictions <- as.data.frame(bart_mod$prob.test)
+write_rds(bart_mod, 'bart_mod.rds')
+```
+
+```{r ate}
+bart_mod <- read_rds('bart_mod.rds')
+post_pred_ate <- as.data.frame(bart_mod$prob.test)
+
+# find most likely difference in probability driver is black when comparing before and after sunset
+n <- ncol(post_pred_ate)
+dark_end <- n/2
+light_start <- dark_end + 1
+
+post_pred_dark <- post_pred_ate[1:dark_end][1,2]
+post_pred_not_dark <- post_pred_ate[light_start:n][1,2]
+
+post_pred_outcomes <- post_pred_dark - post_pred_not_dark
+```
+```
+
+```{r ate2}
+# create predictions to calculate average treatment effect ------------------------------------
+
+# dataset to create potential outcomes
+# contains each column of the original dataset twice - one with dark, one with not-dark
+pred_data <- model_df %>%
+  mutate(is_dark = T) %>%
+  bind_rows(
+    model_df %>%
+      mutate(is_dark = F)
+  ) %>%
+  select(-is_black)
+
+pred_ate <- predict(bart_mod, pred_data, mc.cores = 6)
+
+# create training / test partitions
+nc_stop_splits <- model_df %>%
+  group_by_at(vars[partition_group_vars]) %>%
+  initial_split(prop = .75)
+
+# extracgt train / test datasets
+nc_stops_train <- create_train_test_sets(nc_stop_splits, vars, 'train')
+
+response_train <- as.numeric(nc_stops_train$is_black)
+
+nc_stops_train <- select(nc_stops_train, -is_black)
+
+nc_stops_test <- create_train_test_sets(nc_stop_splits, vars, 'test') %>%
+  select(-is_black)
+
+# remove to clean up RAM
+rm(nc_stop_splits)
+
 ```
 
 ```{r}
@@ -436,15 +506,20 @@ a <- data.frame(
 )
 
 b <- data.frame(
-  a = round(rnorm(10, 0, 5), 0),
-  b = round(rnorm(10, 0, 5), 0)
+  c = round(rnorm(10, 0, 5), 0),
+  d = round(rnorm(10, 0, 5), 0)
 )
 
-# find most likely difference in probability driver is black when comparing before and after sunset
-n_test_end <- nrow(test_data)
-n_test_start <- n+1
+a - b
 
-post_pred_outcomes <- posterior_predictions[1:n] - posterior_predictions[n_test_start:n_test_end]
+# find most likely difference in probability driver is black when comparing before and after sunset
+n_test_start <- n+1
+n_test_end <- nrow(test_data)
+
+post_pred_dark <- posterior_predictions[1:48661][1,2]
+post_pred_not_dark <- posterior_predictions[48662:97322][1,2]
+
+post_pred_outcomes <- post_pred_dark - post_pred_not_dark
 ```
 
 ```{r}
@@ -495,24 +570,4 @@ county_posterior_hdi <- county_predictions %>%
 ggplot(county_posterior_hdi, aes(minute, values, color = is_dark)) +
   geom_line() +
   facet_wrap(~county_name)
-```
-
-
-
-## Logistic Regression
-
-```{r}
-t_prior <- student_t(df = 7, location = 0, scale = 2.5)
-
-log_mod <- stan_glmer(
-  is_black ~ is_dark + splines::ns(minute, df = 4) + subject_age + subject_sex + (1 |county_name) + (1 | year), 
-  data = nc_stops_veil,
-  family = binomial(link = "logit"), 
-  prior = t_prior, 
-  prior_intercept = t_prior, 
-  QR=TRUE,
-  seed = 909
-)
-
-write_rds(log_mod, 'log_mod.rds')
 ```
