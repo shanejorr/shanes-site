@@ -45,7 +45,7 @@ library(widgetframe)
 library(suncalc)
 library(tigris)
 library(sf)
-library(BART)
+library(bartCause)
 library(tidybayes)
 library(rsample)
 library(tidyverse)
@@ -393,181 +393,67 @@ nc_stops_veil <- nc_stops %>%
 rm(county_pop_race)
 rm(nc_stops)
 rm(nc_counties_sunset)
-
+gc()
 ```
 
-### BART ###
+## BART Causal Model
 
-```{r testAndTrainData}
-# create test and train datasets -------------------
-
-# only keep the variables we need to make the train and test sets not take up as much RAM
-vars <- c('minute', 'subject_age', 'subject_sex', 'county_name', 'is_dark', 'year', 'is_black')
-partition_group_vars <- seq(4, 7, 1)
-
-# BART requires categoricals with more than one level to be factors
-model_df <- nc_stops_veil %>% 
-  ungroup() %>%
-  select(!!vars) %>%
-  drop_na() %>%
-  mutate(across(c('subject_sex', 'county_name', 'year'), ~as.factor(.)))
-
-response_train <- as.numeric(model_df$is_black)
-
-predictor_df <- model_df %>% 
-  select(-is_black) %>%
-  as.data.frame()
-
-# dataset to create potential outcomes
-# contains each column of the original dataset twice - one with dark, one with not-dark
-ate_data <- model_df %>%
-  mutate(is_dark = T) %>%
-  bind_rows(
-    model_df %>%
-      mutate(is_dark = F)
-  ) %>%
-  select(-is_black) %>%
-  as.data.frame()
-```
-
-
-```{r bartMod, cache = T}
-# run BART model --------------------------------
-
-bart_mod <- mc.pbart(
-  x.train = predictor_df, 
-  y.train = response_train, 
-  x.test = ate_data, 
-  keeptrainfits = F,
-  ndpost = 200, 
-  mc.cores = 4,
-  cont = FALSE,
-  seed = 99
+```{r bartDataset}
+# create dataset to use in BART model
+bart_mod <- bartc(
+  response = is_black,
+  treatment = is_dark,
+  confounders = minute + subject_age + subject_sex + county_name,
+  data = nc_stops_veil,
+  estimand = 'ate',
+  n.chains = 8
 )
-
-write_rds(bart_mod, 'bart_mod.rds')
 ```
 
-```{r ate}
-bart_mod <- read_rds('bart_mod.rds')
-post_pred_ate <- as.data.frame(bart_mod$prob.test)
+```{r ateCounty}
+# average treatment effect for all counties --------------
 
-# find most likely difference in probability driver is black when comparing before and after sunset
-n <- ncol(post_pred_ate)
-dark_end <- n/2
-light_start <- dark_end + 1
+# initialize dataframe to store ates
+bart_cty_ates <- summary(bart_mod)
 
-post_pred_dark <- post_pred_ate[1:dark_end][1,2]
-post_pred_not_dark <- post_pred_ate[light_start:n][1,2]
+bart_cty_ates <- overall_ate[[9]] %>%
+  mutate(county = 'All Counties')
 
-post_pred_outcomes <- post_pred_dark - post_pred_not_dark
-```
-```
-
-```{r ate2}
-# create predictions to calculate average treatment effect ------------------------------------
-
-# dataset to create potential outcomes
-# contains each column of the original dataset twice - one with dark, one with not-dark
-pred_data <- model_df %>%
-  mutate(is_dark = T) %>%
-  bind_rows(
-    model_df %>%
-      mutate(is_dark = F)
-  ) %>%
-  select(-is_black)
-
-pred_ate <- predict(bart_mod, pred_data, mc.cores = 6)
-
-# create training / test partitions
-nc_stop_splits <- model_df %>%
-  group_by_at(vars[partition_group_vars]) %>%
-  initial_split(prop = .75)
-
-# extracgt train / test datasets
-nc_stops_train <- create_train_test_sets(nc_stop_splits, vars, 'train')
-
-response_train <- as.numeric(nc_stops_train$is_black)
-
-nc_stops_train <- select(nc_stops_train, -is_black)
-
-nc_stops_test <- create_train_test_sets(nc_stop_splits, vars, 'test') %>%
-  select(-is_black)
-
-# remove to clean up RAM
-rm(nc_stop_splits)
-
-```
-
-```{r}
-a <- data.frame(
-  a = round(rnorm(10, 0, 5), 0),
-  b = round(rnorm(10, 0, 5), 0)
-)
-
-b <- data.frame(
-  c = round(rnorm(10, 0, 5), 0),
-  d = round(rnorm(10, 0, 5), 0)
-)
-
-a - b
-
-# find most likely difference in probability driver is black when comparing before and after sunset
-n_test_start <- n+1
-n_test_end <- nrow(test_data)
-
-post_pred_dark <- posterior_predictions[1:48661][1,2]
-post_pred_not_dark <- posterior_predictions[48662:97322][1,2]
-
-post_pred_outcomes <- post_pred_dark - post_pred_not_dark
-```
-
-```{r}
-# find the difference between 
-
-avg_prob_is_black <- function(pred_matrix, vec_with_dark, use_dark_cols) {
+# iterate through each county, filter for data that only includes county, run BART model
+for (cty in most_pop_counties) {
   
-  pred_df <- as.data.frame(pred_matrix)
+  # status update
+  print(cty)
   
-  pred_df <- pred_df[vec_with_dark == use_dark_cols]
+  # only keep needed county
+  county_df <- nc_stops_veil %>%
+    filter(county_name == !!cty)
   
-  pred_df %>%
-    summarize_all(mean) %>%
-    as_vector()
+  bart_mod_cty <- bartc(
+    response = is_black,
+    treatment = is_dark,
+    confounders = minute + subject_age + subject_sex,
+    data = county_df,
+    estimand = 'ate',
+    n.chains = 4
+  )
+  
+  cty_ate <- summary(bart_mod_cty)
+
+  cty_ate <- cty_ate[[9]] %>%
+    mutate(county_name = !!cty)
+  
+  print(cty_ate)
+  
+  bart_cty_ates <- bart_cty_ates %>%
+    bind_rows(cty_ate)
+  
+  print(bart_cty_ates)
+  
+  write_csv(bart_cty_ates, 'bart_cty_ates.csv')
+  
+  rm(bart_mod_cty)
+  
 }
 
-# mean difference in dark
-post_dark <- avg_prob_is_black(county_predictions, nc_stops_veil$is_dark, T)
-post_light <- avg_prob_is_black(county_predictions, nc_stops_veil$is_dark, F)
-post_diff <- post_dark - post_light
-
-county_df <- as.data.frame(county_predictions)
-
-```
-
-```{r}
-# plots of counties and difference in probability black
-# between night and not night
-# in the prediction dataset, odd numbers are not dark, even numbers are dark
-identifying_columns <- c('minute', 'county_name', 'is_dark')
-
-county_posterior_hdi <- county_predictions %>%
-  t() %>%
-  as.data.frame() %>%
-  bind_cols(prediction_df[identifying_columns]) %>%
-  pivot_longer(cols = V1:V200, 
-               names_to = 'names', values_to = 'values') %>%
-  county_posterior_long %>%
-  group_by_at(identifying_columns) %>%
-  median_hdci(values, .width = c(.95, .5)) %>%
-  pivot_wider(id_cols = c(identifying_columns, 'values') , 
-              names_from = '.width', values_from = c('.lower', '.upper'))
-
-```
-
-```{r}
-# plot
-ggplot(county_posterior_hdi, aes(minute, values, color = is_dark)) +
-  geom_line() +
-  facet_wrap(~county_name)
 ```
