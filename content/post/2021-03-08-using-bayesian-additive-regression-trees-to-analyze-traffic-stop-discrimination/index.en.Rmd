@@ -398,7 +398,8 @@ test_data <- predictors %>%
   bind_rows(
     predictors %>%
       mutate(is_dark = F)
-  )
+  ) %>%
+  arrange(year, county_name, minute, is_dark)
 
 response <- as.numeric(nc_stops_veil$is_black)
 
@@ -420,6 +421,7 @@ bart_mod <- mc.pbart(
   x.train = predictors, 
   y.train = response, 
   x.test = test_data, 
+  keeptrainfits = F,
   ndpost = 200, 
   mc.cores = 4,
   cont = FALSE,
@@ -436,15 +438,20 @@ a <- data.frame(
 )
 
 b <- data.frame(
-  a = round(rnorm(10, 0, 5), 0),
-  b = round(rnorm(10, 0, 5), 0)
+  c = round(rnorm(10, 0, 5), 0),
+  d = round(rnorm(10, 0, 5), 0)
 )
 
-# find most likely difference in probability driver is black when comparing before and after sunset
-n_test_end <- nrow(test_data)
-n_test_start <- n+1
+a - b
 
-post_pred_outcomes <- posterior_predictions[1:n] - posterior_predictions[n_test_start:n_test_end]
+# find most likely difference in probability driver is black when comparing before and after sunset
+n_test_start <- n+1
+n_test_end <- nrow(test_data)
+
+post_pred_dark <- posterior_predictions[1:48661][1,2]
+post_pred_not_dark <- posterior_predictions[48662:97322][1,2]
+
+post_pred_outcomes <- post_pred_dark - post_pred_not_dark
 ```
 
 ```{r}
