@@ -47,9 +47,8 @@ library(tigris)
 library(sf)
 library(bartCause)
 library(tidybayes)
-library(rsample)
+library(lme4)
 library(tidyverse)
-
 ```
 
 ```{r customFunctions}
@@ -456,5 +455,33 @@ for (cty in most_pop_counties) {
   rm(bart_mod_cty)
   
 }
+```
 
+## Logistic regression model as a check
+
+```{r}
+# logistic regression model with LMER
+nc_stops_veil <- nc_stops_veil %>%
+  ungroup() %>%
+  # scale continuous predictors
+  mutate(minute_scale = scale(minute),
+         age_scale = scale(subject_age))
+
+lmer_mod <- glmer(
+  is_black ~ is_dark + minute_scale + age_scale + subject_sex + (1 | county_name) + (1 | year),
+  data = nc_stops_veil,
+  family = binomial(link = "logit")
+)
+
+names(summary(lmer_mod))
+
+summary(lmer_mod)$coefficients %>%
+  as.data.frame() %>%
+  mutate(ci.lower = Estimate - (`Std. Error` * 1.96),
+         ci.upper = Estimate + (`Std. Error` * 1.96)) %>%
+  rownames_to_column() %>%
+  filter(rowname == 'is_darkTRUE') %>%
+  mutate(county_name = '20 Largest NC Counties') %>%
+  select(county_name, Estimate, `Std. Error`, starts_with('ci')) %>%
+  mutate(across(where(is.numeric), ~round(., 3)))
 ```
