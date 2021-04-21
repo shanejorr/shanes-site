@@ -33,6 +33,53 @@ knitr::opts_chunk$set(echo = T,
                       error = F)
 ```
 
+Bayesian Additive Regression Trees (BART) are a Bayesian version of random forests. They're flexible, non-parametric, and supply a full posterior distribution on outcomes. They have all the benefits of Bayesian modeling and non-parametric machine learning modeling in one algorithm.
+
+In this post, I practice with BART models in this post using traffic stop data as the backdrop. We'll apply BART to the veil of darkness test and see if we can uncover racial disparities on traffic stops.
+
+## Why BART?
+
+We're not going into the technical details of BART here. Instead, check out the following resources To understand the algorithm's guts:
+
+-   [BART: Bayesian additive regression trees](https://arxiv.org/abs/0806.3286) - The paper that introduced the world to BART.^[Chipman, H. A., George, E. I., & McCulloch, R. E. (2010). BART: Bayesian additive regression trees. The Annals of Applied Statistics, 4(1), 266-298.]
+-   [Bayesian Nonparametric Modeling for Causal Inference](https://www.tandfonline.com/doi/abs/10.1198/jcgs.2010.08162) - Jennifer Hill's paper that brought us BART for causal inference.^[Hill, J. L. (2011). Bayesian nonparametric modeling for causal inference. Journal of Computational and Graphical Statistics, 20(1), 217-240.]
+-   [Causal Inference at the Intersection of Statistics and Machine Learning](https://www.youtube.com/watch?v=mJVTg8PWjW4) - Video presentation by Jennifer Hill on BART fo causal inference. The video isn't great quality, but it's an easy to follow introduction to BART.
+-   [Introduction to Bayesian Additive Regression Trees (BART) for Causal Inference](https://www.youtube.com/watch?v=9d5-3_7u5a4) - Another good video introduction to BART for causal inference.
+
+In general terms, however, I view the pros of BART as falling into two categories: (1) reasons it's better than parametric Bayesian models such as linear or logistic regression, and (2) reasons it's better than other non-parametric methods like random forests. Let's look at these two categories.
+
+### Why BART is (often) better than parametric Bayesian methods
+
+Compared to parametric models, BART lets you easily and automatically discover a prediction model's best functional form. The best, at least, in terms of partitioning the feature space as trees. In a way, it's plug and play. 
+
+There are a few reasons why this brings benefits over parametric Bayesian models. First, no more worrying about the assumption of linearity between the predictors and the outcome. No more fishing around with splines or polynomials just in case the relationship is nonlinear. If it's nonlinear, the algorithm will create a nonlinear fit without you intervening.
+
+For causal inference, the algorithm automatically incorporates interactions to the degree they appear in the data. No more trying multiple models, some with and some without interactions, to see if there are interaction effects. You get them for free.
+
+Finally, variable selection is simplified. Predictors that do not predict the outcome will simply not find their way into any trees. Humans don't have to identify and exclude them, the model identifies and excludes them.
+
+### Why BART is (often) better than other non-parametric methods
+
+There's one answer here: you get the full posterior distribution of your outcome just like with any Bayesian model. This is crucial with causal inference as it let's you map the uncertainty of your treatment effects. Black-box machine learning models don't do this. They give you one answer and tell you little about uncertainty in the answer.
+
+## What is the veil of darkness test?
+
+This post is about me learning and applying BART. But, applying algorithms I'm interested in to topics I'm curious about helps me stay engaged. This post's topic is racial disparities in traffic stops using the veil of darkness test.
+
+Here's how [a group of scholars](https://www.nature.com/articles/s41562-020-0858-1) explained the test:
+
+>[The] method starts from the idea that officers who engage in racial profiling are less able to identify a driver’s race after dark than during the day. As a result, if officers are discriminating against black drivers—all else being equal—one would expect black drivers to comprise a smaller share of stopped drivers at night, when a veil-of-darkness masks their race. To account for patterns of driving and police deployment that may vary throughout the day, the test leverages the fact that the sun sets at different times during the year.^[Pierson, E., Simoiu, C., Overgoor, J., Corbett-Davies, S., Jenson, D., Shoemaker, A., & Goel, S. (2020). A large-scale analysis of racial disparities in police stops across the United States.() Nature human behaviour, 4(7), 736-745.]
+
+For example, let's say it is dark at 7 p.m. for a third of the year, light for a third of the year, and kind-of dark for a third of the year. We want to compare the percentage of all drivers pulled over are Black and when it's light at 7 p.m. against the percentage of all drivers are pulled over who are Black when it's dark at 7 p.m. If a larger percentage are pulled over when it's light we have some evidence of racial discrimination.  
+
+This reduces to a prediction problem. For each traffic stop, we want to predict the driver's race given the time of the stop, the location (county), whether it's dark out, and other possible covariates. Then, we'll turn around and predict every driver's race. If the probability that a driver is Black is higher during the day than at night - holding time, location, and other covariates constant - then we have evidence of racial discrimination. 
+
+Researchers generally apply logistic regression to this problem. And that's a great tool. But, we're here to learn BART, so that what we're applying. Plus, BART provides all the benefits over parametric models that we mentioned earlier. 
+
+## Exploratory analysis of racial disparities
+
+Talk about data.
+
 ```{r importLibraries}
 library(glue)
 library(vroom)
@@ -41,7 +88,7 @@ library(tidycensus)
 library(lubridate)
 library(highcharter)
 library(scales)
-library(widgetframe)
+library(widgetframe) 
 library(suncalc)
 library(tigris)
 library(sf)
@@ -154,8 +201,6 @@ create_train_test_sets <- function(split_partition, predictor_variables, train_o
   
 }
 ```
-
-
 
 ## Stops per 100 residents for black and white drivers
 
@@ -397,8 +442,7 @@ gc()
 
 ## BART Causal Model
 
-
-```{r bartDataset}
+```{r bartDataset, eval = F}
 # Bart model for all counties ---------------------
 bart_mod <- bartc(
   response = is_black,
@@ -410,7 +454,7 @@ bart_mod <- bartc(
 )
 ```
 
-```{r bartCtyAte}
+```{r bartCtyAte, eval = F}
 # Bart mdoels by county -------------------------
 
 # initialize dataframe to store ates
