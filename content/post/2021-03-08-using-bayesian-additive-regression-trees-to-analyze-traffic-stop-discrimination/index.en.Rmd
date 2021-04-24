@@ -1,5 +1,5 @@
 ---
-title: Using Bayesian Additive Regression Trees to Analyze Traffic Stop Discrimination
+title: Using Bayesian Additive Regression Trees to Analyze Traffic Stop Bias
 author: ''
 date: '2021-03-08'
 slug: using-bayesian-additive-regression-trees-to-analyze-traffic-stop-discrimination
@@ -35,7 +35,7 @@ knitr::opts_chunk$set(echo = T,
 
 Bayesian Additive Regression Trees (BART) are a Bayesian version of random forests. They're flexible, non-parametric, and supply a full posterior distribution on outcomes. They have all the benefits of Bayesian modeling and non-parametric machine learning modeling in one algorithm.
 
-In this post, I practice with BART models in this post using traffic stop data as the backdrop. We'll apply BART to the veil of darkness test and see if we can uncover racial disparities on traffic stops.
+In this post, I practice with BART models using traffic stop data as the backdrop. We'll apply BART to the veil of darkness test and see if we can uncover racial disparities on traffic stops.
 
 ## Why BART?
 
@@ -62,24 +62,6 @@ Finally, variable selection is simplified. Predictors that do not predict the ou
 
 There's one answer here: you get the full posterior distribution of your outcome just like with any Bayesian model. This is crucial with causal inference as it let's you map the uncertainty of your treatment effects. Black-box machine learning models don't do this. They give you one answer and tell you little about uncertainty in the answer.
 
-## What is the veil of darkness test?
-
-This post is about me learning and applying BART. But, applying algorithms I'm interested in to topics I'm curious about helps me stay engaged. This post's topic is racial disparities in traffic stops using the veil of darkness test.
-
-Here's how [a group of scholars](https://www.nature.com/articles/s41562-020-0858-1) explained the test:
-
->[The] method starts from the idea that officers who engage in racial profiling are less able to identify a driver’s race after dark than during the day. As a result, if officers are discriminating against black drivers—all else being equal—one would expect black drivers to comprise a smaller share of stopped drivers at night, when a veil-of-darkness masks their race. To account for patterns of driving and police deployment that may vary throughout the day, the test leverages the fact that the sun sets at different times during the year.^[Pierson, E., Simoiu, C., Overgoor, J., Corbett-Davies, S., Jenson, D., Shoemaker, A., & Goel, S. (2020). A large-scale analysis of racial disparities in police stops across the United States.() Nature human behaviour, 4(7), 736-745.]
-
-For example, let's say it is dark at 7 p.m. for a third of the year, light for a third of the year, and kind-of dark for a third of the year. We want to compare the percentage of all drivers pulled over are Black and when it's light at 7 p.m. against the percentage of all drivers are pulled over who are Black when it's dark at 7 p.m. If a larger percentage are pulled over when it's light we have some evidence of racial discrimination.  
-
-This reduces to a prediction problem. For each traffic stop, we want to predict the driver's race given the time of the stop, the location (county), whether it's dark out, and other possible covariates. Then, we'll turn around and predict every driver's race. If the probability that a driver is Black is higher during the day than at night - holding time, location, and other covariates constant - then we have evidence of racial discrimination. 
-
-Researchers generally apply logistic regression to this problem. And that's a great tool. But, we're here to learn BART, so that what we're applying. Plus, BART provides all the benefits over parametric models that we mentioned earlier. 
-
-## Exploratory analysis of racial disparities
-
-Talk about data.
-
 ```{r importLibraries}
 library(glue)
 library(vroom)
@@ -95,6 +77,7 @@ library(sf)
 library(bartCause)
 library(tidybayes)
 library(lme4)
+library(gt)
 library(tidyverse)
 ```
 
@@ -105,7 +88,7 @@ library(tidyverse)
 post_theme <- theme_minimal() +
   theme(legend.position = 'bottom',
         plot.title = element_text(size = 11),
-        plot.subtitle = element_text(size = 10),
+        plot.subtitle = element_text(size = 10), 
         axis.title = element_text(size = 10))
 
 theme_set(post_theme)
@@ -202,8 +185,6 @@ create_train_test_sets <- function(split_partition, predictor_variables, train_o
 }
 ```
 
-## Stops per 100 residents for black and white drivers
-
 ```{r importData, cache = T}
 # downlaod traffic stop data --------------------------
 
@@ -224,6 +205,8 @@ nc_stops <- nc_stops %>%
 ```
 
 ## Comparing Stops Per 100 Residents Among Racial Groups
+
+Prior to modeling racial bias with the veil of darkness test, let's take a look at the data. The traffic stop data set comes from [The Stanford Open Policing Project](https://openpolicing.stanford.edu/) and is the same data used in [the last post](https://www.shaneorr.io/post/exploratory-analysis-of-north-carolina-traffic-stop-data/).
 
 ```{r importCensus, cache = T}
 # racial populations by county from census ----------------
@@ -327,6 +310,10 @@ stops_by_race <- nc_stops %>%
 
 ```
 
+One way to show racial differences in traffic stops is to compare stops per 100 residents between racial groups. The graph below shows this comparison for all North Carolina counties. The left plot compares Black and White drivers, while the right plot highlights Hispanic and White drivers. Each point is a county. The diagonal line is the trend we would expect if drivers of different races have the same number of stops per 100 residents.
+
+For almost all counties in North Carolina, Black drivers are stopped at a higher rate per 100 residents than White drivers. This is shown by almost all of the points lying above the diagonal line for the Black / White comparison chart. The Hispanic and White rates, however, are similar as shown by the dots in the Hispanic / White graph falling along the diagonal line.
+
 ```{r plotStopsRace}
 # scatter plot of race and perc. stops compared to overall perc. pop ----------
 
@@ -346,7 +333,23 @@ hw_grid(
 )
 ```
 
-## Veil Of Darkenss Test
+Of course, stopping our analysis here is unwarranted. First, this does not account for how often different racial groups drive. It's comparing stops per 100 residents, not stops per 100 miles driven. Second, we have not accounted for differences in policing patterns. In general, police patrol Black neighborhoods more frequently than White neighborhoods. Therefore, the greater police presence could account for the differences in stops per 100 residents. Although, it's no vindication of police to explain away the differences in stops per 100 residents by saying that their neighborhoods are more heavily patrolled. This simply kicks the bias up a step to the level of the deployment of policing assets. Finally, drivers within different racial groups may just drive differently.
+
+## Veil of darkenss test
+
+The veil of darkness test attempts to overcome these differences. The test has its own weaknesses and should only be seen as additional evidence. It can provide evidence for or against bias in police stops, but should never be taken as the final say.
+
+### What is the veil of darkness test?
+
+Here's how [a group of scholars](https://www.nature.com/articles/s41562-020-0858-1) explained the test:
+
+>[The] method starts from the idea that officers who engage in racial profiling are less able to identify a driver’s race after dark than during the day. As a result, if officers are discriminating against black drivers—all else being equal—one would expect black drivers to comprise a smaller share of stopped drivers at night, when a veil-of-darkness masks their race. To account for patterns of driving and police deployment that may vary throughout the day, the test leverages the fact that the sun sets at different times during the year.^[Pierson, E., Simoiu, C., Overgoor, J., Corbett-Davies, S., Jenson, D., Shoemaker, A., & Goel, S. (2020). A large-scale analysis of racial disparities in police stops across the United States.() Nature human behaviour, 4(7), 736-745.]
+
+For example, let's say it is dark at 7 p.m. for a third of the year, light for a third of the year, and kind-of dark for a third of the year. We want to compare the percentage of all drivers pulled over are Black and when it's light at 7 p.m. against the percentage of all drivers are pulled over who are Black when it's dark at 7 p.m. If a larger percentage are pulled over when it's light we have some evidence of racial bias.  
+
+This reduces to a prediction problem. For each traffic stop, we want to predict the driver's race given the time of the stop, the location (county), whether it's dark out, and other possible covariates. Then, we'll turn around and predict every driver's race. If the probability that a driver is Black is higher during the day than at night - holding time, location, and other covariates constant - then we have evidence of racial bias. 
+
+Researchers generally apply logistic regression to this problem. And that's a great tool. But, we're here to learn BART, so that what we're applying. Plus, BART provides all the benefits over parametric models that we mentioned in the beginning. 
 
 ```{r minutesToDuskDataset}
 # create dataset for veil of darkness test -----------------------
@@ -440,7 +443,13 @@ rm(nc_counties_sunset)
 gc()
 ```
 
-## BART Causal Model
+### Applying BART to the veil of darkness test
+
+We're use the `bartCause` package to run our model. `bartCause` makes it easy to do causal inference with BART models. Although this is not a pure causal inference problem, a measurement such as the average treatment effect - with the treatment being whether it is dark - can shed light on the issue. The average treatment effect of darkness on the probability that the driver is Black represents the percentage point difference in the probability the driver is Black between daytime and darkness. This is the number we want. With `bartCause`, it's easy to calculate this number. 
+
+Another benefit of using `bartCause` is that the treatment variable will be included in every tree. In a typical BART model, like in a random forest, not every variable is used in each decision tree. Including the variable signifying whether it is dark out in all trees will help create a more precise predictions about differences in whether it is dark outside.^[I learned this the hard way. I originally created the model with the `BART` package and calculated the difference in probabilities between darkness and daytime myself. But, the difference for every observation was zero. By zero, I mean literally zero, not 0.0000003 or something. This was odd. The random part of random forests also applies to BART and this randomness should prevent the difference from being exactly zero. Upon investigation, however, I saw that no trees contained the variable signifying whether it was dark outside. This explains why running predictions with changes to this variable did not alter the prediction. It's like doubling the amount of salt in a recipe that does not call for salt. The taste will be the same. But, its exclusion from all trees does signify that the has little to no impact on predictions.]
+
+Here's all the code we need to create the model. Note that the code behind this entire post is available on [GitHub](https://github.com/shanejorr/shanes-site/tree/main/content/post/2021-03-08-using-bayesian-additive-regression-trees-to-analyze-traffic-stop-discrimination). The confounders are additional variables we want to account for. As already noted, BART automatically incorporates non-linearities and interactions so there is no need to try non-linear terms like splines (`splines::ns((minute, df = 4)`) or interaction effects (`minute*county_name`). You get it all. And finally, we'll use default priors for stuff like the number of trees and the number of variables per tree.
 
 ```{r bartDataset, eval = F}
 # Bart model for all counties ---------------------
@@ -454,6 +463,8 @@ bart_mod <- bartc(
 )
 ```
 
+The model above gives us a single percentage point difference for the 20 largest NC counties in the probability a driver is black between stops in daytime and stops at night. The code below, meanwhile, provides this probability for each of the 20 largest counties individually. It creates a different model for each county. Positive numbers tell us that there is a higher probabiity the driver pulled over is Black compared to 
+
 ```{r bartCtyAte, eval = F}
 # Bart mdoels by county -------------------------
 
@@ -464,7 +475,7 @@ bart_cty_ates <- overall_ate[[9]] %>%
   mutate(county = 'All Counties')
 
 # iterate through each county, filter for data that only includes county, run BART model
-for (cty in most_pop_counties) {
+for (cty in most_pop_counties[19]) {
   
   # status update
   print(cty)
@@ -487,21 +498,39 @@ for (cty in most_pop_counties) {
   cty_ate <- cty_ate[[9]] %>%
     mutate(county_name = !!cty)
   
-  print(cty_ate)
-  
   bart_cty_ates <- bart_cty_ates %>%
     bind_rows(cty_ate)
-  
-  print(bart_cty_ates)
-  
-  write_csv(bart_cty_ates, 'bart_cty_ates.csv')
-  
-  rm(bart_mod_cty)
   
 }
 ```
 
+Now for the results. The graph below shows for each county and all of North Carolina the percentage point difference between daytime and darkness in the probability that the driver pulled over is Black. The aggregate difference for the 20 largest NC counties sits near zero, with its 95% credible interval crossing zero. Functionally, there is no difference at the state level.
+
+County differences bounce around zero. They are symmetrically distributed around zero and all 95% credible intervals also cross zero. This combination means that we cannot say anything with confidence about counties. We cannot even say for sure what side of zero their diffierences in probabilities sits on.
+
+```{r echo = F}
+# plot of average treatment effects --------------------------
+bart_results <- read_csv('bart_ate.csv')
+
+bart_results %>%
+  mutate(is_NC = ifelse(str_detect(county_name, "^20.*"), T, F)) %>%
+  ggplot(aes(estimate, fct_reorder(county_name, estimate), color = is_NC)) +
+    geom_point() +
+    geom_segment(aes(x = ci.lower, xend = ci.upper, y = county_name, yend = county_name)) +
+    geom_vline(xintercept = 0, linetype = 2, alpha = .5) +
+    scale_color_manual(values = c('black', 'dodgerblue3')) +
+    labs(title = NULL,
+         x = 'Perc. point difference between daytime and darkness\nIn probability that driver pulled over is Black',
+         y = NULL) +
+    theme_minimal() +
+    theme(legend.position = 'none')
+```
+
 ## Logistic regression model as a check
+
+As mentioned earlier, researchers often use logistic regression as the model of choice for the veil of ignorance test. We'll sanity check the BART results with logistic regression. 
+
+Here's our model. We're only creating one aggregate model using the 20 largest counties.
 
 ```{r}
 # logistic regression model with LMER
@@ -512,12 +541,18 @@ nc_stops_veil <- nc_stops_veil %>%
          age_scale = scale(subject_age))
 
 lmer_mod <- glmer(
-  is_black ~ is_dark + minute_scale + age_scale + subject_sex + (1 | county_name) + (1 | year),
+  is_black ~ is_dark + splines::ns(minute_scale, df = 4) + splines::ns(age_scale, df = 4) + subject_sex + (1 | county_name) + (1 | year),
   data = nc_stops_veil,
   family = binomial(link = "logit")
 )
+```
 
-names(summary(lmer_mod))
+The following table highlights the results. The value of interest is the regression coefficient for the term signifying whether is it daytime or darkness. The coefficient is in log-odds, not the percentage point difference in probabilities. As such, the values cannot be directly compared to the estimates from the BART model. But, positive numbers have the same meaning as positive numbers in the BART model: Blacks are more likely to get pulled over during nighttime than daytime. Also like BART, zero means no effect. 
+
+The regression model's result mirrors BART. The coefficient value is slightly positive, but the 95% credible interval crosses zero.
+## LKimJust as in BART, the logistic regression model does not provide evidence of bias in traffic stops.
+
+```{r}
 
 summary(lmer_mod)$coefficients %>%
   as.data.frame() %>%
@@ -527,5 +562,22 @@ summary(lmer_mod)$coefficients %>%
   filter(rowname == 'is_darkTRUE') %>%
   mutate(county_name = '20 Largest NC Counties') %>%
   select(county_name, Estimate, `Std. Error`, starts_with('ci')) %>%
-  mutate(across(where(is.numeric), ~round(., 3)))
+  mutate(across(where(is.numeric), ~round(., 3))) %>%
+  select(county_name, Estimate, starts_with('ci')) %>%
+  gt() %>%
+    cols_label(county_name = "",
+              ci.lower = "95% CI lower",
+              ci.upper = "95% CI upper")
 ```
+
+## Limitations of the veil of darkness test
+
+The veil of darkness test, like all tests, has its limits. The first is the test's scope. It's not trying to discern bias writ-large, but a narrow type of bias: bias when police officers make the quick decision to pull someone over. But, there are multiple entry points of bias with law enforcement. As noted earlier, there might be racial bias is the deployment of law enforcement assets. This bias could feed into disparities in traffic stops without being picked up by the veil of darkness test.
+
+But, the scope is even smaller than this. It only examines police officer bias in a small roughly three hour period when it's daytime part of the year and nighttime part of the year.
+
+Additionally, many streets contain artificial lighting. The veil of darkness test assumes that officers do not know the race of the driver they are pulling over at night. often, however, this isn't true.
+
+Finally, there are factors that correlate with race which our model doesn't consider. Vehicle make, model, and year could correlate with race and are visible to the officer at night. If stops correlate with these three items and these items also correlate with race then we would not pick up bias.
+
+That said, the test is a form of evidence pointing to bias or the lack thereof. .
