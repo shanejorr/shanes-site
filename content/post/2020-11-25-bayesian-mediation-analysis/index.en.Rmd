@@ -1,13 +1,16 @@
 ---
-title: A First Attempt at Bayesian Mediation Analysis
-author: Shane Orr
+title: "A First Attempt at Bayesian Mediation Analysis"
+author: "Shane Orr"
 date: '2020-11-25'
-slug: bayesian-mediation-analysis
+output:
+  html_document:
+    df_print: paged
 categories:
-  - bayesian analysis
-  - mediation analysis
+- bayesian analysis
+- mediation analysis
 tags: []
-subtitle: "The same process and 'almost' the same results as non-Bayesian approaches, but cooler"
+subtitle: The same process and 'almost' the same results as non-Bayesian approaches,
+  but cooler
 summary: ''
 authors: []
 lastmod: '2020-11-25T18:38:02-05:00'
@@ -22,16 +25,40 @@ links:
   icon_pack: fab
   name: Github
   url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-11-25-bayesian-mediation-analysis/index.en.Rmd
-  
-draft: true
+draft: yes
+slug: bayesian-mediation-analysis
 ---
 
 ```{r setup, echo = F}
-knitr::opts_chunk$set(echo = F,
+knitr::opts_chunk$set(echo = T,
                       message = F,
                       warning = F,
                       error = F)
 ```
+
+## What is mediation analysis? {#introduction}
+
+Let's say you want to examine the affect of employment on whether a student passes a class. You set up a cruel randomized controlled trial where some students are forced to work 15 hours a week and other are prohibited from working at all. You speculate that working students will perform worse because they have less time to study.
+
+We can visually depict the causal relationships with the following Directed Acyclic Graph (DAG):
+
+```{r mainDag, fig.cap = 'DAG highlighting the effect of working on passing a class', out.width = '50%'}
+knitr::include_graphics(glue("dag/working_dag_main.png"))
+```
+
+As the graph shows, we might be interested in three different ways that working affects the probability of passing a class.
+
+1.  *Direct Effect:* The direct effect is the effect that working has on class passage through a direct causal link. There is no intermediate cause between working and passing the class; at least none that we can measure.
+
+2.  *Indirect Effect:* In our example, working's indirect effect on bar passage is its effect through hours studied. Working impacts hours studied and hours studied affects class passage.
+
+3.  *Total Effect:* Total effect is the overall, all things considered, effect of working on passing. It's the direct effect plus the indirect effect.
+
+The goal of mediation analysis is to disentangle these three effects.
+
+THis post is my attempt to manually code a mediation analysis. There are packages that do it for you but I could not find one to fit my use case: mediation analysis using a Bayesian hierarchical logistic regression model and a Bayesian hierarchical linear regression. So, let's see if I can do it on my own!
+
+Let's get set up with packages and a series of functions that I will repeatedly use.
 
 ```{r loadPackages}
 library(rstanarm)
@@ -121,29 +148,9 @@ two_group_plot <- function(df, plot_title) {
 }
 ```
 
-## What is mediation analysis?
-
-Let's say you want to examine the effect of working on whether a student passes a class. You set up a randomized controlled trial where some students are forced to work 15 hours a week and other are prohibited from working at all. But, a third variable also come into play. Working students have less time to study and this negatively impacts their probability of passing.
-
-We can visually depict the causal relationships with the following Directed Acyclic Graph (DAG):
-
-```{r mainDag, fig.cap = 'DAG highlighting the effect of working on passing a class', out.width = '50%'}
-knitr::include_graphics(glue("dag/working_dag_main.png"))
-```
-
-As the graph shows, we might be interested in three different ways that working effects the probability of passing a class.
-
-1.  *Direct Effect:* The direct effect is the effect that working has on class passage through a direct causal link. For example, working may impact passage through an unknown mechanism outside of hours studied. Assume we don't know, or cannot measure, this mechanism, working will have a direct effect on class passage.
-
-2.  *Indirect Effect:* In our example, working's indirect effect on bar passage is its effect through hours studied. Working impacts hours studied and hours studied effects class passage.
-
-3.  *Total Effect:* Not self-define, but the total effect is the overall, all things considered, effect of working on passing. It's the direct effect plus the indirect effect.
-
-The goal of mediation analysis is to disentangle these three effects.
-
 ## Untangling the Gordian Effects Knot
 
-We'll simulate a data set to show the three types of effects. The fake data set includes three columns: a 0 or 1 identifying whether the student worked, a continuous number showing how many hours the student worked in the given week, and a 0 or 1 signifying whether the student passed the class.
+We'll simulate a data set to show the three types of effects outlined in the [introduction](#introduction). The fake data set includes three columns: (1) a 0 or 1 identifying whether the student worked, (2) a continuous number showing how many hours the student studied in the given week, and (3) a 0 or 1 signifying whether the student passed the class.
 
 The code below creates the fake data.
 
@@ -177,19 +184,20 @@ final_grade <- rbinom(n = n, size = 1, prob = final_grade)
 grades <- data.frame(
   work = working,
   study = study_hours,
-  grade = final_grade
+  pass = final_grade
 )
 ```
 
 Here's a sample of the data set.
 
 ```{r}
-kable(head(grades))
+
+kable(head(grades), digits = 2)
 ```
 
-### Direct effect the old fashioned way
+### Calcualting the direct effect the old fashioned way
 
-In figure \@ref(fig:mainDag), the direct effect of working on class passage is the causal line that does not go through hours studied. We calculate this through a single model that conditions on hours studied. By conditioning on hours studied, we block the path from working to passage that flows through hours studied. This only leaves the direct effect path open.
+In figure \@ref(fig:mainDag), the direct effect of working on passing the class is the causal line that does not go through hours studied. We calculate this through a single model that conditions on hours studied. By conditioning on hours studied, we block the path from working to course passage that flows through hours studied. This only leaves the direct effect path open.
 
 ```{r directDag, fig.cap = 'DAG highlighting the direct effect of working on passing a class', out.width = '50%'}
 knitr::include_graphics("dag/working_dag_direct.jpg")
@@ -197,41 +205,47 @@ knitr::include_graphics("dag/working_dag_direct.jpg")
 
 By conditioning on hours studied, the effect of working on passing represents the effect with hours studied being the same for both the working and non-working groups. We thus remove any effect working has on passage via creating differences in hours studied between workers and non-workers.
 
-We can isolate the direct effect through a simple Bayesian logistic regression model with hours study and working status as predictors and whether the student passed as the response. The hours worked regression coefficient then drives the direct effect.
+We can isolate the direct effect through a simple Bayesian logistic regression model with hours study and working status as predictors and whether the student passed as the response. By including hours worked as a predictor, we hold it constant when examining the relatinship between working and passing the class. The working regression coefficient then drives the direct effect.
 
-```{r deMod}
+```{r deMod, cache = T}
 # logistic regression model to identify direct effect
-full_mod <- stan_glm(grade ~ study + work, 
+full_mod <- stan_glm(pass ~ study + work, 
                      family = binomial('logit'),
                      seed = 938,
                      data = grades)
 
 ```
 
-With our model in hand, we can now visualize the direct effect. One way to show it is to predict class passage for workers and non-workers, while holding hours studied the same between workers and non-workers. In other words, we can use the model to predict class passage for the two following hypothetical students. The hours worked is the mean hours worked in our simulated data.
+With our model in hand, we can now visualize the direct effect. One way is to predict class passage for workers and non-workers, while holding hours studied constant. In other words, we can use the model to predict class passage for the two following hypothetical students. The hours worked is the mean hours worked in our simulated data.
 
 ```{r}
+# predictio ndataset
 mean_hours <- mean(grades$study)
 
 direct_prediction <- data.frame(
   work = work_order,
   study = mean_hours
 )
-
-kable(direct_prediction)
 ```
 
-Here is the posterior distribution of the probability of passing the class, grouped by whether students worked.
+Here is the posterior distribution of the probability of passing the class, grouped by whether students worked. We assume all students studied `r (mean_hours)` hours, the mean amount.
 
 ```{r dePlotDiff, fig.caption = "Direct effect: Difference in class passage probabilities between workers and non-workers, with hours studied held constant.", fig.height = 2.7, fig.width = 4}
 full_mod %>%
   add_fitted_draws(newdata = direct_prediction, seed = 93, n = 300) %>%
-  two_group_plot(glue("Prob. of Passing based on Work Status and\nHours studied held constant at {round(mean_hours, 2)} Hours"))
+  two_group_plot(glue("Prob. of Passing based on Work Status\nHours studied held constant at {round(mean_hours, 2)} Hours"))
 ```
 
-A weakness of \@ref(fig:dePlotDiff) is that it struggles to highlight the estimated difference, and the uncertainty in the difference, in class passage probabilities between workers and non-workers. We can better highlight the difference and uncertainty in the difference by creating predictions of class passage for workers and non-workers at all values of the number of hours studied in the data set. The difference between the posterior distributions for workers and non-workers can then be calculated.
+We see that students who worked and a lower probability of passing the class compared to non-workers, even when accounting for hours studied. But, there is overlap in the probability distributions. 
+
+We can better highlight the difference and uncertainty through the following steps:
+
+1.  Create two posterior predictive distributions for passing the class for each student: one assuming the student worked and another assuming the student did not work.
+2.  For each set of predictions (each student), subtract the posterior predictive distribution arising when the student works from the distibution occuring when the student does not work.
 
 ```{r}
+# for each student (observations) create two predictions for passing the class, one if the student worked
+# and anotehr if the student did not work
 
 full_mod_newdata <- expand_grid(study = grades$study,
                                 work = work_order) %>%
@@ -243,44 +257,41 @@ direct_effect_post <- full_mod %>%
   posterior_diff(new_df = full_mod_newdata, effect_type = 'Direct Effect')
 ```
 
+This difference is shown below. It gives us the posterior predictive distribution of the difference in passing the class between workers and non-workers, holding hours studied constant. It aligns with figure \@ref(fig:dePlotDiff), but puts more contours on the magnitude of the difference and its uncertainty. 
+
 ```{r iePlotDiff, fig.cap = "Direct effect of working on passing the class.", fig.height = 2.5, fig.width = 4}
 posterior_diff_plot(direct_effect_post, x_limits = c(-15, 30), plot_title = 'Direct Effect of Working on Passing')
 ```
 
 This gives us a much better picture of the difference in class passage probabilities between workers and non-workers. And we can also use the posterior distribution of differences to calculate probabilities such as the probability that the direct effect is positive.
 
-```{r}
-# calculate the probability that the direct effect is greater than zero
-direct_effect_post %>%
-  mutate(over_zero = ifelse(diff > 0, 1, 0)) %>%
-  summarize(over_zero = sum(over_zero) / nrow(.)) %>%
-  mutate(over_zero = glue("{round(over_zero*100, 0)}%")) %>%
-  kable(col.names = 'Prob. direct effect is positive')
-```
-
 ### Total effect the old fashioned way
 
-The total effect is the effect of working on class passage through all causal links originating with working. In figure \@ref(fig:mainDag), its the effect that goes straight from working to class passage and the effect that runs through hours studied. We calculate this effect by failing to condition on hours studied. By removing hours studied from the equation, the effect that previously traveled through hours studied now goes directly to class passage.
+The total effect is the effect of working on class passage through all causal links originating with working. In figure \@ref(fig:mainDag), its the effect that goes straight from working to class passage and the effect that runs through hours studied. We calculate this effect by failing to condition on hours studied. By removing hours studied from the equation, the effect that previously traveled through hours studied now goes directly to class passage. This allows us to merge the two lines into one.
 
 ```{r teDag, fig.cap = 'DAG highlighting the effect of working on passing a class', out.width = '50%'}
 knitr::include_graphics("dag/working_dag_total.png")
 ```
 
-We can estimate the total effect by a Bayesian logistic regression model with work status as the lone predictor and class passage as the response. This is a similar model to the direct effect model, except hours studied is removed as a predictor.
+We can estimate the total effect by a Bayesian logistic regression model with work status as the lone predictor and class passage as the response.
 
-```{r teMod}
+```{r teMod, cache = T}
 # total effect model
-total_effect <- stan_glm(grade ~ work, 
-                           family = binomial('logit'),
-                           seed = 938,
-                           data = grades)
+total_effect <- stan_glm(pass ~ work, 
+                         family = binomial('logit'),
+                         seed = 938,
+                         data = grades)
 ```
+
+As with the direct effect, we can plot the posterior predictive distributions of workers and non-workers.
 
 ```{r tePlotPosterior, fig.height = 3, fig.width = 4}
 total_effect %>%
   add_fitted_draws(newdata = data.frame(work = work_order), seed = 93, n = 300) %>%
   two_group_plot('Prob. of Passing based on Work Status')
 ```
+
+We can also focus on the difference and calculate the posterior predictive distribution representing the difference in class passage between workers and non-workers.
 
 ```{r tePlotDiff, fig.height = 2.5, fig.width = 4}
 diff_limits <- c(-10, 35)
@@ -291,11 +302,13 @@ total_effect_post <- total_effect %>%
 posterior_diff_plot(total_effect_post, x_limits = diff_limits, plot_title = 'Total Effect of Working on Passing')
 ```
 
+The total effect shown in figure \@ref(fig:tePlotDiff) is larger than the direct effect from figure \@ref(fig:tePlotDiff). This is expected. The total effect includes the effect of studying on passage, while the direct effect does not. Since this effect is positive, we would expect the total effect to be larger.
+
 ### Indirect effect (kind-of) the old fashioned way
 
 #### Step 1: Effect of working on number of hours studied
 
-```{r ieModel}
+```{r ieModel, cache = T}
 # indirect effect model
 indirect_effect1 <- stan_glm(study ~ work, 
                          family = 'gaussian',
@@ -338,10 +351,6 @@ ie1_post_pred <- indirect_effect1 %>%
   ungroup() %>%
   select(work_original = work, study = .value) %>%
   mutate(work = 1)
-
-# ie1_post_pred <- ie1_post_pred %>%
-#   bind_rows(ie1_post_pred %>%
-#               mutate(work = 0))
 
 ie1_post_pred <- ie1_post_pred %>%
   group_by(work, work_original) %>%
@@ -397,7 +406,7 @@ posterior_diff_plot(indirect_effect_post_diff, x_limits = c(0, 25), plot_title =
 ```{r}
 med_fit <- lm(study ~ work, data = grades)
 
-out_fit <- glm(grade ~ work + study,
+out_fit <- glm(pass ~ work + study,
               data = grades, family = binomial("logit"))
 
 med_out <- mediate(med_fit, out_fit, treat = "work", mediator = "study",
@@ -440,5 +449,5 @@ bayes_effect %>%
            y = NULL) +
     theme(legend.position = 'none')
 ```
-
 ## The versitility of mediation analysis
+
