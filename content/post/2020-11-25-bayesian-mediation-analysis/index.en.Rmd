@@ -43,7 +43,7 @@ Let's say you want to examine the affect of employment on whether a student pass
 We can visually depict the causal relationships with the following Directed Acyclic Graph (DAG):
 
 ```{r mainDag, fig.cap = 'DAG highlighting the effect of working on passing a class', out.width = '50%'}
-knitr::include_graphics(glue("dag/working_dag_main.png"))
+knitr::include_graphics(glue::glue("dag/working_dag_main.png"))
 ```
 
 As the graph shows, we might be interested in three different ways that working affects the probability of passing a class.
@@ -160,7 +160,7 @@ The code below creates the fake data.
 # number of rows in dataset
 n <- 500
 
-# 1 if student works, 0 otherwise
+# 1 if student does not work, 0 if student works
 work_order <- c(1, 0)
 working <- rep(work_order, times = n/2)
 
@@ -241,7 +241,7 @@ We see that students who worked and a lower probability of passing the class com
 We can better highlight the difference and uncertainty through the following steps:
 
 1.  Create two posterior predictive distributions for passing the class for each student: one assuming the student worked and another assuming the student did not work.
-2.  For each set of predictions (each student), subtract the posterior predictive distribution arising when the student works from the distibution occuring when the student does not work.
+2.  For each set of predictions (each student), subtract the posterior predictive distribution arising when the student works from the distribution occurring when the student does not work.
 
 ```{r}
 # for each student (observations) create two predictions for passing the class, one if the student worked
@@ -306,107 +306,106 @@ The total effect shown in figure \@ref(fig:tePlotDiff) is larger than the direct
 
 ### Indirect effect (kind-of) the old fashioned way
 
-Calculating the indirect effect is more challenging. We want to calculate the effect of working on passing the class that arises because of the effect of working on number of hours studied. Our speculation on the indirect effect is that working causes students to study less, which then leads to them being less likely to pass the class. We'll divide the analysis into two steps.
+Calculating the indirect effect is more challenging. We want to calculate the effect of working on passing the class that arises because of the effect of working on number of hours studied. Our speculation on the indirect effect is that working causes students to study less, which then leads to them being less likely to pass the class.
 
-#### Step 1: Effect of working on number of hours studied
+Here's how the authors of mediation method used here describe calculating indirect effects:
 
-The first step is the easiest. We estimate the effect of working on hours studied with a simple linear regression model containing working as the predictor and hours studied as the response.
+> First, we fit regression models for the mediator and outcome. The mediator is modeled as a function of the treatment and any relevant pretreatment covariates. The outcome is modeled as a function of the mediator, the treatment, and the pretreatment covariates. The form of these models is immaterial. ... Based on the mediator model, we then generate two sets of predictions for the mediator, one under the treatment and the other under the control. For example, in the media framing study, this would correspond to predicted levels of anxiety after reading a news story on immigration or a neutral news story. 
 
-```{r ieModel, cache = T}
-# indirect effect model
-indirect_effect1 <- stan_glm(study ~ work, 
-                         family = 'gaussian',
-                         seed = 938,
-                         data = grades)
+> For the next step, the outcome model is used to make potential outcome predictions. ... First, the outcome is predicted under the treatment using the value of the mediator predicted in the treatment condition. Second, the outcome is predicted under the treatment condition but now uses the mediator prediction from the control condition. The ACME is then computed as the average difference between the outcome predictions using the two different values of the mediator.[^Imai, K., Keele, L., Tingley, D., & Yamamoto, T. (2011). Unpacking the black box of causality: Learning about causal mechanisms from experimental and observational studies. American Political Science Review, 765-789.]
+
+Taking our cue from the method's source, we'll proceed in two steps: (1) fit models, and (2) make potential outcome predictions.
+
+#### Step 1: Fitting regression models
+
+The first step is the easiest. We'll start by fitting two models:
+
+1.  Mediator model: The mediator, number of hours studied, as the response and the treatment, working, as the predictor.
+2.  Outcome model: The outcome, passing the class, as the response and the mediator and treatment, hours studied and working, as the predictors.
+
+We'll then create two sets of predictions from the mediator model, one for working students and another for non-working students.
+
+##### Mediator model
+
+Here is our simple mediator model.
+
+```{r mediatorModel, cache = T}
+mediator_model <- stan_glm(study ~ work, 
+                           family = 'gaussian',
+                           seed = 938,
+                           data = grades)
 ```
 
-Here's the posterior predictive distribution of the hours studied for workers and non-workers. Unsuprisingly, non-workers study more.
+##### Outcome model
 
-```{r iePlotPosterior, fig.height = 3, fig.width = 4}
-indirect_effect1 %>%
-  add_fitted_draws(newdata = data.frame(work = work_order), seed = 1837) %>%
-  two_group_plot('Effect of Working on Hours Studied') +
-  scale_x_continuous() +
-  xlab('Hours studied')
+And here is the almost equally simple outcome model.
+
+```{r outcomeModel, cache = T}
+outcome_model <- stan_glm(pass ~ work + study, 
+                          family = binomial('logit'),
+                          seed = 938,
+                          data = grades)
 ```
 
-#### Step 2: Effect of studying on passing after incorporating the effect of working on studying
+##### Predictions from mediator model
 
-Now for the tricky part. We want to first create predictions from the model we just created. These predictions represent the number of hours a student studies based on whether the student worked. We'll then take these predictions and feed them into a model with hours studied and working status as predictors. This is the full model. The predictions from this model tell us our indirect effects.
-
-*Raw effect of studying on passing*
-
-```{r iePlot2, fig.height = 3.5, fig.width = 3.5}
-ggpredict(full_mod, c("study [10:35]", "work"), seed = 39) %>%
-  plot() +
-  scale_color_brewer(palette = "Set2", type = "Qual", labels = c("Working", "Not working")) +
-  labs(title = 'Probability of Passing Class',
-       x = 'Hours studied',
-       y = 'Probability of passing',
-       color = NULL) +
-  theme(legend.position = 'bottom',
-        plot.title = element_text(size = 10))
-```
-
-*Effect of studying on passing, while incorporating effect of working on studying*
-
-Step 1: predict studying values for workers and non-workers, while holding work status constant.
+Now, we'll generate predictions from the mediator models. We'll predict hours studied for both workers and non-workers.
 
 ```{r}
-# posterior draws of work to study model
-ie1_post_pred <- indirect_effect1 %>%
-  add_fitted_draws(newdata = data.frame(work = work_order), n = 300, seed = 893) %>%
+# dataset that only includes two rows, one for a worker and one for a non-worker
+mediation_predict_dataset <- data.frame(work = work_order)
+
+mediator_mod_predictions <- add_fitted_draws(newdata = mediation_predict_dataset, 
+                                             model = mediator_model,
+                                             value = 'study',
+                                             n = 500,
+                                             seed = 1837)
+```
+
+#### Step 2: Create potential outcome predictions
+
+This is where things get challenging. We want to prediction the outcome, passing the class, using the full outcome model from the predictions created by the mediator model. Bayesian predictions, however, are not point estimates. They are the full posterior distribution of predicted probabilities. By creating predictions for workers and non-workers - two predictions - and specifying 500 draws from the posterior distribution - using `n = 500` in `add_fitted_draws` - we now have 1,000 separate predictions of hours studied. We have 500 for workers and 500 for non-workers. We'll feed all 1,000 hours studied values to the outcome model and make predictions of passing the class from these 1,000 predictions. And all 1,000 values will be assumed to come for workers. I'm sure that sounds convoluted, so here's the code.
+
+```{r}
+outcome_mod_predictions <- mediator_mod_predictions %>%
+  # save the work value from the mediation model because we need to take the difference between the predictions
+  # for workers and non-workers as specified in the mediation model
+  mutate(work_mediator = work,
+         # make all predicted values come from non-workers
+         work = 1) %>%
+  select(work_mediator, work, study) %>%
+  add_fitted_draws(model = outcome_model,
+                   n = 500,
+                   seed = 1837) %>%
   ungroup() %>%
-  select(work_original = work, study = .value) %>%
-  mutate(work = 1)
-
-ie1_post_pred <- ie1_post_pred %>%
-  group_by(work, work_original) %>%
-  median_hdci(study) %>%
-  select(work, work_original, study)
-
-kable(head(ie1_post_pred, 10), digits = 2)
+  arrange(.row, .draw, work_mediator)
 ```
 
+Finally, we calculate the difference in the probability of passing between workers and non-workers in the original mediation model.
+
 ```{r}
-ie1_post_pred <- data.frame(
-  work = c(1, 1),
-  study = c(25, 30),
-  work_original = c(1, 0)
-)
 
-indirect_effect_post <- full_mod %>%
-  add_fitted_draws(newdata = ie1_post_pred, n = 300, seed = 76) %>%
-  ungroup()
+working_work_mediator <- outcome_mod_predictions %>%
+  filter(work_mediator == 0) %>%
+  arrange(.row, .draw) %>%
+  rename(working_pass = .value, working_study = study)
 
-indirect_effect_post %>%
-  group_by(work_original) %>%
-  median_hdci(.value)
+nonworking_work_mediator <- outcome_mod_predictions %>%
+  filter(work_mediator == 1) %>%
+  arrange(.row, .draw) %>%
+  select(nonworking_pass = .value, nonworking_study = study) 
 
-ie2_post_pred0 <- indirect_effect_post %>%
-  filter(work_original == 0) %>%
-  mutate(.row = .row - 300) %>%
-  select(work_study = study, .row, .draw, value_work = .value)
-
-ie2_post_pred1 <- indirect_effect_post %>%
-  filter(work_original == 1) %>%
-  select(notwork_study = study, .row, .draw, value_notwork = .value)
-
-indirect_effect_post_diff <- ie2_post_pred0 %>%
-  left_join(ie2_post_pred1, by = c('.row', '.draw')) %>%
-  mutate(diff = value_notwork - value_work,
+mediation_predictions <- working_work_mediator %>%
+  bind_cols(nonworking_work_mediator) %>%
+  select(.row:working_study, nonworking_study, everything()) %>%
+  mutate(diff = nonworking_pass - working_pass,
          type_effect = 'Indirect Effect')
 ```
 
+All this complete, here is the posterior predictive distribution of our indirect effects.
 
-```{r fig.height = 3, fig.width = 4}
-indirect_effect_post %>%
-  select(work = work_original, .value) %>%
-  two_group_plot('Probability of Passing Class by Work Status')
-```
-
-```{r fig.height = 2.5, fig.width = 4}
-posterior_diff_plot(indirect_effect_post_diff, x_limits = c(-100, 100), plot_title = 'Indirect Effect of Working on Passing')
+```{r ieEffectPlot, fig.height = 2.5, fig.width = 4}
+posterior_diff_plot(mediation_predictions, x_limits = c(0, 25), plot_title = 'Indirect Effect of Working on Passing')
 ```
 
 ### Compare results to `mediation` package
@@ -433,9 +432,12 @@ mediation_effects <- tibble(
   upper_ci = upper_lower_ci[[2]],
   effect_group = 'Frequentist (mediation package)'
 )
+```
 
+
+```{r}
 # get 95% credible intervals for bayesian effects
-bayes_effect <- bind_rows(list(direct_effect_post, indirect_effect_post_diff, total_effect_post)) %>%
+bayes_effect <- bind_rows(list(direct_effect_post, mediation_predictions, total_effect_post)) %>%
   group_by(type_effect) %>%
   median_hdi(diff)
 ```
@@ -457,5 +459,5 @@ bayes_effect %>%
            y = NULL) +
     theme(legend.position = 'none')
 ```
-## The versitility of mediation analysis
 
+## The versitility of mediation analysis
