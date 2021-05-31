@@ -1,10 +1,10 @@
 ---
 title: "A First Attempt at Bayesian Mediation Analysis"
 author: "Shane Orr"
-date: '2020-11-25'
+date: '2021-05-25'
 output:
-  html_document:
-    df_print: paged
+  blogdown::html_page:
+    toc: true
 categories:
 - bayesian analysis
 - mediation analysis
@@ -13,7 +13,7 @@ subtitle: The same process and 'almost' the same results as non-Bayesian approac
   but cooler
 summary: ''
 authors: []
-lastmod: '2020-11-25T18:38:02-05:00'
+lastmod: '2021-05-25T18:38:02-05:00'
 featured: no
 image:
   caption: ''
@@ -25,7 +25,7 @@ links:
   icon_pack: fab
   name: Github
   url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2020-11-25-bayesian-mediation-analysis/index.en.Rmd
-draft: yes
+draft: no
 slug: bayesian-mediation-analysis
 ---
 
@@ -56,9 +56,20 @@ As the graph shows, we might be interested in three different ways that working 
 
 The goal of mediation analysis is to disentangle these three effects.
 
-THis post is my attempt to manually code a mediation analysis. There are packages that do it for you but I could not find one to fit my use case: mediation analysis using a Bayesian hierarchical logistic regression model and a Bayesian hierarchical linear regression. So, let's see if I can do it on my own!
+This post is my attempt to manually code a Bayesian mediation analysis. There are packages that do it for you but I could not find one to fit my use case: mediation analysis using a Bayesian logistic regression model and a Bayesian linear regression. So, let's see if I can do it on my own!
 
-Let's get set up with packages and a series of functions that I will repeatedly use.
+There are a couple different ways to do mediation analysis. This post implements the algorithm explained in the following two papers from Imai et al.
+
+1.  [Unpacking the Black Box of Causality: Learning about Causal Mechanisms from Experimental and Observational Studies](https://imai.fas.harvard.edu/research/files/mediationP.pdf)
+2.  [A General Approach to Causal Mediation Analysis](https://www.researchgate.net/profile/Luke-Keele/publication/47457932_A_General_Approach_to_Causal_Mediation_Analysis/links/00b7d51899a1467504000000/A-General-Approach-to-Causal-Mediation-Analysis.pdf)
+
+The appeal of this method is its flexibility. Other methods require models of the same type; for example two Guassian linear models. The method of Imai et al., however, can take any two models as long as they produce predictions. For example, a Guassian linear model and random forest could be used if that's what your heart desires. This flexibility becomes required if the mediation analysis requires a continuous predictor in one model and a categorical predictor in another. In such a case, you can use a Guassian linear regression and logistic regression. Other methods don't mix and match so easily.
+
+This post's wrinkle is that we're running Bayesian models through the algorithm.
+
+*Note: As we'll see [at the end](#conclusion), my results appear a bit off, so I'd advise against blindly following my technique. But, thinking through the issues allowed me to better understand mediation analysis. I hope this post also helps readers deepen their understanding of mediation analysis as well.*
+
+Let's get set up with packages and a series of functions that we will repeatedly use.
 
 ```{r loadPackages}
 library(rstanarm)
@@ -150,9 +161,7 @@ two_group_plot <- function(df, plot_title) {
 
 ## Untangling the Gordian Effects Knot
 
-We'll simulate a data set to show the three types of effects outlined in the [introduction](#introduction). The fake data set includes three columns: (1) a 0 or 1 identifying whether the student worked, (2) a continuous number showing how many hours the student studied in the given week, and (3) a 0 or 1 signifying whether the student passed the class.
-
-The code below creates the fake data.
+We'll simulate a data set to show the three types of effects outlined in the [introduction](#introduction). The fake data set includes three columns: (1) a 0 or 1 identifying whether the student worked with a 1 representing non-working students, (2) a continuous number showing how many hours the student studied in the given week, and (3) a 0 or 1 signifying whether the student passed the class with a 1 showing that the student passed.
 
 ```{r createDataset}
 # create simulated dataset --------
@@ -195,17 +204,15 @@ Here's a sample of the data set.
 kable(head(grades), digits = 2)
 ```
 
-### Calcualting the direct effect the old fashioned way
+## Direct effect the old fashioned way
 
-In figure \@ref(fig:mainDag), the direct effect of working on passing the class is the causal line that does not go through hours studied. We calculate this through a single model that conditions on hours studied. By conditioning on hours studied, we block the path from working to course passage that flows through hours studied. This only leaves the direct effect path open.
+In figure \@ref(fig:mainDag), the direct effect of working on passing the class is the causal line that does not go through hours studied. TO calculate this effect, we use a single model that predicts passing the class from working status, conditioning on hours studied. By conditioning on hours studied, we block the path from working to class passage that flows through hours studied. This only leaves the direct effect path open.
 
-```{r directDag, fig.cap = 'DAG highlighting the direct effect of working on passing a class', out.width = '50%'}
+```{r directDag, fig.cap = 'DAG highlighting the direct effect of working on passing a class.', out.width = '50%'}
 knitr::include_graphics("dag/working_dag_direct.jpg")
 ```
 
-By conditioning on hours studied, the effect of working on passing represents the effect with hours studied being the same for both the working and non-working groups. We thus remove any effect working has on passage via creating differences in hours studied between workers and non-workers.
-
-We can isolate the direct effect through a simple Bayesian logistic regression model with hours study and working status as predictors and whether the student passed as the response. By including hours worked as a predictor, we hold it constant when examining the relatinship between working and passing the class. The working regression coefficient then drives the direct effect.
+In this situation, we measure the effect of working on class passage, while keeping hours studied the same between workers and non-workers. Converting this idea to a model, we can isolate the direct effect through a simple Bayesian logistic regression model with hours study and working status as predictors and whether the student passed as the response.
 
 ```{r deMod, cache = T}
 # logistic regression model to identify direct effect
@@ -216,29 +223,27 @@ full_mod <- stan_glm(pass ~ study + work,
 
 ```
 
-With our model in hand, we can now visualize the direct effect. One way is to predict class passage for workers and non-workers, while holding hours studied constant. In other words, we can use the model to predict class passage for the two following hypothetical students. The hours worked is the mean hours worked in our simulated data.
+With our model in hand, we can now visualize the direct effect. Figure \@ref(fig:dePlotDiff) shows the posterior distribution of the probability of passing the class for both workers and non-workers. The number of hours studied is held constant at the mean number of hours studied: `r round(mean(grades$study), 2)` hours.
 
-```{r}
-# predictio ndataset
+```{r dePlotDiff, fig.cap = "Direct Effect - Difference in class passage probabilities between workers and non-workers, with hours studied held constant.", fig.height = 2.7, fig.width = 4}
+
+# prediction dataset
 mean_hours <- mean(grades$study)
 
 direct_prediction <- data.frame(
   work = work_order,
   study = mean_hours
 )
-```
 
-Here is the posterior distribution of the probability of passing the class, grouped by whether students worked. We assume all students studied `r (mean_hours)` hours, the mean amount.
-
-```{r dePlotDiff, fig.caption = "Direct effect: Difference in class passage probabilities between workers and non-workers, with hours studied held constant.", fig.height = 2.7, fig.width = 4}
+# visualization fo predictions for workers and non-workers
 full_mod %>%
   add_fitted_draws(newdata = direct_prediction, seed = 93, n = 300) %>%
   two_group_plot(glue("Prob. of Passing based on Work Status\nHours studied held constant at {round(mean_hours, 2)} Hours"))
 ```
 
-We see that students who worked and a lower probability of passing the class compared to non-workers, even when accounting for hours studied. But, there is overlap in the probability distributions. 
+We see that students who worked have a lower probability of passing the class compared to non-workers, even when accounting for hours studied. But, there is overlap in the probability distributions. 
 
-We can better highlight the difference and uncertainty through the following steps:
+We can better highlight the uncertainty surrounding the difference between workers and non-workers in the probability of passing the class through the following steps:
 
 1.  Create two posterior predictive distributions for passing the class for each student: one assuming the student worked and another assuming the student did not work.
 2.  For each set of predictions (each student), subtract the posterior predictive distribution arising when the student works from the distribution occurring when the student does not work.
@@ -257,23 +262,27 @@ direct_effect_post <- full_mod %>%
   posterior_diff(new_df = full_mod_newdata, effect_type = 'Direct Effect')
 ```
 
-This difference is shown below. It gives us the posterior predictive distribution of the difference in passing the class between workers and non-workers, holding hours studied constant. It aligns with figure \@ref(fig:dePlotDiff), but puts more contours on the magnitude of the difference and its uncertainty. 
+This difference is shown in figure \@ref(fig:dePlotDiffExact). It gives us the posterior predictive distribution of the difference in passing the class between workers and non-workers, holding hours studied constant. It aligns with figure \@ref(fig:dePlotDiff), but puts more contours on the magnitude of the difference and its uncertainty. 
 
-```{r iePlotDiff, fig.cap = "Direct effect of working on passing the class.", fig.height = 2.5, fig.width = 4}
+```{r dePlotDiffExact, fig.cap = "Non-workers are more likely to pass the class.", fig.height = 2.5, fig.width = 4}
 posterior_diff_plot(direct_effect_post, x_limits = c(-15, 30), plot_title = 'Direct Effect of Working on Passing')
 ```
 
-This gives us a much better picture of the difference in class passage probabilities between workers and non-workers. And we can also use the posterior distribution of differences to calculate probabilities such as the probability that the direct effect is positive.
+The posterior distribution of the difference gives us a much better picture of the difference in class passage probabilities between workers and non-workers.
 
-### Total effect the old fashioned way
+- [x] Direct Effect
+- [ ] Total Effect
+- [ ] Indirect Effect
 
-The total effect is the effect of working on class passage through all causal links originating with working. In figure \@ref(fig:mainDag), its the effect that goes straight from working to class passage and the effect that runs through hours studied. We calculate this effect by failing to condition on hours studied. By removing hours studied from the equation, the effect that previously traveled through hours studied now goes directly to class passage. This allows us to merge the two lines into one.
+## Total effect the old fashioned way
+
+The total effect is the effect of working on class passage through all causal links originating with working. In figure \@ref(fig:mainDag), it's the effect that goes straight from working to class passage combined with the effect that runs through hours studied. We calculate this effect by failing to condition on hours studied. By removing hours studied from the equation, the effect that previously traveled through hours studied now goes directly to class passage. This allows us to merge the two lines into one.
 
 ```{r teDag, fig.cap = 'DAG highlighting the effect of working on passing a class', out.width = '50%'}
 knitr::include_graphics("dag/working_dag_total.png")
 ```
 
-We can estimate the total effect by a Bayesian logistic regression model with work status as the lone predictor and class passage as the response.
+We can estimate the total effect with a Bayesian logistic regression model containing work status as the lone predictor and class passage as the response.
 
 ```{r teMod, cache = T}
 # total effect model
@@ -285,15 +294,15 @@ total_effect <- stan_glm(pass ~ work,
 
 As with the direct effect, we can plot the posterior predictive distributions of workers and non-workers.
 
-```{r tePlotPosterior, fig.height = 3, fig.width = 4}
+```{r tePlotPosterior, fig.cap = "Non-working students have a higher probability of passing the class compared to working students.", fig.height = 3, fig.width = 4}
 total_effect %>%
   add_fitted_draws(newdata = data.frame(work = work_order), seed = 93, n = 300) %>%
   two_group_plot('Prob. of Passing based on Work Status')
 ```
 
-We can also focus on the difference and calculate the posterior predictive distribution representing the difference in class passage between workers and non-workers.
+We can also focus on the difference and calculate the posterior predictive distribution representing the difference in class passage between workers and non-workers, regardless of hours studied.
 
-```{r tePlotDiff, fig.height = 2.5, fig.width = 4}
+```{r tePlotDiff, fig.cap = "Total effect of working on passing the class. It combines the direct and indirect effects.", fig.height = 2.5, fig.width = 4}
 diff_limits <- c(-10, 35)
 
 total_effect_post <- total_effect %>%
@@ -302,30 +311,36 @@ total_effect_post <- total_effect %>%
 posterior_diff_plot(total_effect_post, x_limits = diff_limits, plot_title = 'Total Effect of Working on Passing')
 ```
 
-The total effect shown in figure \@ref(fig:tePlotDiff) is larger than the direct effect from figure \@ref(fig:tePlotDiff). This is expected. The total effect includes the effect of studying on passage, while the direct effect does not. Since this effect is positive, we would expect the total effect to be larger.
+The total effect shown in figure \@ref(fig:tePlotDiff) is larger than the direct effect from figure \@ref(fig:dePlotDiffExact). This is expected. The total effect includes the direct effect plus effect of studying on passage. Since this later effect is positive, we would expect the total effect to be larger.
 
-### Indirect effect (kind-of) the old fashioned way
+Let's check another item off!.
+
+- [x] Direct Effect
+- [x] Total Effect
+- [ ] Indirect Effect
+
+## Indirect effect (kind-of) the old fashioned way
 
 Calculating the indirect effect is more challenging. We want to calculate the effect of working on passing the class that arises because of the effect of working on number of hours studied. Our speculation on the indirect effect is that working causes students to study less, which then leads to them being less likely to pass the class.
 
-Here's how the authors of mediation method used here describe calculating indirect effects:
+Here's how the authors of the mediation method we're using describe calculating indirect effect:[^Imai, K., Keele, L., Tingley, D., & Yamamoto, T. (2011). Unpacking the black box of causality: Learning about causal mechanisms from experimental and observational studies. American Political Science Review, 765-789.]
 
-> First, we fit regression models for the mediator and outcome. The mediator is modeled as a function of the treatment and any relevant pretreatment covariates. The outcome is modeled as a function of the mediator, the treatment, and the pretreatment covariates. The form of these models is immaterial. ... Based on the mediator model, we then generate two sets of predictions for the mediator, one under the treatment and the other under the control. For example, in the media framing study, this would correspond to predicted levels of anxiety after reading a news story on immigration or a neutral news story. 
+> First, we fit regression models for the mediator and outcome. The mediator is modeled as a function of the treatment and any relevant pretreatment covariates. The outcome is modeled as a function of the mediator, the treatment, and the pretreatment covariates. The form of these models is immaterial. ... Based on the mediator model, we then generate two sets of predictions for the mediator, one under the treatment and the other under the control. 
 
-> For the next step, the outcome model is used to make potential outcome predictions. ... First, the outcome is predicted under the treatment using the value of the mediator predicted in the treatment condition. Second, the outcome is predicted under the treatment condition but now uses the mediator prediction from the control condition. The ACME is then computed as the average difference between the outcome predictions using the two different values of the mediator.[^Imai, K., Keele, L., Tingley, D., & Yamamoto, T. (2011). Unpacking the black box of causality: Learning about causal mechanisms from experimental and observational studies. American Political Science Review, 765-789.]
+> For the next step, the outcome model is used to make potential outcome predictions. ... First, the outcome is predicted under the treatment using the value of the mediator predicted in the treatment condition. Second, the outcome is predicted under the treatment condition but now uses the mediator prediction from the control condition. The ACME [indirect effect] is then computed as the average difference between the outcome predictions using the two different values of the mediator.
 
 Taking our cue from the method's source, we'll proceed in two steps: (1) fit models, and (2) make potential outcome predictions.
 
-#### Step 1: Fitting regression models
+### Step 1: Fitting regression models
 
 The first step is the easiest. We'll start by fitting two models:
 
-1.  Mediator model: The mediator, number of hours studied, as the response and the treatment, working, as the predictor.
-2.  Outcome model: The outcome, passing the class, as the response and the mediator and treatment, hours studied and working, as the predictors.
+1.  **Mediator model:** The mediator (number of hours studied) is the response and the treatment (working status) is the predictor.
+2.  **Outcome model:** The outcome (passing the class) is the response and the mediator (number of hours studied) and treatment (workign status) as the predictors.
 
 We'll then create two sets of predictions from the mediator model, one for working students and another for non-working students.
 
-##### Mediator model
+#### Mediator model
 
 Here is our simple mediator model.
 
@@ -349,7 +364,7 @@ outcome_model <- stan_glm(pass ~ work + study,
 
 ##### Predictions from mediator model
 
-Now, we'll generate predictions from the mediator models. We'll predict hours studied for both workers and non-workers.
+Now, we'll generate predictions from the mediator model. We'll predict hours studied for both workers and non-workers.
 
 ```{r}
 # dataset that only includes two rows, one for a worker and one for a non-worker
@@ -362,53 +377,59 @@ mediator_mod_predictions <- add_fitted_draws(newdata = mediation_predict_dataset
                                              seed = 1837)
 ```
 
-#### Step 2: Create potential outcome predictions
+OK, that was easy.
 
-This is where things get challenging. We want to prediction the outcome, passing the class, using the full outcome model from the predictions created by the mediator model. Bayesian predictions, however, are not point estimates. They are the full posterior distribution of predicted probabilities. By creating predictions for workers and non-workers - two predictions - and specifying 500 draws from the posterior distribution - using `n = 500` in `add_fitted_draws` - we now have 1,000 separate predictions of hours studied. We have 500 for workers and 500 for non-workers. We'll feed all 1,000 hours studied values to the outcome model and make predictions of passing the class from these 1,000 predictions. And all 1,000 values will be assumed to come for workers. I'm sure that sounds convoluted, so here's the code.
+### Step 2: Create potential outcome predictions
+
+This is where it get tricky. We want to prediction the outcome - passing the class - using the full outcome model *from* the predictions created by the mediator model. In essence, we'll take the predictions about hours studied from the mediator model and use them as the number of hours studied in the full model to create predictions about whether the student passes the class. We'll assume everyone worked. 
+
+Bayesian predictions, however, are not point estimates. They are the full posterior distribution of predicted probabilities. By creating predictions for both workers and non-workers in the mediator model and specifying 500 draws from the posterior distribution - using `n = 500` in `add_fitted_draws` - we now have 1,000 separate predictions of hours studied. 500 for workers and 500 for non-workers. We'll feed all 1,000 hours studied values to the outcome model and make predictions of passing the class from these 1,000 predictions. Again, all 1,000 values will be assumed to come for workers. I'm sure that sounds convoluted, so here's the code.
 
 ```{r}
 outcome_mod_predictions <- mediator_mod_predictions %>%
+  ungroup() %>%
+  mutate(mediator_draw = .draw) %>%
   # save the work value from the mediation model because we need to take the difference between the predictions
   # for workers and non-workers as specified in the mediation model
   mutate(work_mediator = work,
          # make all predicted values come from non-workers
          work = 1) %>%
-  select(work_mediator, work, study) %>%
+  select(mediator_draw, work_mediator, work, study) %>%
   add_fitted_draws(model = outcome_model,
                    n = 500,
                    seed = 1837) %>%
   ungroup() %>%
-  arrange(.row, .draw, work_mediator)
+  arrange(work_mediator, mediator_draw, .draw, .row)
 ```
 
-Finally, we calculate the difference in the probability of passing between workers and non-workers in the original mediation model.
+Finally, we calculate the difference in the probability of passing between workers and non-workers, as labeled in the original mediation model. In calculating the difference, we want to subtract the probability of passing of a non-worker from the probability of a worker. But, which worker and non-worker? There are 500 of each in the mediation model.
+
+For each value in the prediction data set of the outcome model, we stored the work status and sample draw that created the value from the mediation predictions data set.  The `work_mediator` variable distinguishes the workers and non-workers in the mediator model and `mediator_draw` contains the sample draw from the mediation model. In calculating the difference in probability of passage in the outcome model, we want to pair a worker with a non-worker in the mediation model that has the same sample draw value from the mediation model.
 
 ```{r}
 
-working_work_mediator <- outcome_mod_predictions %>%
-  filter(work_mediator == 0) %>%
-  arrange(.row, .draw) %>%
-  rename(working_pass = .value, working_study = study)
-
-nonworking_work_mediator <- outcome_mod_predictions %>%
-  filter(work_mediator == 1) %>%
-  arrange(.row, .draw) %>%
-  select(nonworking_pass = .value, nonworking_study = study) 
-
-mediation_predictions <- working_work_mediator %>%
-  bind_cols(nonworking_work_mediator) %>%
-  select(.row:working_study, nonworking_study, everything()) %>%
-  mutate(diff = nonworking_pass - working_pass,
+mediation_predictions <- outcome_mod_predictions %>%
+  pivot_wider(id_cols = c('mediator_draw', '.draw'), 
+              names_from = 'work_mediator', 
+              values_from = '.value') %>%
+  rename(worker = `0`, nonworker = `1`) %>%
+  mutate(diff = nonworker - worker,
          type_effect = 'Indirect Effect')
 ```
 
-All this complete, here is the posterior predictive distribution of our indirect effects.
+All this complete, figure \@ref(fig:ieEffectPlot) shows the posterior predictive distribution of the indirect effect.
 
-```{r ieEffectPlot, fig.height = 2.5, fig.width = 4}
+```{r ieEffectPlot, fig.cap = "There is a positive indirect effect of not working on passing the class due to the effect of not working on hours studied.", fig.height = 2.5, fig.width = 4}
 posterior_diff_plot(mediation_predictions, x_limits = c(0, 25), plot_title = 'Indirect Effect of Working on Passing')
 ```
 
-### Compare results to `mediation` package
+## Compare results to `mediation` package {#conclusion}
+
+We did this manually because there is not an R package to automate a mediation analysis when using two different types of Bayesian general linear models. If we had two Gaussian linear models we could streamline the process with the function `brm` from the [`brms` package](https://cran.r-project.org/web/packages/bayestestR/vignettes/mediation.html). But, I could not get the function to work with a Gaussian and logistic model.
+
+Additionally, the [`mediation` package](https://cran.r-project.org/web/packages/mediation/vignettes/mediation.pdf) can be used when mixing Gaussian and logistic models from a frequentest angle. But, we wanted Bayes. However, we can sanity check our results against the `mediation` package. Our Bayesian models are simple, so the Bayesian and frequentest variants should align.
+
+We'll first calculate the total, direct, and indirect effects with the `mediation` package. As you see, it's a whole lot easier! An entire blog post is encapsulated in six lines of code.
 
 ```{r}
 med_fit <- lm(study ~ work, data = grades)
@@ -418,8 +439,13 @@ out_fit <- glm(pass ~ work + study,
 
 med_out <- mediate(med_fit, out_fit, treat = "work", mediator = "study",
                   robustSE = TRUE, sims = 500)
+```
 
-# get estimates and cnof. intervals for frequentist effect size estimates with mediation package
+Now, lets pull out the confidence intervals and point estimates.
+
+```{r}
+
+# get estimates and conf. intervals for frequentist effect size estimates with mediation package
 
 # dataframe of confidence intervals, with two columns (one for lower and upper bounds)
 # will be used for plotting effect sizes
@@ -434,6 +460,7 @@ mediation_effects <- tibble(
 )
 ```
 
+We want to compare the frequentist 95% confidence intervals with our Bayesian 95% credible intervals, which are highest density intervals (hdi). They are not the same, but should be close with our simple models.
 
 ```{r}
 # get 95% credible intervals for bayesian effects
@@ -442,10 +469,12 @@ bayes_effect <- bind_rows(list(direct_effect_post, mediation_predictions, total_
   median_hdi(diff)
 ```
 
+Finally, let's put it all together in one plot.
+
 ```{r raceMediation, fig.cap = "Direct, indirect, and total effects of working on class passage. Values are the average percentage point difference in class passage.", fig.height = 3.5, fig.width = 5}
 bayes_effect %>%
   select(effect_type = type_effect, effect_size = diff, lower_ci = .lower, upper_ci = .upper) %>%
-  mutate(effect_group = "Bayesian Mediation") %>%
+  mutate(effect_group = "Bayesian mediation") %>%
   bind_rows(mediation_effects) %>%
     ggplot(aes(effect_size, fct_rev(effect_type), color = effect_group)) +
     geom_point() +
@@ -454,10 +483,14 @@ bayes_effect %>%
     scale_color_brewer(palette = "Set2", type = "Qual") +
     scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
     facet_wrap(~effect_group, ncol = 1) +
-    labs(title = 'Cumulative Effects of Race on Bar Passage',
-           x = "Percentage point difference (Non-workers minus Workers)\nIn avg. probability of class passage",
+    labs(title = 'Cumulative Effects of Working on Passing Class',
+           x = "Percentage point difference (Non-workers minus Workers)\nIn probability of class passage",
            y = NULL) +
     theme(legend.position = 'none')
 ```
 
-## The versitility of mediation analysis
+The direct and total effects are almost identical between our homemade Bayesian version and the `mediation` package. But, these are the easy effects to compute. Let's not pat ourselves on the back yet. The indirect effects are slightly different. The point estimate of our Bayesian version (I know, real Bayesians don't use point estimates) is a couple percentage points higher than estimate from the `mediation` package. Our credible intervals are also larger than the `mediation` package's confidence intervals (I know, they're not the same thing).
+
+It's hard to know whether the difference is because our homemade version is wrong or because it represents a Bayesian / frequentist difference. My gut tells me that our version is off. The models are too simple for the Bayesian / frequentist difference to matter, as shown by the total and direct effects.
+
+So, you may not want to blindly copy my Bayesian method for mediation analysis. Nonetheless, I hope learned something going through the process.

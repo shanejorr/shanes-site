@@ -30,7 +30,8 @@ draft: yes
 knitr::opts_chunk$set(echo = T,
                       message = F,
                       warning = F,
-                      error = F)
+                      error = F,
+                      eval = F)
 ```
 
 Bayesian Additive Regression Trees (BART) are a Bayesian version of random forests. They're flexible, non-parametric, and supply a full posterior distribution on outcomes. They have all the benefits of Bayesian modeling and non-parametric machine learning modeling in one algorithm.
