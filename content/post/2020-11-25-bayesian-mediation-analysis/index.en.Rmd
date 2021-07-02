@@ -38,7 +38,7 @@ knitr::opts_chunk$set(echo = T,
 
 ## What is mediation analysis? {#introduction}
 
-Let's say you want to examine the affect of employment on whether a student passes a class. You set up a cruel randomized controlled trial where some students are forced to work 15 hours a week and other are prohibited from working at all. You speculate that working students will perform worse because they have less time to study.
+Let's say you want to examine the affect of employment on whether students passes a class. You set up a cruel randomized controlled trial where some students are forced to work 15 hours a week and other are prohibited from working at all. You speculate that working students will perform worse because they have less time to study.
 
 We can visually depict the causal relationships with the following Directed Acyclic Graph (DAG):
 
@@ -313,7 +313,7 @@ posterior_diff_plot(total_effect_post, x_limits = diff_limits, plot_title = 'Tot
 
 The total effect shown in figure \@ref(fig:tePlotDiff) is larger than the direct effect from figure \@ref(fig:dePlotDiffExact). This is expected. The total effect includes the direct effect plus effect of studying on passage. Since this later effect is positive, we would expect the total effect to be larger.
 
-Let's check another item off!.
+Let's check another item off!
 
 - [x] Direct Effect
 - [x] Total Effect
@@ -323,7 +323,7 @@ Let's check another item off!.
 
 Calculating the indirect effect is more challenging. We want to calculate the effect of working on passing the class that arises because of the effect of working on number of hours studied. Our speculation on the indirect effect is that working causes students to study less, which then leads to them being less likely to pass the class.
 
-Here's how the authors of the mediation method we're using describe calculating indirect effect:[^Imai, K., Keele, L., Tingley, D., & Yamamoto, T. (2011). Unpacking the black box of causality: Learning about causal mechanisms from experimental and observational studies. American Political Science Review, 765-789.]
+Here's how the authors of the mediation method we're using describe calculating indirect effect:^[Imai, K., Keele, L., Tingley, D., & Yamamoto, T. (2011). Unpacking the black box of causality: Learning about causal mechanisms from experimental and observational studies. American Political Science Review, 765-789.]
 
 > First, we fit regression models for the mediator and outcome. The mediator is modeled as a function of the treatment and any relevant pretreatment covariates. The outcome is modeled as a function of the mediator, the treatment, and the pretreatment covariates. The form of these models is immaterial. ... Based on the mediator model, we then generate two sets of predictions for the mediator, one under the treatment and the other under the control. 
 
