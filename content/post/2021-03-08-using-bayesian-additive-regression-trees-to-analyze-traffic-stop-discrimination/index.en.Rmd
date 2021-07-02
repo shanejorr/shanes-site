@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = T,
                       message = F,
                       warning = F,
                       error = F,
-                      eval = F)
+                      eval = T)
 ```
 
 Bayesian Additive Regression Trees (BART) are a Bayesian version of random forests. They're flexible, non-parametric, and supply a full posterior distribution on outcomes. They have all the benefits of Bayesian modeling and non-parametric machine learning modeling in one algorithm.
@@ -75,7 +75,7 @@ library(widgetframe)
 library(suncalc)
 library(tigris)
 library(sf)
-library(bartCause)
+library(BART)
 library(tidybayes)
 library(lme4)
 library(gt)
@@ -191,7 +191,8 @@ create_train_test_sets <- function(split_partition, predictor_variables, train_o
 
 # download entire state traffic stop dataset
 nc_stops <- vroom('https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_statewide_2020_04_01.csv.gz',
-                  col_select = -contains('raw'))
+                  col_select = -contains('raw')) %>%
+  sample_frac(size = .2)
 
 # get 2010 - 2013 5 year and aggregate
 pop_years <- seq(2009, 2013, 1)
@@ -443,31 +444,43 @@ rm(nc_stops)
 rm(nc_counties_sunset)
 gc()
 ```
+
+
 #############################################
 ```{r testAndTrainData}
 # create test and train datasets -------------------
 # only keep the variables we need to make the train and test sets not take up as much RAM
+
 vars <- c('minute', 'subject_age', 'subject_sex', 'county_name', 'is_dark', 'year', 'is_black')
+
 partition_group_vars <- seq(4, 7, 1)
+
 # BART requires categoricals with more than one level to be factors
 model_df <- nc_stops_veil %>% 
   ungroup() %>%
   select(!!vars) %>%
   drop_na() %>%
-  mutate(across(c('subject_sex', 'county_name', 'year'), ~as.factor(.)))
+  mutate(is_dark = ifelse(is_dark, 'Yes', 'No')) %>%
+  mutate(across(c('subject_sex', 'county_name', 'is_dark', 'year'), ~as.factor(.)))
+
 response_train <- as.numeric(model_df$is_black)
+
 predictor_df <- model_df %>% 
   select(-is_black) %>%
   as.data.frame()
+
 # dataset to create potential outcomes
-# contains each column of the original dataset twice - one with dark, one with not-dark
-ate_data <- model_df %>%
-  mutate(is_dark = T) %>%
-  bind_rows(
-    model_df %>%
-      mutate(is_dark = F)
+# compare differences in probability of getting stops between Black and White drivers
+# for each county in 10 minute increments
+potential_outcome_data <- model_df %>%
+  data_grid(
+    minute = seq_range(minute, by = 10, pretty = T),
+    subject_age = c(20, 60),
+    subject_sex = subject_sex,
+    county_name = county_name,
+    is_dark = is_dark,
+    year = year
   ) %>%
-  select(-is_black) %>%
   as.data.frame()
 ```
 
@@ -477,10 +490,10 @@ ate_data <- model_df %>%
 bart_mod <- mc.pbart(
   x.train = predictor_df, 
   y.train = response_train, 
-  x.test = ate_data, 
+  x.test = potential_outcome_data, 
   keeptrainfits = F,
   ndpost = 200, 
-  mc.cores = 4,
+  mc.cores = 8,
   cont = FALSE,
   seed = 99
 )
@@ -498,7 +511,7 @@ post_pred_dark <- post_pred_ate[1:dark_end][1,2]
 post_pred_not_dark <- post_pred_ate[light_start:n][1,2]
 post_pred_outcomes <- post_pred_dark - post_pred_not_dark
 ```
-```
+
 ```{r ate2}
 # create predictions to calculate average treatment effect ------------------------------------
 # dataset to create potential outcomes
@@ -585,92 +598,6 @@ county_posterior_hdi <- county_predictions %>%
 ggplot(county_posterior_hdi, aes(minute, values, color = is_dark)) +
   geom_line() +
   facet_wrap(~county_name)
-```
-
-
-######################################################################################3
-
-### Applying BART to the veil of darkness test
-
-We're use the `bartCause` package to run our model. `bartCause` makes it easy to do causal inference with BART models. Although this is not a pure causal inference problem, a measurement such as the average treatment effect - with the treatment being whether it is dark - can shed light on the issue. The average treatment effect of darkness on the probability that the driver is Black represents the percentage point difference in the probability the driver is Black between daytime and darkness. This is the number we want. With `bartCause`, it's easy to calculate this number. 
-
-Another benefit of using `bartCause` is that the treatment variable will be included in every tree. In a typical BART model, like in a random forest, not every variable is used in each decision tree. Including the variable signifying whether it is dark out in all trees will help create a more precise predictions about differences in whether it is dark outside.^[I learned this the hard way. I originally created the model with the `BART` package and calculated the difference in probabilities between darkness and daytime myself. But, the difference for every observation was zero. By zero, I mean literally zero, not 0.0000003 or something. This was odd. The random part of random forests also applies to BART and this randomness should prevent the difference from being exactly zero. Upon investigation, however, I saw that no trees contained the variable signifying whether it was dark outside. This explains why running predictions with changes to this variable did not alter the prediction. It's like doubling the amount of salt in a recipe that does not call for salt. The taste will be the same. But, its exclusion from all trees does signify that the has little to no impact on predictions.]
-
-Here's all the code we need to create the model. Note that the code behind this entire post is available on [GitHub](https://github.com/shanejorr/shanes-site/tree/main/content/post/2021-03-08-using-bayesian-additive-regression-trees-to-analyze-traffic-stop-discrimination). The confounders are additional variables we want to account for. As already noted, BART automatically incorporates non-linearities and interactions so there is no need to try non-linear terms like splines (`splines::ns((minute, df = 4)`) or interaction effects (`minute*county_name`). You get it all. And finally, we'll use default priors for stuff like the number of trees and the number of variables per tree.
-
-```{r bartDataset, eval = F}
-# Bart model for all counties ---------------------
-bart_mod <- bartc(
-  response = is_black,
-  treatment = is_dark,
-  confounders = minute + subject_age + subject_sex + county_name,
-  data = nc_stops_veil,
-  estimand = 'ate',
-  n.chains = 8
-)
-```
-
-The model above gives us a single percentage point difference for the 20 largest NC counties in the probability a driver is black between stops in daytime and stops at night. The code below, meanwhile, provides this probability for each of the 20 largest counties individually. It creates a different model for each county. Positive numbers tell us that there is a higher probabiity the driver pulled over is Black compared to 
-
-```{r bartCtyAte, eval = F}
-# Bart mdoels by county -------------------------
-
-# initialize dataframe to store ates
-bart_cty_ates <- summary(bart_mod)
-
-bart_cty_ates <- overall_ate[[9]] %>%
-  mutate(county = 'All Counties')
-
-# iterate through each county, filter for data that only includes county, run BART model
-for (cty in most_pop_counties[19]) {
-  
-  # status update
-  print(cty)
-  
-  # only keep needed county
-  county_df <- nc_stops_veil %>%
-    filter(county_name == !!cty)
-  
-  bart_mod_cty <- bartc(
-    response = is_black,
-    treatment = is_dark,
-    confounders = minute + subject_age + subject_sex,
-    data = county_df,
-    estimand = 'ate',
-    n.chains = 4
-  )
-  
-  cty_ate <- summary(bart_mod_cty)
-
-  cty_ate <- cty_ate[[9]] %>%
-    mutate(county_name = !!cty)
-  
-  bart_cty_ates <- bart_cty_ates %>%
-    bind_rows(cty_ate)
-  
-}
-```
-
-Now for the results. The graph below shows for each county and all of North Carolina the percentage point difference between daytime and darkness in the probability that the driver pulled over is Black. The aggregate difference for the 20 largest NC counties sits near zero, with its 95% credible interval crossing zero. Functionally, there is no difference at the state level.
-
-County differences bounce around zero. They are symmetrically distributed around zero and all 95% credible intervals also cross zero. This combination means that we cannot say anything with confidence about counties. We cannot even say for sure what side of zero their diffierences in probabilities sits on.
-
-```{r echo = F}
-# plot of average treatment effects --------------------------
-bart_results <- read_csv('bart_ate.csv')
-
-bart_results %>%
-  mutate(is_NC = ifelse(str_detect(county_name, "^20.*"), T, F)) %>%
-  ggplot(aes(estimate, fct_reorder(county_name, estimate), color = is_NC)) +
-    geom_point() +
-    geom_segment(aes(x = ci.lower, xend = ci.upper, y = county_name, yend = county_name)) +
-    geom_vline(xintercept = 0, linetype = 2, alpha = .5) +
-    scale_color_manual(values = c('black', 'dodgerblue3')) +
-    labs(title = NULL,
-         x = 'Perc. point difference between daytime and darkness\nIn probability that driver pulled over is Black',
-         y = NULL) +
-    theme_minimal() +
-    theme(legend.position = 'none')
 ```
 
 ## Logistic regression model as a check
