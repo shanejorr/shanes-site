@@ -60,6 +60,7 @@ library(sf)
 library(rstanarm)
 library(tidybayes)
 library(gt)
+library(ggridges)
 library(tidyverse)
 ```
 
@@ -158,6 +159,17 @@ minute_to_time <- function(minutes_since_midnight) {
   
   return(time_of_day)
   
+}
+
+get_hdi <- function(df, hdi_colname) {
+  # calcualte the highest density interval and place results in a data frame
+  
+  column_to_calc_hdi <- df[hdi_colname]
+  
+  median_hdci(column_to_calc_hdi, .width = .9) %>%
+    mutate(county_time = !!hdi_colname,
+           county_time = str_remove(county_time, 'Yes_')) %>%
+    select(county_time, estimate = 1, .lower, .upper)
 }
 ```
 
@@ -365,17 +377,17 @@ nc_counties_sunset <- map_df(days_seq, function(day) {
   # join county names
   left_join(nc_counties, by = c('lon', 'lat'))
 
-# only keep the 20 most populated counties
+# only keep the 40 most populated counties
 most_pop_counties <- county_pop %>%
  arrange(desc(value)) %>%
- head(20) %>%
+ head(40) %>%
  .[[1]]
 
 # merge dusk times with nc stops dataset
 nc_stops_veil <- nc_stops %>%
   drop_na(time) %>%
   mutate(county_name = str_remove_all(county_name, ' County')) %>%
-  # only keep the 20 most populated counties
+  # only keep the 40 most populated counties
   filter(county_name %in% !!most_pop_counties) %>%
   # add sunset and dusk times
   left_join(nc_counties_sunset, 
@@ -408,6 +420,8 @@ nc_stops_veil <- nc_stops %>%
   mutate(county_name = factor(county_name),
          year = as.factor(year))
 
+write_rds(nc_stops_veil, 'nc_stops_veil.rds')
+
 # remove items to save RAM
 rm(county_pop_race)
 rm(nc_stops)
@@ -415,6 +429,8 @@ rm(nc_counties_sunset)
 ```
 
 ```{r modelDatasets}
+nc_stops_veil <- read_rds('nc_stops_veil.rds')
+
 # create datasets for modeling and prediction -------------------
 
 # variables needed for modeling
@@ -428,15 +444,10 @@ model_df <- nc_stops_veil %>%
   mutate(is_dark = ifelse(is_dark, 'Yes', 'No')) %>%
   mutate(across(c('subject_sex', 'county_name', 'is_dark', 'year'), ~as.factor(.)))
 
-response_train <- as.numeric(model_df$is_black)
-
-predictor_df <- model_df %>% 
-  select(-is_black) %>%
-  as.data.frame()
-
 # dataset to create potential outcomes
 # compare differences in probability of getting stops between Black and White drivers
 # for each county in 10 minute increments
+# use 20 year old male getting stopped
 potential_outcome_data <- model_df %>%
   data_grid(
     minute = seq_range(minute, by = 10, pretty = T),
@@ -452,28 +463,45 @@ potential_outcome_data <- model_df %>%
   as.data.frame()
 ```
 
-```{r bayesHeirMod, cache = T, eval = F}
-t_prior <- student_t(df = 7, location = 0, scale = 2)
+```{r bayesMod, cache = T, eval = F}
+# create logistic regression model -----------------------
+
+# horseshoe prior for regression coefficients
+
+# number of predictors
+# multiplying county_name by 2 because of interaction term
+# p <- ((length(unique(model_df$county_name)) - 1)*2) + (length(unique(model_df$year)) - 1) + 4
+# n <- nrow(model_df)
+# # prior guess for the number of relevant variables
+# p0 <- 4 
+# tau0 <- p0/(p-p0) * 1/sqrt(n)
+# hs_prior <- hs(df=1, global_df=1, global_scale=tau0)
+
+t_prior_coef <- student_t(df = 7, location = 0, scale = 2.5)
+t_prior_intercept <- student_t(df = 7, location = 0, scale = 2.5)
 
 # bayesian hierarchical model
-heir_mod <- stan_glm(
+mod <- stan_glm(
   is_black ~ is_dark*county_name + splines::ns(minute, df = 4) + splines::ns(subject_age, df = 4) + subject_sex + year,
   data = model_df,
   family = binomial(link = "logit"),
-  prior = t_prior, prior_intercept = t_prior,
-  # algorithm = "fullrank",
+  prior = t_prior_coef, prior_intercept = t_prior_intercept,
   QR = TRUE,
   seed = 123,
-  cores = 4
+  cores = 8
 )
 
-write_rds(heir_mod, 'hier_mod.rds')
+# write_rds(mod, 'mod.rds')
 ```
 
-```{r heirModPostPred, cache = T, eval = F}
-# predictions from test set that was added to model
-post_predictions <- posterior_epred(heir_mod, newdata = potential_outcome_data, draws = 200) %>%
+```{r bayesModPostPred, cache = T, eval = F}
+# create predictions from model ---------------------
+post_predictions <- posterior_epred(mod, newdata = potential_outcome_data, draws = 200) %>%
   as.data.frame()
+
+# add decriptive column names to posterior predictions signifying what they represent
+potential_outcome_data <- potential_outcome_data %>%
+  mutate(descriptive_name = glue("{is_dark}_{county_name}_{minute}"))
 
 colnames(post_predictions) <- potential_outcome_data$descriptive_name
 
@@ -490,34 +518,53 @@ diff_dark_not_dark <- dark_predcitions - not_dark_predcitions
 colnames_for_hdi <- colnames(diff_dark_not_dark)
 
 # create final dataset for plotting
-discrimination_hdi_hier <- map_df(colnames_for_hdi, ~get_hdi(diff_dark_not_dark, .x)) %>%
-  # separate county name and minute into two differenct columns
-  separate(county_time, into = c('county', 'time'), sep = '_') %>%
-  # convert minutes since midnight to time (hour / minute)
-  mutate(time = as.numeric(time)) %>%
-  mutate(hour_minute = minute_to_time(time)) %>%
-  # add county populations so we can order facets by population
-  left_join(county_pop, by = c('county' = 'NAME')) %>%
-  mutate(county = fct_reorder(county, value, .desc = T))
+# discrimination_hdi <- map_df(colnames_for_hdi, ~get_hdi(diff_dark_not_dark, .x)) %>%
+#   # separate county name and minute into two differenct columns
+#   separate(county_time, into = c('county', 'time'), sep = '_') %>%
+#   # convert minutes since midnight to time (hour / minute)
+#   mutate(time = as.numeric(time)) %>%
+#   mutate(hour_minute = minute_to_time(time)) %>%
+#   # add county populations so we can order facets by population
+#   left_join(county_pop, by = c('county' = 'NAME')) %>%
+#   mutate(county = fct_reorder(county, value, .desc = T))
 
-write_rds(discrimination_hdi_hier, 'discrimination_hdi_hier.rds')
+# write_rds(discrimination_hdi, 'discrimination_hdi.rds')
 ```
 
 ```{r fig.width = 12, fig.height = 10, plotDifference, fig.cap = "Logistic regression model - There is not a difference between when it is dark and when it is not dark in the percentage of drives pulled over who are Black at a given time in the day."}
-discrimination_hdi_hier <- read_rds('discrimination_hdi_hier.rds')
+discrimination_hdi <- read_rds('discrimination_hdi_hier.rds')
 
-discrimination_hdi_hier %>%
-  # filter(!(county %in% !!counties_to_remove)) %>%
-  ggplot(aes(hour_minute, estimate)) +
-    geom_line() +
-    geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = .2) +
-    scale_x_time(labels = function(x) {hour(x)}) +
-    scale_y_continuous(labels = percent_format(accuracy = 1)) +
-    facet_wrap(~county, ncol = 5) +
-  geom_hline(yintercept = 0, linetype = 2, alpha = .5) +
-    labs(y = 'Difference between darkness and day in the percentage of drivers pulled over who are Black\n
-              (Probability that the driver is Black when it is dark minus the probability driver is Black when it is not dark)',
-         x = "Hour of day\n(24 hour times)")
+# use 20 year old male getting stopped at 7 PM
+
+diff_dark_1140 <- diff_dark_not_dark %>%
+  # select columns for 7 pm
+  select(ends_with('1140')) %>%
+  # make column with row ID, useful when pivoting data
+  rowid_to_column("ID") %>%
+  pivot_longer(cols = -ID, names_to = 'county_id', values_to = 'estimate') %>%
+  mutate(county = str_extract(county_id, '_.*_'),
+         county = str_remove_all(county, '_')) %>%
+  select(-county_id)
+
+# order counties by HDI, so the plots look better
+county_order_by_hdi <- diff_dark_1140 %>%
+  group_by(county) %>%
+  median_hdci(estimate) %>%
+  arrange(estimate) %>%
+  select(county) %>%
+  .[[1]]
+
+
+diff_dark_1140 %>%
+  mutate(county = factor(county, levels = county_order_by_hdi)) %>%
+  ggplot(aes(estimate, county)) +
+  geom_vline(xintercept = 0, linetype = 2, alpha = .8) +
+  stat_density_ridges(quantile_lines = TRUE, quantiles = c(0.05, .5, 0.95), alpha = 0.7, rel_min_height = 0.05) +
+  labs(
+    y = NULL,
+    x = 'Difference between Black and White drivers in probability of being stopped\nPositive numebrs mean Black drivers face a higher probability.'
+  ) +
+  theme_minimal()
 
 ```
 
