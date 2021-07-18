@@ -1,20 +1,19 @@
 ---
-title: Using Bayesian Additive Regression Trees to Analyze Traffic Stop Bias
+title: Using the Veil of Darkness Test to Evaulate Discrimination in Traffic Stops
 author: ''
-date: '2021-03-08'
-slug: using-bayesian-additive-regression-trees-to-analyze-traffic-stop-discrimination
+date: '2021-07-18'
+slug: using-the-veil-of-darkness-test-to-evaulate-discrimination-in-traffic-stops
 categories:
   - bayesian analysis
   - traffic stops
-  - Bayesian Additive Regression Trees
 tags: []
 subtitle: ''
 summary: ''
 authors: []
-lastmod: '2021-03-08T19:22:36-05:00'
+lastmod: '2021-07-18T12:58:36-04:00'
 featured: no
 image:
-  caption: '<span>Photo by <a href="https://unsplash.com/@gerandeklerk?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Geran de Klerk</a> on <a href="https://unsplash.com/s/photos/forest?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>'
+  caption: '<span>Photo by <a href="https://unsplash.com/@introspectivedsgn?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Erik Mclean</a> on <a href="https://unsplash.com/s/photos/police-car?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></span>'
   focal_point: ''
   preview_only: no
 projects: []
@@ -22,18 +21,29 @@ links:
 - icon: github
   icon_pack: fab
   name: Github
-  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2021-03-08-using-bayesian-additive-regression-trees-to-analyze-traffic-stop-discrimination/index.en.Rmd
+  url: 
 draft: yes
 ---
 
 ```{r setup, echo = F}
-knitr::opts_chunk$set(echo = T,
+knitr::opts_chunk$set(echo = F,
                       message = F,
                       warning = F,
                       error = F,
                       eval = T)
 ```
 
+The veil of darkness test attempts to uncover racial differences in traffic stop rates. The aim, of course, is to identify racial bias. The test, like all tests, has its own weaknesses and should only be seen as additional evidence. It can provide evidence for or against bias in police stops, but should never be taken as the final say. That goes for this blog post and any other use of the test.
+
+## What is the veil of darkness test?
+
+Here's how [a group of scholars](https://www.nature.com/articles/s41562-020-0858-1) explained the test:
+
+>[The] method starts from the idea that officers who engage in racial profiling are less able to identify a driver’s race after dark than during the day. As a result, if officers are discriminating against black drivers—all else being equal—one would expect black drivers to comprise a smaller share of stopped drivers at night, when a veil-of-darkness masks their race. To account for patterns of driving and police deployment that may vary throughout the day, the test leverages the fact that the sun sets at different times during the year.^[Pierson, E., Simoiu, C., Overgoor, J., Corbett-Davies, S., Jenson, D., Shoemaker, A., & Goel, S. (2020). A large-scale analysis of racial disparities in police stops across the United States.() Nature human behaviour, 4(7), 736-745.]
+
+For example, let's say it is dark at 7 p.m. for a third of the year, light for a third of the year, and kind-of dark for a third of the year. We want to compare the percentage of all drivers pulled over are Black and when it's light at 7 p.m. against the percentage of all drivers are pulled over who are Black when it's dark at 7 p.m. If a larger percentage are pulled over when it's light we have some evidence of racial bias.  
+
+This reduces to a prediction problem. For each traffic stop, we want to predict the driver's race given the time of the stop, the location (county), whether it's dark out, and other possible covariates. Then, we'll turn around and predict every driver's race. If the probability that a driver is Black is higher during the day than at night - holding time, location, and other covariates constant - then we have evidence of racial bias. 
 
 ```{r importLibraries}
 library(glue)
@@ -47,10 +57,8 @@ library(widgetframe)
 library(suncalc)
 library(tigris)
 library(sf)
-library(BART)
 library(rstanarm)
 library(tidybayes)
-library(lme4)
 library(gt)
 library(tidyverse)
 ```
@@ -150,42 +158,6 @@ minute_to_time <- function(minutes_since_midnight) {
   
   return(time_of_day)
   
-}
-
-create_train_test_sets <- function(split_partition, predictor_variables, train_or_test = 'train') {
-  
-  # create train and testing datasets
-  
-  if (train_or_test == 'train') {
-    
-    pred_df <- training(split_partition)
-    
-  } else if (train_or_test == 'test') {
-    
-    pred_df <- testing(split_partition)
-    
-  } else {
-    stop("train_or_test must be either 'train' or 'test'")
-  }
-  
-  pred_df %>%
-      ungroup() %>%
-      # only keep predictors (required for BART)
-      select(!!predictor_variables) %>%
-      as.data.frame()
-  
-}
-
-get_hdi <- function(df, hdi_colname) {
-
-  # calcualte the highest density interval and place results in a data frame
-  
-  column_to_calc_hdi <- df[hdi_colname]
-  
-  median_hdci(column_to_calc_hdi, .width = .9) %>%
-    mutate(county_time = !!hdi_colname,
-           county_time = str_remove(county_time, 'Yes_')) %>%
-    select(county_time, estimate = 1, .lower, .upper)
 }
 ```
 
@@ -336,23 +308,20 @@ hw_grid(
 )
 ```
 
-Of course, stopping our analysis here is unwarranted. First, this does not account for how often different racial groups drive. It's comparing stops per 100 residents, not stops per 100 miles driven. Second, we have not accounted for differences in policing patterns. In general, police patrol Black neighborhoods more frequently than White neighborhoods. Therefore, the greater police presence could account for the differences in stops per 100 residents. Although, it's no vindication of police to explain away the differences in stops per 100 residents by saying that their neighborhoods are more heavily patrolled. This simply kicks the bias up a step to the level of the deployment of policing assets. Finally, drivers within different racial groups may just drive differently.
+Of course, ending our analysis here is unwarranted. First, this does not account for how often different racial groups drive. It's comparing stops per 100 residents, not stops per 100 miles driven. Second, we have not accounted for differences in policing patterns. In general, police patrol Black neighborhoods more frequently than White neighborhoods. Therefore, the greater police presence could account for the differences in stops per 100 residents. Although, it's no vindication of police to explain away the differences in stops per 100 residents by saying that their neighborhoods are more heavily patrolled. This simply kicks the bias up a step to the level of the deployment of policing assets. Finally, drivers within different racial groups may just drive differently.
 
-## Veil of darkenss test
+# The Veil of Darkness Test in North Carolina
 
-The veil of darkness test attempts to overcome these differences. The test has its own weaknesses and should only be seen as additional evidence. It can provide evidence for or against bias in police stops, but should never be taken as the final say.
+We'll now apply the veil of darkness test with a Bayesian logistic regression model. The model's predictors are:
 
-### What is the veil of darkness test?
+- Time of day that the stop occurred
+- Driver's age
+- Driver's sex
+- Year
+- Whether it is dark outside at the time of the stop
+- County as a fixed effect (The ideal is to use county within a hierarchical model, but the heirarchical model took too long to run and I gave up!)
 
-Here's how [a group of scholars](https://www.nature.com/articles/s41562-020-0858-1) explained the test:
-
->[The] method starts from the idea that officers who engage in racial profiling are less able to identify a driver’s race after dark than during the day. As a result, if officers are discriminating against black drivers—all else being equal—one would expect black drivers to comprise a smaller share of stopped drivers at night, when a veil-of-darkness masks their race. To account for patterns of driving and police deployment that may vary throughout the day, the test leverages the fact that the sun sets at different times during the year.^[Pierson, E., Simoiu, C., Overgoor, J., Corbett-Davies, S., Jenson, D., Shoemaker, A., & Goel, S. (2020). A large-scale analysis of racial disparities in police stops across the United States.() Nature human behaviour, 4(7), 736-745.]
-
-For example, let's say it is dark at 7 p.m. for a third of the year, light for a third of the year, and kind-of dark for a third of the year. We want to compare the percentage of all drivers pulled over are Black and when it's light at 7 p.m. against the percentage of all drivers are pulled over who are Black when it's dark at 7 p.m. If a larger percentage are pulled over when it's light we have some evidence of racial bias.  
-
-This reduces to a prediction problem. For each traffic stop, we want to predict the driver's race given the time of the stop, the location (county), whether it's dark out, and other possible covariates. Then, we'll turn around and predict every driver's race. If the probability that a driver is Black is higher during the day than at night - holding time, location, and other covariates constant - then we have evidence of racial bias. 
-
-Researchers generally apply logistic regression to this problem. And that's a great tool. But, we're here to learn BART, so that what we're applying. Plus, BART provides all the benefits over parametric models that we mentioned in the beginning. 
+The outcome variable is the driver's race. Since logistic regression models require the outcome to be discrete (take one of two values), I filtered the data to only include Black and White drivers.
 
 ```{r minutesToDuskDataset}
 # create dataset for veil of darkness test -----------------------
@@ -483,78 +452,6 @@ potential_outcome_data <- model_df %>%
   as.data.frame()
 ```
 
-
-```{r bartMod, cache = T, eval = FALSE}
-# run BART model --------------------------------
-bart_mod <- mc.pbart(
-  x.train = predictor_df, 
-  y.train = response_train, 
-  x.test = potential_outcome_data, 
-  keeptrainfits = F,
-  ndpost = 200, 
-  mc.cores = 8,
-  cont = FALSE,
-  seed = 99
-)
-write_rds(bart_mod, 'bart_mod.rds')
-```
-
-```{r modPredictions, cache = TRUE}
-bart_mod <- read_rds('bart_mod.rds')
-
-# predictions from test set that was added to model
-post_predictions <- as.data.frame(bart_mod$prob.test)
- 
-# add decriptive column names to posterior predictions signifying what they represent
-potential_outcome_data <- potential_outcome_data %>%
-  mutate(descriptive_name = glue("{is_dark}_{county_name}_{minute}"))
-
-colnames(post_predictions) <- potential_outcome_data$descriptive_name
-
-# subtract dark from not dark for all county / minute combinations
-dark_predcitions <- post_predictions %>%
-  select(starts_with('Yes'))
-
-not_dark_predcitions <- post_predictions %>%
-  select(starts_with('No'))
-
-diff_dark_not_dark <- dark_predcitions - not_dark_predcitions
-
-# calcualte hdi for all differences between dark and not dark for each county / time combination
-colnames_for_hdi <- colnames(diff_dark_not_dark)
-
-# create final dataset for plotting
-discrimination_hdi_bart <- map_df(colnames_for_hdi, ~get_hdi(diff_dark_not_dark, .x)) %>%
-  # separate county name and minute into two differenct columns
-  separate(county_time, into = c('county', 'time'), sep = '_') %>%
-  # convert minutes since midnight to time (hour / minute)
-  mutate(time = as.numeric(time)) %>%
-  mutate(hour_minute = minute_to_time(time)) %>%
-  # add county populations so we can order facets by population
-  left_join(county_pop, by = c('county' = 'NAME')) %>%
-  mutate(county = fct_reorder(county, value, .desc = T))
-
-```
-
-```{r fig.width = 12, fig.height = 10, plotDifference, fig.cap = "BART model - There is not a difference between when it is dark and when it is not dark in the percentage of drives pulled over who are Black at a given time in the day."}
-
-# plots of counties and difference in probability of being black between dark and not dark
-
-discrimination_hdi_bart %>%
-  ggplot(aes(hour_minute, estimate)) +
-    geom_line() +
-    geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = .2) +
-    scale_x_time(labels = function(x) {hour(x)}) +
-    scale_y_continuous(labels = percent_format(accuracy = 1)) +
-    facet_wrap(~county, ncol = 5) +
-  geom_hline(yintercept = 0, linetype = 2, alpha = .5) +
-    labs(y = 'Difference between darkness and day in the percentage of drivers pulled over who are Black\n
-              (Probability that the driver is Black when it is dark minus the probability driver is Black when it is not dark)',
-         x = "Hour of day\n(24 hour times)")
-```
-
-## Bayesian logistic regression
-
 ```{r bayesHeirMod, cache = T, eval = F}
 t_prior <- student_t(df = 7, location = 0, scale = 2)
 
@@ -634,4 +531,4 @@ Additionally, many streets contain artificial lighting. The veil of darkness tes
 
 Finally, there are factors that correlate with race which our model doesn't consider. Vehicle make, model, and year could correlate with race and are visible to the officer at night. If stops correlate with these three items and these items also correlate with race then we would not pick up bias.
 
-That said, the test is a form of evidence pointing to bias or the lack thereof. .
+That said, the test is a form of evidence pointing to bias or the lack thereof.
