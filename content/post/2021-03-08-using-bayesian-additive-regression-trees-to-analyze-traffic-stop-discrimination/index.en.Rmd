@@ -34,7 +34,7 @@ knitr::opts_chunk$set(echo = T,
                       eval = T)
 ```
 
-Bayesian Additive Regression Trees (BART) are a Bayesian version of random forests. They're flexible, non-parametric, and supply a full posterior distribution on outcomes. They have all the benefits of Bayesian modeling and non-parametric machine learning modeling in one algorithm.
+Bayesian Additive Regression Trees (BART) are a Bayesian version of random forests. They're flexible, non-parametric, and supply a full posterior distribution on outcomes. They have all the benefits of both Bayesian modeling and non-parametric machine learning modeling in one algorithm.
 
 In this post, I practice with BART models using traffic stop data as the backdrop. We'll apply BART to the veil of darkness test and see if we can uncover racial disparities on traffic stops.
 
@@ -512,7 +512,7 @@ potential_outcome_data <- model_df %>%
 ```
 
 
-```{r bartMod, cache = T, eval = TRUE}
+```{r bartMod, cache = T, eval = FALSE}
 # run BART model --------------------------------
 bart_mod <- mc.pbart(
   x.train = predictor_df, 
@@ -583,7 +583,7 @@ discrimination_hdi_bart %>%
 
 ## Bayesian logistic regression
 
-```{r bayesHeirMod, cache = T}
+```{r bayesHeirMod, cache = T, eval = F}
 t_prior <- student_t(df = 7, location = 0, scale = 2)
 
 # bayesian hierarchical model
@@ -601,7 +601,7 @@ heir_mod <- stan_glm(
 write_rds(heir_mod, 'hier_mod.rds')
 ```
 
-```{r heirModPostPred, cache = T}
+```{r heirModPostPred, cache = T, eval = F}
 # predictions from test set that was added to model
 post_predictions <- posterior_epred(heir_mod, newdata = potential_outcome_data, draws = 200) %>%
   as.data.frame()
@@ -635,7 +635,7 @@ write_rds(discrimination_hdi_hier, 'discrimination_hdi_hier.rds')
 ```
 
 ```{r fig.width = 12, fig.height = 10, plotDifference, fig.cap = "Logistic regression model - There is not a difference between when it is dark and when it is not dark in the percentage of drives pulled over who are Black at a given time in the day."}
-# discrimination_hdi_hier <- read_rds('discrimination_hdi_hier.rds')
+discrimination_hdi_hier <- read_rds('discrimination_hdi_hier.rds')
 
 discrimination_hdi_hier %>%
   # filter(!(county %in% !!counties_to_remove)) %>%
