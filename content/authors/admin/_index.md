@@ -10,9 +10,9 @@ interests:
 - Causal Inference
 - R Programming
 organizations:
-- name: North Carolina Office of Indigent Defense Services
-  url: "ncids.org"
-role: Research Associate
+- name: TNTP
+  url: "tntp.org"
+role: Education Analyst
 social:
 - icon: envelope
   icon_pack: fas
