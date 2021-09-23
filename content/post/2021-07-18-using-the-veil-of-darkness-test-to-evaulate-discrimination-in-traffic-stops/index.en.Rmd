@@ -1,11 +1,11 @@
 ---
-title: Using the Veil of Darkness Test to Evaulate Discrimination in Traffic Stops
+title: "Using the Veil of Darkness Test to Evaulate Discrimination in Traffic Stops"
 author: ''
 date: '2021-07-18'
 slug: using-the-veil-of-darkness-test-to-evaulate-discrimination-in-traffic-stops
 categories:
-  - bayesian analysis
-  - traffic stops
+- bayesian analysis
+- traffic stops
 tags: []
 subtitle: ''
 summary: ''
@@ -13,7 +13,8 @@ authors: []
 lastmod: '2021-07-18T12:58:36-04:00'
 featured: no
 image:
-  caption: '<span>Photo by <a href="https://unsplash.com/@introspectivedsgn?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Erik Mclean</a> on <a href="https://unsplash.com/s/photos/police-car?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></span>'
+  caption: <span>Photo by <a href="https://unsplash.com/@introspectivedsgn?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Erik
+    Mclean</a> on <a href="https://unsplash.com/s/photos/police-car?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></span>
   focal_point: ''
   preview_only: no
 projects: []
@@ -21,19 +22,21 @@ links:
 - icon: github
   icon_pack: fab
   name: Github
-  url: 
+  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2021-07-18-using-the-veil-of-darkness-test-to-evaulate-discrimination-in-traffic-stops/index.en.Rmd
 draft: yes
 ---
 
 ```{r setup, echo = F}
-knitr::opts_chunk$set(echo = F,
+knitr::opts_chunk$set(echo = T,
                       message = F,
                       warning = F,
                       error = F,
                       eval = T)
 ```
 
-The veil of darkness test attempts to uncover racial differences in traffic stop rates. The aim, of course, is to identify racial bias. The test, like all tests, has its own weaknesses and should only be seen as additional evidence. It can provide evidence for or against bias in police stops, but should never be taken as the final say. That goes for this blog post and any other use of the test.
+The veil of darkness test attempts to uncover racial differences in traffic stop rates. The test, like all tests, has its own weaknesses and should only be seen as additional evidence. It can provide evidence for or against bias in police stops, but should never be taken as the final say.
+
+This post's purpose is to lay out an example of the veil of darkness test within a Bayesian framework using R. It's not to prove or disprove discrimination using the test. I leave that delicate task to people more proficient than myself.
 
 ## What is the veil of darkness test?
 
@@ -41,9 +44,11 @@ Here's how [a group of scholars](https://www.nature.com/articles/s41562-020-0858
 
 >[The] method starts from the idea that officers who engage in racial profiling are less able to identify a driver’s race after dark than during the day. As a result, if officers are discriminating against black drivers—all else being equal—one would expect black drivers to comprise a smaller share of stopped drivers at night, when a veil-of-darkness masks their race. To account for patterns of driving and police deployment that may vary throughout the day, the test leverages the fact that the sun sets at different times during the year.^[Pierson, E., Simoiu, C., Overgoor, J., Corbett-Davies, S., Jenson, D., Shoemaker, A., & Goel, S. (2020). A large-scale analysis of racial disparities in police stops across the United States.() Nature human behaviour, 4(7), 736-745.]
 
-For example, let's say it is dark at 7 p.m. for a third of the year, light for a third of the year, and kind-of dark for a third of the year. We want to compare the percentage of all drivers pulled over are Black and when it's light at 7 p.m. against the percentage of all drivers are pulled over who are Black when it's dark at 7 p.m. If a larger percentage are pulled over when it's light we have some evidence of racial bias.  
+Let's say it's dark at 7 p.m. for a third of the year, light for a third of the year, and kind-of dark for a third of the year. We want to compare the percentage of all drivers pulled over who are Black and when it's light at 7 p.m. against the percentage of all drivers are pulled over who are Black when it's dark at 7 p.m. If a larger percentage are pulled over when it's light we have some evidence of racial bias.
 
-This reduces to a prediction problem. For each traffic stop, we want to predict the driver's race given the time of the stop, the location (county), whether it's dark out, and other possible covariates. Then, we'll turn around and predict every driver's race. If the probability that a driver is Black is higher during the day than at night - holding time, location, and other covariates constant - then we have evidence of racial bias. 
+With that out of the way, let's get started.
+
+#### Setup
 
 ```{r importLibraries}
 library(glue)
@@ -63,6 +68,8 @@ library(gt)
 library(ggridges)
 library(tidyverse)
 ```
+
+#### Custom functions for analysis
 
 ```{r customFunctions}
 # custom functions --------------------------
@@ -90,11 +97,11 @@ add_credits <- function(hc) {
 
 scatter_stops_per <- function(df, second_race, plot_title, y_title) {
   
-  # scatter plot of stops per 100 residents for white and black / hispanic drivers
+  # scatter plot of stops per 100 residents for white and black / Latinx drivers
   # second_race is the race to compare with white
   
   # max axis point
-  max_point <- 45
+  max_point <- 100
   
   # find out if white or minority group is higher, used for colors above or below line
   df[['diff']] <- ifelse(df[['white']] < df[[second_race]], 1, 0)
@@ -107,7 +114,7 @@ scatter_stops_per <- function(df, second_race, plot_title, y_title) {
   scatter_tooltip <- "<b>{point.county_name}</b><br>
                       Stops per 100 residents (Black): <b>{point.black}</b><br>
                       Stops per 100 residents (White): <b>{point.white}</b><br>
-                      Stops per 100 residents (Hispanic): <b>{point.hispanic}</b><br>
+                      Stops per 100 residents (Latinx): <b>{point.hispanic}</b><br>
                       County population (2013): <b>{point.value_tooltip}</b><br>"
   
   df %>%
@@ -173,15 +180,25 @@ get_hdi <- function(df, hdi_colname) {
 }
 ```
 
-```{r importData, cache = T}
+## Comparing Stops Per 100 Residents Among Racial Groups
+
+Prior to modeling racial bias with the veil of darkness test, let's take a look at the data. The traffic stop data set comes from [the Stanford Open Policing Project](https://openpolicing.stanford.edu/) and is the same data used in [the last post](https://www.shaneorr.io/post/exploratory-analysis-of-north-carolina-traffic-stop-data/).
+
+#### Load data
+
+I placed copies of the Stanford Open Policing Project into a Digital Ocean Space. I'm pulling from this Space.
+
+```{r importData, eval = F}
 # downlaod traffic stop data --------------------------
 
 # download entire state traffic stop dataset
-nc_stops <- vroom('https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_statewide_2020_04_01.csv.gz',
-                  col_select = -contains('raw')) #%>%
-  #sample_frac(size = .2)
+nc_stops <- vroom(
+  'https://shane-datasets.nyc3.digitaloceanspaces.com/traffic-stop/nc/nc_statewide_2020_04_01.csv.gz',
+  col_select = -contains('raw'),
+  progress = FALSE
+)
 
-# get 2010 - 2013 5 year and aggregate
+# get 2009 - 2013 5 year and aggregate
 pop_years <- seq(2009, 2013, 1)
 
 n_years <- length(pop_years)
@@ -191,11 +208,18 @@ nc_stops <- nc_stops %>%
   # only keep between years 2010 and 2013 
   # 2013 is final full year of stop data
   filter(year %in% !!pop_years)
+
+# save data set so we don't have to download again
+write_rds(nc_stops, 'nc_stops.rds')
 ```
 
-## Comparing Stops Per 100 Residents Among Racial Groups
+One way to show racial differences in traffic stops is to compare stops per 100 residents between racial groups. The figure below shows this comparison for all North Carolina counties. The top plot compares Black and White drivers, while the bottom plot highlights Latinx and White drivers. Each point is a county. The diagonal line is the trend we would expect if drivers of different races had the same number of stops per 100 residents.
 
-Prior to modeling racial bias with the veil of darkness test, let's take a look at the data. The traffic stop data set comes from [The Stanford Open Policing Project](https://openpolicing.stanford.edu/) and is the same data used in [the last post](https://www.shaneorr.io/post/exploratory-analysis-of-north-carolina-traffic-stop-data/).
+Of course, there is a lot of data cleaning first to create a data set with county populations and aggregate number of traffic stops per county.
+
+#### Get county populations and clean population data
+
+We'll use the `tidycensus` package to pull county populations from the US Census API. After pulling the data, we'll clean it so we can combine it with our traffic stop data.
 
 ```{r importCensus, cache = T}
 # racial populations by county from census ----------------
@@ -235,8 +259,7 @@ county_pop_agg <- county_pop_race %>%
   filter(between(DATE, 3, 6)) %>%
   # aggregate population by race for each county
   group_by(GEOID, NAME, RACE, HISP) %>%
-  summarize(agg_pop = sum(value)) %>%
-  ungroup() %>%
+  summarize(agg_pop = sum(value), .groups = 'drop') %>%
   filter(HISP != 'Both Hispanic Origins') %>%
   # make the All Races  race that is Hisp the Hisp race
   mutate(RACE = ifelse(RACE == 'All races' & HISP == 'Hispanic', 'Hispanic', RACE)) %>%
@@ -254,18 +277,23 @@ county_pop_agg <- county_pop_race %>%
   select(-HISP)
 ```
 
+#### Combine county populations with aggregate traffic stop data by county
+
+Now, let's calculate the number of stops in each county for Black, Latinx, and White drivers. We'll then 
+
 ```{r stopsByRace}
 # calculate stops per race --------------
 
+nc_stops <- read_rds('nc_stops.rds')
+
 # save list of stop reasons to be uses in text
 stop_reasons <- unique(nc_stops$reason_for_stop)
-
+ 
 stops_by_race <- nc_stops %>%
   # calculate number of stops by race (numerator)
   group_by(county_name, subject_race) %>%
-  summarize(num_stops_race = n()) %>%
+  summarize(num_stops_race = n(), .groups = 'drop') %>%
   # calculate percentage of stops by race
-  ungroup() %>%
   # only need three races; not enough data for others
   filter(subject_race %in% c('black', 'white', 'hispanic')) %>%
   # only keep counties with a minimum of 100 stops for each race
@@ -297,48 +325,67 @@ stops_by_race <- nc_stops %>%
 
 ```
 
-One way to show racial differences in traffic stops is to compare stops per 100 residents between racial groups. The graph below shows this comparison for all North Carolina counties. The left plot compares Black and White drivers, while the right plot highlights Hispanic and White drivers. Each point is a county. The diagonal line is the trend we would expect if drivers of different races have the same number of stops per 100 residents.
+#### Plot stops per 100 residents by race
 
-For almost all counties in North Carolina, Black drivers are stopped at a higher rate per 100 residents than White drivers. This is shown by almost all of the points lying above the diagonal line for the Black / White comparison chart. The Hispanic and White rates, however, are similar as shown by the dots in the Hispanic / White graph falling along the diagonal line.
+And here is the plot comparing amond racial categories stops per 100 residents.
 
-```{r plotStopsRace, fig.cap = "More Black drivers are stopped per 100 residents than White drivers. Hispanic and White drivers, however, have similair rates."}
-
+```{r plotStopsRace}
+ 
 # scatter plot of race and perc. stops compared to overall perc. pop ----------
 
 bw_stops_title <- 'Stops Per 100 Residents for Black and White Drivers'
 bw_y_title <- 'Stops per 100 residents for Black drivers'
 bw_scatter_plot <- scatter_stops_per(stops_by_race, 'black', bw_stops_title, bw_y_title)
 
-hw_stops_title <- 'Stops Per 100 Residents for Hispanic and White Drivers'
-hw_y_title <- 'Stops per 100 residents for Hispanic drivers'
+hw_stops_title <- 'Stops Per 100 Residents for Latinx and White Drivers'
+hw_y_title <- 'Stops per 100 residents for Latinx drivers'
 hw_scatter_plot <- scatter_stops_per(stops_by_race, 'hispanic', hw_stops_title, hw_y_title) %>%
   add_credits()
-
-hw_grid(
-  bw_scatter_plot, hw_scatter_plot,
-  ncol = 2, rowheight = 300
-)
+```
+```{r}
+frameWidget(bw_scatter_plot, height = 350, width = '75%')
+```
+```{r}
+frameWidget(hw_scatter_plot, height = 350, width = '75%')
 ```
 
-Of course, ending our analysis here is unwarranted. First, this does not account for how often different racial groups drive. It's comparing stops per 100 residents, not stops per 100 miles driven. Second, we have not accounted for differences in policing patterns. In general, police patrol Black neighborhoods more frequently than White neighborhoods. Therefore, the greater police presence could account for the differences in stops per 100 residents. Although, it's no vindication of police to explain away the differences in stops per 100 residents by saying that their neighborhoods are more heavily patrolled. This simply kicks the bias up a step to the level of the deployment of policing assets. Finally, drivers within different racial groups may just drive differently.
+For almost all counties in North Carolina, Black drivers are stopped at a higher rate per 100 residents than White drivers. This is shown by almost all of the points lying above the diagonal line for the Black / White comparison chart. The Latinx and White rates, however, are similar as shown by the dots in the Latinx / White graph falling along the diagonal line.
 
-# The Veil of Darkness Test in North Carolina
+Of course, ending our analysis here is unwarranted. First, this does not account for how often different racial groups drive. It's comparing stops per 100 residents, not stops per 100 miles driven. Second, we have not accounted for differences in policing patterns. In general, police patrol Black neighborhoods more frequently than White neighborhoods. Therefore, the greater police presence could account for the differences in stops per 100 residents. 
 
-We'll now apply the veil of darkness test with a Bayesian logistic regression model. The model's predictors are:
+Although, it's no vindication of police to explain away the differences in stops per 100 residents by saying that their neighborhoods are more heavily patrolled. This simply kicks the bias up a step to the level of the deployment of policing assets. Finally, drivers within different racial groups may just drive differently.
 
-- Time of day that the stop occurred
-- Driver's age
+## The Veil of Darkness Test in North Carolina
+
+### The model
+
+We'll now apply the veil of darkness test with a Bayesian logistic regression model. We'll use the model to predict a driver's race and then compare the probability that the driver is Black at a given time when it is dark outside to the probability at the same time when it is daylight. The data set includes all stops in North Carolina's 40 largest counties between 2009 and 2013. For modeling, we are only using times of the day that experience both daylight and darkness. This is from 5:24 P.M. to 8:21 P.M. 
+
+The model's predictors are:
+
+- Time of day (minute) that the stop occurred, with a natural spline.
+- Driver's age, with a natural spline.
 - Driver's sex
-- Year
-- Whether it is dark outside at the time of the stop
-- County as a fixed effect (The ideal is to use county within a hierarchical model, but the heirarchical model took too long to run and I gave up!)
+- Year as a categorical variable (2009- 2013).
+- Whether it is dark outside at the time of the stop as a categorical.
+- County as a fixed effect (We should ideally use county within a hierarchical model, but the hierarchical model took too long to run and I gave up!)
+- Interaction term between whether it is dark and county. The interaction term is needed because we want to break the results down by county.
+
+As a regularization tool, all coefficients containing counties - whether the interaction term with counties or just counties alone - have Student T priors with a scale of 1. That said, we have so much data that priors make little difference.
 
 The outcome variable is the driver's race. Since logistic regression models require the outcome to be discrete (take one of two values), I filtered the data to only include Black and White drivers.
 
-```{r minutesToDuskDataset}
+#### Creating model's data set
+
+The veil of darkness test requires a lot of data cleaning and pre-processing. Most of the work centers on incorporating sunset and dusk times for each day and county, and then figuring out how many minutes after or before dusk a stopped occurred.
+
+The proceeding code block starts by importing each county's shape file using the `tigris` package. Each county's centroid - it's center in latitude and longitude - is then calculated using the shape file. We then use the `suncalc` package to calculate the time of sunset and dusk for each county centroid on each day of the year.
+
+```{r minutesToDuskDataset, results = "hide"}
 # create dataset for veil of darkness test -----------------------
 
 # get centroid of every county
+# we will use this centroid to figure out the county's time of sunset and dusk for each day
 
 # get county shapefiles and centroids
 nc_counties <- counties(state = 'NC', cb = T)
@@ -382,6 +429,11 @@ most_pop_counties <- county_pop %>%
  arrange(desc(value)) %>%
  head(40) %>%
  .[[1]]
+```
+
+Now, we'll merge these sunset and dusk times to the traffic stop data set. After merging, we'll calculate how many minutes before or after dusk a stop occurred and filter the data set to only include times of the day where at some points of the year it was light and at others it was dark.
+
+```{r}
 
 # merge dusk times with nc stops dataset
 nc_stops_veil <- nc_stops %>%
@@ -420,17 +472,17 @@ nc_stops_veil <- nc_stops %>%
   mutate(county_name = factor(county_name),
          year = as.factor(year))
 
-write_rds(nc_stops_veil, 'nc_stops_veil.rds')
-
 # remove items to save RAM
 rm(county_pop_race)
 rm(nc_stops)
 rm(nc_counties_sunset)
 ```
 
-```{r modelDatasets}
-nc_stops_veil <- read_rds('nc_stops_veil.rds')
+#### Create model
 
+Now we're ready to model. First, we'll create a data set with the needed variables and also create a data set for predictions, which will assume a 20 year old male in 2013.
+
+```{r modelDatasets}
 # create datasets for modeling and prediction -------------------
 
 # variables needed for modeling
@@ -440,7 +492,7 @@ model_df <- nc_stops_veil %>%
   ungroup() %>%
   select(!!vars_for_model) %>%
   drop_na() %>%
-  # BART requires categoricals with more than one level to be factors
+  # make categoricals explicit so results are easier to understand
   mutate(is_dark = ifelse(is_dark, 'Yes', 'No')) %>%
   mutate(across(c('subject_sex', 'county_name', 'is_dark', 'year'), ~as.factor(.)))
 
@@ -463,24 +515,16 @@ potential_outcome_data <- model_df %>%
   as.data.frame()
 ```
 
+And here is our Bayesian logistic regression model. 
+
 ```{r bayesMod, cache = T, eval = F}
 # create logistic regression model -----------------------
 
-# horseshoe prior for regression coefficients
+# priors on intercept and coefficients
+t_prior_coef <- student_t(df = 5, location = 0, scale = 1, autoscale = TRUE)
+t_prior_intercept <- student_t(df = 5, location = 0, scale = 1, autoscale = TRUE)
 
-# number of predictors
-# multiplying county_name by 2 because of interaction term
-# p <- ((length(unique(model_df$county_name)) - 1)*2) + (length(unique(model_df$year)) - 1) + 4
-# n <- nrow(model_df)
-# # prior guess for the number of relevant variables
-# p0 <- 4 
-# tau0 <- p0/(p-p0) * 1/sqrt(n)
-# hs_prior <- hs(df=1, global_df=1, global_scale=tau0)
-
-t_prior_coef <- student_t(df = 7, location = 0, scale = 2.5)
-t_prior_intercept <- student_t(df = 7, location = 0, scale = 2.5)
-
-# bayesian hierarchical model
+# bayesian model
 mod <- stan_glm(
   is_black ~ is_dark*county_name + splines::ns(minute, df = 4) + splines::ns(subject_age, df = 4) + subject_sex + year,
   data = model_df,
@@ -491,12 +535,43 @@ mod <- stan_glm(
   cores = 8
 )
 
-# write_rds(mod, 'mod.rds')
+# write out to save results, so we don't have to re-run
+write_rds(mod, 'mod.rds')
 ```
 
-```{r bayesModPostPred, cache = T, eval = F}
+### The results
+
+The next plot highlights the applicable model results. It's the posterior distribution for each county of the percentage point difference between darkness and daylight in the percent of drivers who get stopped that are Black. The predictions assume a 20 year old male driver who is pulled over at 7 p.m. Let's use an example to better understand.
+
+Let's say that at 7 p.m. during the time of year when it is dark out the percentage breakdown of those being stopped is as follows:
+
+Race     | Percentage breakdown 
+---------|-----------------------
+Black    | 49%                  
+White    | 51%                  
+
+Conversely, at 7 p.m. when it is light the percentage breakdown changes as follows:
+
+Race     | Percentage breakdown 
+---------|----------------------
+Black    | 45%                  
+White    | 55%                  
+
+The difference in the probability that a driver being pulled over is Black between when it is dark outside and when it is light at 7 p.m.: 49% - 45% = **4 percentage points**
+
+In this case, there is evidence of discrimination since Black drivers make up a higher percentage of drivers pulled over when it is dark compared to when it is light outside, keeping the time of day constant.
+
+The values in the plot have the same meaning: positive numbers imply that Black drivers are pulled over more at night. The lines at the ends of the distributions represent 95% credible intervals.
+
+#### Create posterior distribution of differences
+
+The block below takes the posterior distributions in each county of predictions that a driver is Black when it is dark outside at 7 P.M. and subtracts it from the county posterior distributions of the same probability when it is light outside at 7 P.M. The resulting posterior distribution is what we will plot.
+
+```{r bayesModPostPred}
 # create predictions from model ---------------------
-post_predictions <- posterior_epred(mod, newdata = potential_outcome_data, draws = 200) %>%
+mod <- read_rds('mod.rds')
+
+post_predictions <- posterior_epred(mod, newdata = potential_outcome_data, draws = 500) %>%
   as.data.frame()
 
 # add decriptive column names to posterior predictions signifying what they represent
@@ -512,33 +587,22 @@ dark_predcitions <- post_predictions %>%
 not_dark_predcitions <- post_predictions %>%
   select(starts_with('No'))
 
-diff_dark_not_dark <- dark_predcitions - not_dark_predcitions
+diff_dark_not_dark <- not_dark_predcitions - dark_predcitions
 
 # calcualte hdi for all differences between dark and not dark for each county / time combination
 colnames_for_hdi <- colnames(diff_dark_not_dark)
 
-# create final dataset for plotting
-# discrimination_hdi <- map_df(colnames_for_hdi, ~get_hdi(diff_dark_not_dark, .x)) %>%
-#   # separate county name and minute into two differenct columns
-#   separate(county_time, into = c('county', 'time'), sep = '_') %>%
-#   # convert minutes since midnight to time (hour / minute)
-#   mutate(time = as.numeric(time)) %>%
-#   mutate(hour_minute = minute_to_time(time)) %>%
-#   # add county populations so we can order facets by population
-#   left_join(county_pop, by = c('county' = 'NAME')) %>%
-#   mutate(county = fct_reorder(county, value, .desc = T))
-
-# write_rds(discrimination_hdi, 'discrimination_hdi.rds')
 ```
 
-```{r fig.width = 12, fig.height = 10, plotDifference, fig.cap = "Logistic regression model - There is not a difference between when it is dark and when it is not dark in the percentage of drives pulled over who are Black at a given time in the day."}
-discrimination_hdi <- read_rds('discrimination_hdi_hier.rds')
+And here are the results.
+
+```{r countyPosteriors, fig.width = 10, fig.height = 12}
 
 # use 20 year old male getting stopped at 7 PM
 
 diff_dark_1140 <- diff_dark_not_dark %>%
   # select columns for 7 pm
-  select(ends_with('1140')) %>%
+  select(ends_with('1140')) %>% # .50
   # make column with row ID, useful when pivoting data
   rowid_to_column("ID") %>%
   pivot_longer(cols = -ID, names_to = 'county_id', values_to = 'estimate') %>%
@@ -559,23 +623,41 @@ diff_dark_1140 %>%
   mutate(county = factor(county, levels = county_order_by_hdi)) %>%
   ggplot(aes(estimate, county)) +
   geom_vline(xintercept = 0, linetype = 2, alpha = .8) +
-  stat_density_ridges(quantile_lines = TRUE, quantiles = c(0.05, .5, 0.95), alpha = 0.7, rel_min_height = 0.05) +
+  stat_density_ridges(quantile_lines = TRUE, quantiles = c(0.025, .5, 0.975), alpha = 0.7, rel_min_height = 0.05) +
   labs(
     y = NULL,
-    x = 'Difference between Black and White drivers in probability of being stopped\nPositive numebrs mean Black drivers face a higher probability.'
+    x = 'Percentage point difference between darkness and daytime in percentage of drivers being stopped who are Black'
   ) +
   theme_minimal()
 
 ```
 
+Overall, the results paint a mixed picture. Three counties have 95% credible intervals entirely above zero, while five counties have intervals below zero. These results, which don't show any trends overall, raise worries about multiple comparison problems. After all, we are looking at 40 counties. It's not crazy to think that one or two will have large values by chance. Sure, we have a lot of data and we put regularizing priors on the county coefficients; but the worry still lingers.
+ 
+We can overlay all the posterior distributions to get a picture of the distribution of distributions. The following figure does this. The county-level distributions form a symmetrical, bell-shaped, distribution centered on zero. But, the two counties to the left, Craven and Gaston, separate themselves from the pack a bit.
+
+```{r allCountyDistribution, fig.width = 6, fig.height = 4}
+ggplot(diff_dark_1140, aes(estimate, color = county)) +
+  geom_density() +
+  geom_vline(xintercept = 0, linetype = 2) +
+  xlim(c(-.2, .2)) +
+  theme_minimal() +
+  labs(x = 'County posterior distributions',
+       y = NULL)  +
+  theme(
+    legend.position = 'none',
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+    panel.border = element_rect(colour = "grey", fill=NA, size=1)
+  )
+```
+
+Taking this all together, I'm hesitant to claim that the veil of darkness tests provides strong evidence of discrimination. At most, it could present evidence for the three counties with 95% credible intervals above zero. Plus, the strength of the evidence depends, in part, on the strength of the veil of darkness test as a tool. Let's turn to the test's limitations now.
+
 ## Limitations of the veil of darkness test
 
 The veil of darkness test, like all tests, has its limits. The first is the test's scope. It's not trying to discern bias writ-large, but a narrow type of bias: bias when police officers make the quick decision to pull someone over. But, there are multiple entry points of bias with law enforcement. As noted earlier, there might be racial bias is the deployment of law enforcement assets. This bias could feed into disparities in traffic stops without being picked up by the veil of darkness test.
 
-But, the scope is even smaller than this. It only examines police officer bias in a small roughly three hour period when it's daytime part of the year and nighttime part of the year.
+But, the scope is even smaller than this. It only examines police officer bias in a small roughly three hour period when it's daytime part of the year and nighttime part of the year. Additionally, many streets contain artificial lighting. The veil of darkness test assumes that officers do not know the race of the driver they are pulling over at night. Often, however, this isn't true.
 
-Additionally, many streets contain artificial lighting. The veil of darkness test assumes that officers do not know the race of the driver they are pulling over at night. often, however, this isn't true.
-
-Finally, there are factors that correlate with race which our model doesn't consider. Vehicle make, model, and year could correlate with race and are visible to the officer at night. If stops correlate with these three items and these items also correlate with race then we would not pick up bias.
-
-That said, the test is a form of evidence pointing to bias or the lack thereof.
+That said, the test is evidence. Not conclusive evidence, but a data point; part of a larger picture. Conclusively claiming discrimination, or lack thereof, requires more than one study, test, or blog-post. However, each study and test paints part of the picture.
