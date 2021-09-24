@@ -589,7 +589,11 @@ diff_dark_1140 %&gt;%
   mutate(county = factor(county, levels = county_order_by_hdi)) %&gt;%
   ggplot(aes(estimate, county)) +
   geom_vline(xintercept = 0, linetype = 2, alpha = .8) +
-  stat_density_ridges(quantile_lines = TRUE, quantiles = c(0.025, .5, 0.975), alpha = 0.7, rel_min_height = 0.05) +
+  stat_density_ridges(
+    quantile_lines = TRUE, quantiles = c(0.025, .5, 0.975), 
+    alpha = 0.7, rel_min_height = 0.05, 
+    fill = &#39;deepskyblue&#39;, alpha = .25
+  ) +
   labs(
     y = NULL,
     x = &#39;Percentage point difference between darkness and daytime in percentage of drivers being stopped who are Black&#39;
