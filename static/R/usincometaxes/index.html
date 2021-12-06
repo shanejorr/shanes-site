@@ -94,10 +94,10 @@
   primary_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span>, <span class="fl">36</span><span class="op">)</span>
 <span class="op">)</span>
 
-<span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span><span class="va">family_income</span><span class="op">)</span>
+<span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span><span class="va">family_income</span>, upload_method <span class="op">=</span> <span class="st">'ftp'</span><span class="op">)</span>
 <span class="co">#&gt; [1] "All required columns are present and the data is in the proper format!"</span>
-<span class="co">#&gt; [1] "Uploading data to TAXSIM server."</span>
-<span class="co">#&gt; [1] "Downloading data to TAXSIM server."</span></code></pre></div>
+<span class="co">#&gt; [1] "Uploading data to TAXSIM server via ftp."</span>
+<span class="co">#&gt; [1] "Downloading data from TAXSIM server via ftp."</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">family_taxes</span><span class="op">)</span></code></pre></div>
 <table style="width:100%;" class="table">
@@ -230,7 +230,7 @@
 <div class="section level2">
 <h2 id="input">Input<a class="anchor" aria-label="anchor" href="#input"></a>
 </h2>
-<p><code>.data</code> is the only parameter for <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. It is a data frame containing the information used to calculate taxes. Column names must match the names below.</p>
+<p>The input data frame, <code>.data</code> must contain three required columns. Optional columns can also be specified for better tax calculations. All columns must have the column names and data types listed below or in teh help file for <code>taxsim_calculate_taxes</code>.</p>
 <div class="section level3">
 <h3 id="required-columns">Required columns<a class="anchor" aria-label="anchor" href="#required-columns"></a>
 </h3>
@@ -246,6 +246,11 @@
 </h3>
 <p>Optional columns can be found in the help documentation of <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> under the section <code>Optional columns</code>. Use <code><a href="reference/taxsim_calculate_taxes.html">?taxsim_calculate_taxes</a></code> to access the help documentation.</p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="upload-and-download-method">Upload and download method<a class="anchor" aria-label="anchor" href="#upload-and-download-method"></a>
+</h2>
+<p>FTP or SSH can be used to upload and retrieve information to and from the TAXSIM server. This is set with the <code>upload_method</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> and defaults to FTP. Behind the scenes, FTP uses the <code>RCurl</code> package and SSH issues an SSH command to the operating system.</p>
 </div>
 <div class="section level2">
 <h2 id="giving-credit">Giving credit<a class="anchor" aria-label="anchor" href="#giving-credit"></a>
