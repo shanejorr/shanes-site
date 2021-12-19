@@ -102,9 +102,14 @@
   primary_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span>, <span class="fl">36</span><span class="op">)</span>
 <span class="op">)</span>
 
-<span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span><span class="va">family_income</span>, upload_method <span class="op">=</span> <span class="st">'ssh'</span><span class="op">)</span>
+<span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span>
+  .data <span class="op">=</span> <span class="va">family_income</span>,
+  return_all_information <span class="op">=</span> <span class="cn">FALSE</span>,
+  upload_method <span class="op">=</span> <span class="st">'ftp'</span>
+<span class="op">)</span>
 <span class="co">#&gt; [1] "All required columns are present and the data is in the proper format!"</span>
-<span class="co">#&gt; [1] "Sending and retrieving data from TAXSIM server via SSH"</span></code></pre></div>
+<span class="co">#&gt; [1] "Uploading data to TAXSIM server via ftp."</span>
+<span class="co">#&gt; [1] "Downloading data from TAXSIM server via ftp."</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">family_taxes</span><span class="op">)</span></code></pre></div>
 <table style="width:100%;" class="table">
@@ -217,28 +222,14 @@
 <h2 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a>
 </h2>
 <p><code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> returns a data frame where each row corresponds to a row in <code>.data</code> and each column is a piece of tax information. The output and <code>.data</code> can be linked by the <code>id_number</code> column.</p>
+<p>The amount of output (tax information) received is controlled by the <code>return_all_information</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. Setting <code>return_all_information</code> to <code>FALSE</code> returns minimal information such as federal and state tax liabilities and FICA taxes. When <code>return_all_information</code> is <code>TRUE</code> 45 different tax items are returned.</p>
 <p>See the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-output.html" class="external-link">Description of Output Columns</a> vignette for output information.</p>
 </div>
 <div class="section level2">
 <h2 id="input">Input<a class="anchor" aria-label="anchor" href="#input"></a>
 </h2>
-<p>The input data frame, <code>.data</code>, must contain three required columns. Optional columns can also be specified for better tax calculations. All columns must have the column names and data types listed in the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">Description of Input Columns</a> vignette.</p>
-<p><code>.data</code> can contain columns beyond those listed in the vignette. The additional columns will be ignored.</p>
-<div class="section level3">
-<h3 id="required-columns">Required columns<a class="anchor" aria-label="anchor" href="#required-columns"></a>
-</h3>
-<p>The following columns are required:</p>
-<ul>
-<li><p><code>id_number</code> An arbitrary, non-negative, <strong>integer</strong>. This number links the results from TAXSIM 32 to the original data frame with entries.</p></li>
-<li><p><code>tax_year</code> Tax year ending Dec 31 (4 digits between 1960 and 2023). State must be zero if year is before 1977 or after 2023.</p></li>
-<li><p><code>filing_status</code> Filing status of tax unit. One of the following: “single” for single; “married, jointly” for married, filing jointly; “married, separately” for married, filing separately; “dependent child” for dependent, usually a child with income; or “head of household” for head of household filing status.</p></li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="optional-columns">Optional columns<a class="anchor" aria-label="anchor" href="#optional-columns"></a>
-</h3>
-<p>Optional columns can be found in the help documentation of <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> under the section <code>Optional columns</code>. Use <code><a href="reference/taxsim_calculate_taxes.html">?taxsim_calculate_taxes</a></code> to access the help documentation.</p>
-</div>
+<p>Taxes are calculated with <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> using the financial and household characteristics found in the data frame represented by the <code>.data</code> parameter. Each column is a different piece of information and each row contains a tax payer unit.</p>
+<p>All columns must have the column names and data types listed in the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">Description of Input Columns</a> vignette. <code>.data</code> can contain columns beyond those listed in the vignette. The additional columns will be ignored.</p>
 </div>
 <div class="section level2">
 <h2 id="upload-and-download-method">Upload and download method<a class="anchor" aria-label="anchor" href="#upload-and-download-method"></a>

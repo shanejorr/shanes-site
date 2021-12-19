@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   taxsim-input: taxsim-input.html
   taxsim-output: taxsim-output.html
-last_built: 2021-12-19T01:17Z
+last_built: 2021-12-19T03:18Z
 urls:
   reference: https://shanejorr.github.io/usincometaxes/reference
   article: https://shanejorr.github.io/usincometaxes/articles
