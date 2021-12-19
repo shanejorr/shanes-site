@@ -10,6 +10,15 @@
     <loc>https://shanejorr.github.io/usincometaxes/LICENSE.html</loc>
   </url>
   <url>
+    <loc>https://shanejorr.github.io/usincometaxes/articles/index.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/articles/taxsim-input.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/articles/taxsim-output.html</loc>
+  </url>
+  <url>
     <loc>https://shanejorr.github.io/usincometaxes/authors.html</loc>
   </url>
   <url>
@@ -26,6 +35,9 @@
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/check_numeric.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/check_parameters.html</loc>
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/check_required_cols.html</loc>

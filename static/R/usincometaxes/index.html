@@ -44,6 +44,13 @@
 <li class="nav-item">
   <a class="nav-link" href="reference/index.html">Reference</a>
 </li>
+<li class="nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="articles/taxsim-input.html">Description of Input Columns</a>
+    <a class="dropdown-item" href="articles/taxsim-output.html">Description of Output Columns</a>
+  </div>
+</li>
       </ul>
 <form class="form-inline my-2 my-lg-0" role="search">
         <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="search.json" id="search-input" placeholder="Search for" autocomplete="off">
@@ -79,9 +86,10 @@
 <div class="section level2">
 <h2 id="quick-example">Quick example<a class="anchor" aria-label="anchor" href="#quick-example"></a>
 </h2>
+<p><code>usincometaxes</code> helps users estimate household income taxes from data sets containing financial and household data. This allows users to estimate income taxes from surveys with financial information, as the United States Census Public Use Micro Data (PUMS).</p>
 <p><code>usincometaxes</code> contains one function: <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. Below is a simple example of its use.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org" class="external-link">tidyverse</a></span><span class="op">)</span>
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://yihui.org/knitr/" class="external-link">knitr</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/shanejorr/usincometaxes" class="external-link">usincometaxes</a></span><span class="op">)</span>
 
@@ -94,10 +102,9 @@
   primary_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span>, <span class="fl">36</span><span class="op">)</span>
 <span class="op">)</span>
 
-<span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span><span class="va">family_income</span>, upload_method <span class="op">=</span> <span class="st">'ftp'</span><span class="op">)</span>
+<span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span><span class="va">family_income</span>, upload_method <span class="op">=</span> <span class="st">'ssh'</span><span class="op">)</span>
 <span class="co">#&gt; [1] "All required columns are present and the data is in the proper format!"</span>
-<span class="co">#&gt; [1] "Uploading data to TAXSIM server via ftp."</span>
-<span class="co">#&gt; [1] "Downloading data from TAXSIM server via ftp."</span></code></pre></div>
+<span class="co">#&gt; [1] "Sending and retrieving data from TAXSIM server via SSH"</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">family_taxes</span><span class="op">)</span></code></pre></div>
 <table style="width:100%;" class="table">
@@ -209,28 +216,14 @@
 <div class="section level2">
 <h2 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a>
 </h2>
-<p><code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> returns a data frame containing the following columns:</p>
-<ul>
-<li>
-<code>id_number</code>: ID number from the input data set, so users can match the tax information with the input data set</li>
-<li>
-<code>federal_taxes</code>: Total federal taxes</li>
-<li>
-<code>state_taxes</code>: Total state taxes, if a state was identified</li>
-<li>
-<code>fica_taxes</code>: Total FICA taxes, including the employers and employees share</li>
-<li>
-<code>federal_marginal_rate</code>: Marginal federal tax rate</li>
-<li>
-<code>state_marginal_rate</code>: Marginal state tax rate, if a state was identified</li>
-<li>
-<code>fica_rate</code>: FICA rate</li>
-</ul>
+<p><code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> returns a data frame where each row corresponds to a row in <code>.data</code> and each column is a piece of tax information. The output and <code>.data</code> can be linked by the <code>id_number</code> column.</p>
+<p>See the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-output.html" class="external-link">Description of Output Columns</a> vignette for output information.</p>
 </div>
 <div class="section level2">
 <h2 id="input">Input<a class="anchor" aria-label="anchor" href="#input"></a>
 </h2>
-<p>The input data frame, <code>.data</code> must contain three required columns. Optional columns can also be specified for better tax calculations. All columns must have the column names and data types listed below or in teh help file for <code>taxsim_calculate_taxes</code>.</p>
+<p>The input data frame, <code>.data</code>, must contain three required columns. Optional columns can also be specified for better tax calculations. All columns must have the column names and data types listed in the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">Description of Input Columns</a> vignette.</p>
+<p><code>.data</code> can contain columns beyond those listed in the vignette. The additional columns will be ignored.</p>
 <div class="section level3">
 <h3 id="required-columns">Required columns<a class="anchor" aria-label="anchor" href="#required-columns"></a>
 </h3>
@@ -250,7 +243,7 @@
 <div class="section level2">
 <h2 id="upload-and-download-method">Upload and download method<a class="anchor" aria-label="anchor" href="#upload-and-download-method"></a>
 </h2>
-<p>FTP or SSH can be used to upload and retrieve information to and from the TAXSIM server. This is set with the <code>upload_method</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> and defaults to FTP. Behind the scenes, FTP uses the <code>RCurl</code> package and SSH issues an SSH command to the operating system.</p>
+<p>FTP or SSH can be used to upload and retrieve information to and from the TAXSIM server. This is set with the <code>upload_method</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> and defaults to FTP. Behind the scenes, FTP uses the <code>RCurl</code> package and SSH issues an SSH command to the operating system. Large data sets should sue SSH since it is faster.</p>
 </div>
 <div class="section level2">
 <h2 id="giving-credit">Giving credit<a class="anchor" aria-label="anchor" href="#giving-credit"></a>
