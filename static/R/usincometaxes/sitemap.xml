@@ -19,6 +19,9 @@
     <loc>https://shanejorr.github.io/usincometaxes/articles/taxsim-output.html</loc>
   </url>
   <url>
+    <loc>https://shanejorr.github.io/usincometaxes/articles/using-usincometaxes.html</loc>
+  </url>
+  <url>
     <loc>https://shanejorr.github.io/usincometaxes/authors.html</loc>
   </url>
   <url>
@@ -43,6 +46,9 @@
     <loc>https://shanejorr.github.io/usincometaxes/reference/check_required_cols.html</loc>
   </url>
   <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/check_spouse.html</loc>
+  </url>
+  <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/check_state.html</loc>
   </url>
   <url>
@@ -62,6 +68,9 @@
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/recode_filing_status.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/taxpayer_finances.html</loc>
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/taxsim_calculate_taxes.html</loc>

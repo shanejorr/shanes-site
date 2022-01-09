@@ -41,6 +41,7 @@
 <li class="active nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/using-usincometaxes.html">Calculating Federal and State Income Taxes</a>
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
   </div>
@@ -67,6 +68,7 @@
 <div class="row">
   <main id="main"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Description of Input Columns</h1>
+                        <h4 data-toc-skip class="author">Shane Orr</h4>
             
       
       <small class="dont-index">Source: <a href="https://github.com/shanejorr/usincometaxes/blob/HEAD/vignettes/taxsim-input.Rmd" class="external-link"><code>vignettes/taxsim-input.Rmd</code></a></small>
@@ -244,7 +246,22 @@
 </ul>
 </li>
 <li>
-<strong>other_non_property_income</strong>: Other non-property income not subject to Medicare NIIT such as: * Alimony; * Nonwage fellowships; * State income tax refunds (itemizers only); * Alimony paid; * Keogh and IRA contributions; * Foreign income exclusion; and * NOLs. * <code>nonprop</code> in TAXSIM 32 <br><br>
+<strong>other_non_property_income</strong>: Other non-property income not subject to Medicare NIIT such as:
+<ul>
+<li>Alimony;</li>
+<li>Nonwage fellowships;</li>
+<li>State income tax refunds (itemizers only);</li>
+<li>Alimony paid;</li>
+<li>Keogh and IRA contributions;</li>
+<li>Foreign income exclusion; and</li>
+<li>NOLs.
+<ul>
+<li>
+<code>nonprop</code> in TAXSIM 32 <br><br>
+</li>
+</ul>
+</li>
+</ul>
 </li>
 <li>
 <strong>pensions</strong>: Taxable Pensions and IRA distributions.
@@ -302,13 +319,29 @@
 </ul>
 </li>
 <li>
-<strong>other_itemized_deductions</strong>: Other Itemized deductions that are a preference for the Alternative Minimum Tax. These would include: * Other state and local taxes (line 8 of Schedule A) plus local income tax; * Preference share of medical expenses; and * Miscellaneous (line 27). * <code>otheritem</code> in TAXSIM 32 <br><br>
+<strong>other_itemized_deductions</strong>: Other Itemized deductions that are a preference for the Alternative Minimum Tax. These would include:
+<ul>
+<li>Other state and local taxes (line 8 of Schedule A) plus local income tax;</li>
+<li>Preference share of medical expenses; and</li>
+<li>Miscellaneous (line 27).
+<ul>
+<li>
+<code>otheritem</code> in TAXSIM 32 <br><br>
+</li>
+</ul>
+</li>
+</ul>
 </li>
 <li>
 <strong>child_care_expenses</strong>: Child care expenses.
 <ul>
 <li>
-<code>childcare</code> in TAXSIM 32 <br><br><strong>misc_deductions</strong>: Deductions not included in <code>other_itemized_deductions</code> and not a preference for the AMT, including (on Schedule A for 2009):
+<code>childcare</code> in TAXSIM 32 <br><br>
+</li>
+</ul>
+</li>
+<li>
+<strong>misc_deductions</strong>: Deductions not included in <code>other_itemized_deductions</code> and not a preference for the AMT, including (on Schedule A for 2009):
 <ul>
 <li>Deductible medical expenses not included in Line 16;</li>
 <li>Motor Vehicle Taxes paid;</li>
@@ -318,8 +351,6 @@
 <ul>
 <li>
 <code>mortgage</code> in TAXSIM 32 <br><br>
-</li>
-</ul>
 </li>
 </ul>
 </li>
@@ -342,13 +373,27 @@
 </ul>
 </li>
 <li>
-<strong>specialized_service_trade</strong>: Primary Taxpayer’s Specialized Service Trade or Business service (SSTB) with a preferential rate subject to claw-back. Subject to SECA and Medicare Additional Earnings Tax. * <code>pprofinc</code> in TAXSIM 32 <br><br>
+<strong>specialized_service_trade</strong>: Primary Taxpayer’s Specialized Service Trade or Business service (SSTB) with a preferential rate subject to claw-back. Subject to SECA and Medicare Additional Earnings Tax.
+<ul>
+<li>
+<code>pprofinc</code> in TAXSIM 32 <br><br>
+</li>
+</ul>
 </li>
 <li>
-<strong>spouse_qualified_business_income</strong>: Spouse’s QBI. Must be zero for non-joint returns, or the column should not exist. * <code>sbusinc</code> in TAXSIM 32 <br><br>
+<strong>spouse_qualified_business_income</strong>: Spouse’s QBI. Must be zero for non-joint returns, or the column should not exist.
+<ul>
+<li>
+<code>sbusinc</code> in TAXSIM 32 <br><br>
+</li>
+</ul>
 </li>
 <li>
-<strong>spouse_specialized_service_trade</strong>: Spouse’s SSTB. Must be zero for non-joint returns, or the column should not exist. * <code>sprofinc</code>
+<strong>spouse_specialized_service_trade</strong>: Spouse’s SSTB. Must be zero for non-joint returns, or the column should not exist.
+<ul>
+<li>
+<code>sprofinc</code> in TAXSIM 32</li>
+</ul>
 </li>
 </ul>
 </div>
