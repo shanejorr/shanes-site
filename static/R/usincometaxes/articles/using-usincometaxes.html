@@ -8,8 +8,8 @@
 <meta name="description" content="usincometaxes">
 <title>Calculating Federal and State Income Taxes • usincometaxes</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.0.2/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.0.2/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link href="../deps/bootstrap-5.1.0/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.1.0/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Calculating Federal and State Income Taxes">
 <meta property="og:description" content="usincometaxes">
@@ -44,6 +44,7 @@
     <a class="dropdown-item" href="../articles/using-usincometaxes.html">Calculating Federal and State Income Taxes</a>
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
+    <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM32</a>
   </div>
 </li>
       </ul>
@@ -85,10 +86,8 @@
 <p>The data set contains financial and other household characteristics that help estimate income taxes.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">taxpayer_finances</span><span class="op">)</span>
-
 <span class="co"># with of scroll box for tables</span>
 <span class="va">scroll_width</span> <span class="op">&lt;-</span> <span class="st">"800px"</span>
-
 <span class="va">taxpayer_finances</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
@@ -154,46 +153,46 @@ long_term_capital_gains
 2000
 </td>
 <td style="text-align:left;">
-married, jointly
+single
 </td>
 <td style="text-align:left;">
 NC
 </td>
 <td style="text-align:right;">
-31
+35
 </td>
 <td style="text-align:right;">
-32
+0
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-99315.77
+22701.02
 </td>
 <td style="text-align:right;">
-12447.14
+0.00
 </td>
 <td style="text-align:right;">
-3105.94
+6658.21
 </td>
 <td style="text-align:right;">
-6687.79
+3375.59
 </td>
 <td style="text-align:right;">
-452.41
+1002.40
 </td>
 <td style="text-align:right;">
-2146.45
+4390.18
 </td>
 </tr>
 <tr>
@@ -204,46 +203,46 @@ NC
 2000
 </td>
 <td style="text-align:left;">
-married, jointly
+single
 </td>
 <td style="text-align:left;">
 NC
 </td>
 <td style="text-align:right;">
-34
+37
 </td>
 <td style="text-align:right;">
-32
+0
 </td>
 <td style="text-align:right;">
-1
+3
 </td>
 <td style="text-align:right;">
-1
+3
 </td>
 <td style="text-align:right;">
-1
+3
 </td>
 <td style="text-align:right;">
-1
+3
 </td>
 <td style="text-align:right;">
-47035.51
+51359.17
 </td>
 <td style="text-align:right;">
-48764.05
+0.00
 </td>
 <td style="text-align:right;">
-1388.23
+2688.67
 </td>
 <td style="text-align:right;">
-2433.25
+9005.15
 </td>
 <td style="text-align:right;">
-1802.62
+304.71
 </td>
 <td style="text-align:right;">
-1346.43
+2044.23
 </td>
 </tr>
 <tr>
@@ -260,13 +259,10 @@ married, jointly
 NC
 </td>
 <td style="text-align:right;">
-41
+47
 </td>
 <td style="text-align:right;">
-42
-</td>
-<td style="text-align:right;">
-0
+46
 </td>
 <td style="text-align:right;">
 0
@@ -278,22 +274,25 @@ NC
 0
 </td>
 <td style="text-align:right;">
-18678.75
+0
 </td>
 <td style="text-align:right;">
-80048.89
+8979.92
 </td>
 <td style="text-align:right;">
-823.37
+34126.74
 </td>
 <td style="text-align:right;">
-4191.90
+500.50
 </td>
 <td style="text-align:right;">
-501.34
+7208.65
 </td>
 <td style="text-align:right;">
-4246.38
+510.03
+</td>
+<td style="text-align:right;">
+1500.43
 </td>
 </tr>
 <tr>
@@ -310,40 +309,40 @@ married, jointly
 NC
 </td>
 <td style="text-align:right;">
-43
-</td>
-<td style="text-align:right;">
 39
 </td>
 <td style="text-align:right;">
-0
+41
 </td>
 <td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
-19150.21
+1
 </td>
 <td style="text-align:right;">
-45087.50
+47239.44
 </td>
 <td style="text-align:right;">
-1408.27
+36538.55
 </td>
 <td style="text-align:right;">
-3377.04
+2559.99
 </td>
 <td style="text-align:right;">
-501.62
+2148.39
 </td>
 <td style="text-align:right;">
-1388.61
+656.94
+</td>
+<td style="text-align:right;">
+1226.81
 </td>
 </tr>
 <tr>
@@ -360,40 +359,40 @@ married, jointly
 NC
 </td>
 <td style="text-align:right;">
-32
+40
 </td>
 <td style="text-align:right;">
-31
+45
 </td>
 <td style="text-align:right;">
-3
+1
 </td>
 <td style="text-align:right;">
-3
+1
 </td>
 <td style="text-align:right;">
-3
+1
 </td>
 <td style="text-align:right;">
-3
+1
 </td>
 <td style="text-align:right;">
-37964.19
+13756.33
 </td>
 <td style="text-align:right;">
-45782.52
+3803.08
 </td>
 <td style="text-align:right;">
-2781.02
+800.20
 </td>
 <td style="text-align:right;">
-1324.00
+4623.35
 </td>
 <td style="text-align:right;">
-1073.86
+571.34
 </td>
 <td style="text-align:right;">
-1507.30
+1904.82
 </td>
 </tr>
 <tr>
@@ -410,40 +409,40 @@ married, jointly
 NC
 </td>
 <td style="text-align:right;">
-37
+34
 </td>
 <td style="text-align:right;">
-37
+34
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3552.54
+10499.88
 </td>
 <td style="text-align:right;">
-5127.90
+70023.80
 </td>
 <td style="text-align:right;">
-2578.50
+10287.11
 </td>
 <td style="text-align:right;">
-3484.30
+2124.70
 </td>
 <td style="text-align:right;">
-1105.25
+833.24
 </td>
 <td style="text-align:right;">
-1837.87
+2098.14
 </td>
 </tr>
 </tbody>
@@ -455,13 +454,8 @@ NC
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span>
   .data <span class="op">=</span> <span class="va">taxpayer_finances</span>,
-  return_all_information <span class="op">=</span> <span class="cn">FALSE</span>,
-  upload_method <span class="op">=</span> <span class="st">'ftp'</span>
+  return_all_information <span class="op">=</span> <span class="cn">FALSE</span>
 <span class="op">)</span>
-<span class="co">#&gt; [1] "All required columns are present and the data is in the proper format!"</span>
-<span class="co">#&gt; [1] "Uploading data to TAXSIM server via ftp."</span>
-<span class="co">#&gt; [1] "Downloading data from TAXSIM server via ftp."</span>
-
 <span class="va">family_taxes</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
@@ -495,22 +489,22 @@ fica_rate
 1
 </td>
 <td style="text-align:right;">
-22078.88
+431.90
 </td>
 <td style="text-align:right;">
-7496.78
+1103.82
 </td>
 <td style="text-align:right;">
-14233.33
+3473.25
 </td>
 <td style="text-align:right;">
-30.83
+15
 </td>
 <td style="text-align:right;">
-7.75
+7
 </td>
 <td style="text-align:right;">
-3
+15
 </td>
 </tr>
 <tr>
@@ -518,19 +512,19 @@ fica_rate
 2
 </td>
 <td style="text-align:right;">
-18056.86
+7136.98
 </td>
 <td style="text-align:right;">
-6211.26
+3248.00
 </td>
 <td style="text-align:right;">
-14657.25
+7857.93
 </td>
 <td style="text-align:right;">
-28.00
+28
 </td>
 <td style="text-align:right;">
-7.00
+7
 </td>
 <td style="text-align:right;">
 15
@@ -541,19 +535,19 @@ fica_rate
 3
 </td>
 <td style="text-align:right;">
-20710.18
+5905.95
 </td>
 <td style="text-align:right;">
-6751.59
+2785.11
 </td>
 <td style="text-align:right;">
-14627.93
+6595.06
 </td>
 <td style="text-align:right;">
-28.00
+15
 </td>
 <td style="text-align:right;">
-7.00
+7
 </td>
 <td style="text-align:right;">
 15
@@ -564,19 +558,19 @@ fica_rate
 4
 </td>
 <td style="text-align:right;">
-10417.54
+14593.90
 </td>
 <td style="text-align:right;">
-4051.27
+5178.12
 </td>
 <td style="text-align:right;">
-9828.26
+12817.88
 </td>
 <td style="text-align:right;">
-28.00
+28
 </td>
 <td style="text-align:right;">
-7.00
+7
 </td>
 <td style="text-align:right;">
 15
@@ -587,19 +581,19 @@ fica_rate
 5
 </td>
 <td style="text-align:right;">
-12021.62
+860.85
 </td>
 <td style="text-align:right;">
-4712.67
+717.42
 </td>
 <td style="text-align:right;">
-12813.14
+2686.53
 </td>
 <td style="text-align:right;">
-28.00
+15
 </td>
 <td style="text-align:right;">
-7.00
+6
 </td>
 <td style="text-align:right;">
 15
@@ -610,19 +604,19 @@ fica_rate
 6
 </td>
 <td style="text-align:right;">
--663.94
+12211.58
 </td>
 <td style="text-align:right;">
-0.00
+4857.98
 </td>
 <td style="text-align:right;">
-1327.89
+12319.87
 </td>
 <td style="text-align:right;">
--7.65
+28
 </td>
 <td style="text-align:right;">
-0.00
+7
 </td>
 <td style="text-align:right;">
 15
@@ -634,7 +628,6 @@ fica_rate
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">income_and_taxes</span> <span class="op">&lt;-</span> <span class="va">taxpayer_finances</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">family_taxes</span>, by <span class="op">=</span> <span class="st">'id_number'</span><span class="op">)</span>
-
 <span class="va">income_and_taxes</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
@@ -718,64 +711,64 @@ fica_rate
 2000
 </td>
 <td style="text-align:left;">
-married, jointly
+single
 </td>
 <td style="text-align:left;">
 NC
 </td>
 <td style="text-align:right;">
-31
+35
 </td>
 <td style="text-align:right;">
-32
+0
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-99315.77
+22701.02
 </td>
 <td style="text-align:right;">
-12447.14
+0.00
 </td>
 <td style="text-align:right;">
-3105.94
+6658.21
 </td>
 <td style="text-align:right;">
-6687.79
+3375.59
 </td>
 <td style="text-align:right;">
-452.41
+1002.40
 </td>
 <td style="text-align:right;">
-2146.45
+4390.18
 </td>
 <td style="text-align:right;">
-22078.88
+431.90
 </td>
 <td style="text-align:right;">
-7496.78
+1103.82
 </td>
 <td style="text-align:right;">
-14233.33
+3473.25
 </td>
 <td style="text-align:right;">
-30.83
+15
 </td>
 <td style="text-align:right;">
-7.75
+7
 </td>
 <td style="text-align:right;">
-3
+15
 </td>
 </tr>
 <tr>
@@ -786,61 +779,61 @@ NC
 2000
 </td>
 <td style="text-align:left;">
-married, jointly
+single
 </td>
 <td style="text-align:left;">
 NC
 </td>
 <td style="text-align:right;">
-34
+37
 </td>
 <td style="text-align:right;">
-32
+0
 </td>
 <td style="text-align:right;">
-1
+3
 </td>
 <td style="text-align:right;">
-1
+3
 </td>
 <td style="text-align:right;">
-1
+3
 </td>
 <td style="text-align:right;">
-1
+3
 </td>
 <td style="text-align:right;">
-47035.51
+51359.17
 </td>
 <td style="text-align:right;">
-48764.05
+0.00
 </td>
 <td style="text-align:right;">
-1388.23
+2688.67
 </td>
 <td style="text-align:right;">
-2433.25
+9005.15
 </td>
 <td style="text-align:right;">
-1802.62
+304.71
 </td>
 <td style="text-align:right;">
-1346.43
+2044.23
 </td>
 <td style="text-align:right;">
-18056.86
+7136.98
 </td>
 <td style="text-align:right;">
-6211.26
+3248.00
 </td>
 <td style="text-align:right;">
-14657.25
+7857.93
 </td>
 <td style="text-align:right;">
-28.00
+28
 </td>
 <td style="text-align:right;">
-7.00
+7
 </td>
 <td style="text-align:right;">
 15
@@ -860,13 +853,10 @@ married, jointly
 NC
 </td>
 <td style="text-align:right;">
-41
+47
 </td>
 <td style="text-align:right;">
-42
-</td>
-<td style="text-align:right;">
-0
+46
 </td>
 <td style="text-align:right;">
 0
@@ -878,37 +868,40 @@ NC
 0
 </td>
 <td style="text-align:right;">
-18678.75
+0
 </td>
 <td style="text-align:right;">
-80048.89
+8979.92
 </td>
 <td style="text-align:right;">
-823.37
+34126.74
 </td>
 <td style="text-align:right;">
-4191.90
+500.50
 </td>
 <td style="text-align:right;">
-501.34
+7208.65
 </td>
 <td style="text-align:right;">
-4246.38
+510.03
 </td>
 <td style="text-align:right;">
-20710.18
+1500.43
 </td>
 <td style="text-align:right;">
-6751.59
+5905.95
 </td>
 <td style="text-align:right;">
-14627.93
+2785.11
 </td>
 <td style="text-align:right;">
-28.00
+6595.06
 </td>
 <td style="text-align:right;">
-7.00
+15
+</td>
+<td style="text-align:right;">
+7
 </td>
 <td style="text-align:right;">
 15
@@ -928,55 +921,55 @@ married, jointly
 NC
 </td>
 <td style="text-align:right;">
-43
-</td>
-<td style="text-align:right;">
 39
 </td>
 <td style="text-align:right;">
-0
+41
 </td>
 <td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
-19150.21
+1
 </td>
 <td style="text-align:right;">
-45087.50
+47239.44
 </td>
 <td style="text-align:right;">
-1408.27
+36538.55
 </td>
 <td style="text-align:right;">
-3377.04
+2559.99
 </td>
 <td style="text-align:right;">
-501.62
+2148.39
 </td>
 <td style="text-align:right;">
-1388.61
+656.94
 </td>
 <td style="text-align:right;">
-10417.54
+1226.81
 </td>
 <td style="text-align:right;">
-4051.27
+14593.90
 </td>
 <td style="text-align:right;">
-9828.26
+5178.12
 </td>
 <td style="text-align:right;">
-28.00
+12817.88
 </td>
 <td style="text-align:right;">
-7.00
+28
+</td>
+<td style="text-align:right;">
+7
 </td>
 <td style="text-align:right;">
 15
@@ -996,55 +989,55 @@ married, jointly
 NC
 </td>
 <td style="text-align:right;">
-32
+40
 </td>
 <td style="text-align:right;">
-31
+45
 </td>
 <td style="text-align:right;">
-3
+1
 </td>
 <td style="text-align:right;">
-3
+1
 </td>
 <td style="text-align:right;">
-3
+1
 </td>
 <td style="text-align:right;">
-3
+1
 </td>
 <td style="text-align:right;">
-37964.19
+13756.33
 </td>
 <td style="text-align:right;">
-45782.52
+3803.08
 </td>
 <td style="text-align:right;">
-2781.02
+800.20
 </td>
 <td style="text-align:right;">
-1324.00
+4623.35
 </td>
 <td style="text-align:right;">
-1073.86
+571.34
 </td>
 <td style="text-align:right;">
-1507.30
+1904.82
 </td>
 <td style="text-align:right;">
-12021.62
+860.85
 </td>
 <td style="text-align:right;">
-4712.67
+717.42
 </td>
 <td style="text-align:right;">
-12813.14
+2686.53
 </td>
 <td style="text-align:right;">
-28.00
+15
 </td>
 <td style="text-align:right;">
-7.00
+6
 </td>
 <td style="text-align:right;">
 15
@@ -1064,55 +1057,55 @@ married, jointly
 NC
 </td>
 <td style="text-align:right;">
-37
+34
 </td>
 <td style="text-align:right;">
-37
+34
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3
+4
 </td>
 <td style="text-align:right;">
-3552.54
+10499.88
 </td>
 <td style="text-align:right;">
-5127.90
+70023.80
 </td>
 <td style="text-align:right;">
-2578.50
+10287.11
 </td>
 <td style="text-align:right;">
-3484.30
+2124.70
 </td>
 <td style="text-align:right;">
-1105.25
+833.24
 </td>
 <td style="text-align:right;">
-1837.87
+2098.14
 </td>
 <td style="text-align:right;">
--663.94
+12211.58
 </td>
 <td style="text-align:right;">
-0.00
+4857.98
 </td>
 <td style="text-align:right;">
-1327.89
+12319.87
 </td>
 <td style="text-align:right;">
--7.65
+28
 </td>
 <td style="text-align:right;">
-0.00
+7
 </td>
 <td style="text-align:right;">
 15
@@ -1138,10 +1131,8 @@ NC
       legend.position <span class="op">=</span> <span class="st">'bottom'</span>
     <span class="op">)</span>
 <span class="op">}</span>
-
 <span class="co"># color palettes for number of children</span>
 <span class="va">dep_color_palette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'#4B0055'</span>,<span class="st">'#353E7C'</span>,<span class="st">'#007094'</span>,<span class="st">'#009B95'</span>,<span class="st">'#00BE7D'</span>,<span class="st">'#96D84B'</span><span class="op">)</span><span class="op">)</span>
-
 <span class="va">income_and_taxes</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>
     tax_unit_income <span class="op">=</span> <span class="va">primary_wages</span> <span class="op">+</span> <span class="va">spouse_wages</span>,
@@ -1161,7 +1152,7 @@ NC
     <span class="op">)</span> <span class="op">+</span>
     <span class="fu">plt_theme</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
     <span class="fu">guides</span><span class="op">(</span>color <span class="op">=</span> <span class="fu">guide_legend</span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Number of Childern 18 or Younger"</span>, title.position <span class="op">=</span> <span class="st">"top"</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning: Removed 165 rows containing missing values (geom_point).</span></code></pre></div>
+<span class="co">#&gt; Warning: Removed 159 rows containing missing values (geom_point).</span></code></pre></div>
 <p><img src="webimg/plot_family_taxes-1.png" width="648" style="display: block; margin: auto;"></p>
 <p>The plots shows what we would expect: higher income families pay more in taxes and households pay less the more children they have. We also see the reduction in federal marginal tax rates from 2000 to 2020, as shown by the decrease in income tax liabilities when comparing the two years.</p>
 </div>
@@ -1169,15 +1160,13 @@ NC
 <h2 id="income-tax-simulations">Income tax simulations<a class="anchor" aria-label="anchor" href="#income-tax-simulations"></a>
 </h2>
 <div class="section level3">
-<h3 id="association-between-income-taxes-paid-and-hosuehold-wages">Association between income taxes paid and hosuehold wages<a class="anchor" aria-label="anchor" href="#association-between-income-taxes-paid-and-hosuehold-wages"></a>
+<h3 id="association-between-income-taxes-paid-and-household-wages">Association between income taxes paid and household wages<a class="anchor" aria-label="anchor" href="#association-between-income-taxes-paid-and-household-wages"></a>
 </h3>
 <p>An additional use of <code>usincometaxes</code> is to run simulations. This could be as simple as plotting the relationship between wages and income taxes paid. To do this, we first need to create a data set that holds everything constant except for wages. The code block below does this, except it also creates different data sets for households with zero and four children 18 or younger, so we can compare differences on this characteristic as well.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># calculate taxes from 0 to 200,000 in wages</span>
 <span class="va">wage_linespace</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">200000</span>, <span class="fl">100</span><span class="op">)</span>
-
 <span class="va">n_kids</span> <span class="op">&lt;-</span> <span class="fl">4</span>
-
 <span class="va">base_family_income</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>
   tax_year <span class="op">=</span> <span class="fl">2020</span>,
   filing_status <span class="op">=</span> <span class="st">'married, jointly'</span>,
@@ -1191,7 +1180,6 @@ NC
   primary_wages <span class="op">=</span> <span class="va">wage_linespace</span>,
   spouse_wages <span class="op">=</span> <span class="fl">0</span>
 <span class="op">)</span>
-
 <span class="co"># create an additional data se twith no dependents and add it to the original</span>
 <span class="va">family_income</span> <span class="op">&lt;-</span> <span class="va">base_family_income</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind.html" class="external-link">bind_rows</a></span><span class="op">(</span>
@@ -1202,7 +1190,6 @@ NC
   <span class="co"># add unique ID to each row</span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>id_number <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/ranking.html" class="external-link">row_number</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">id_number</span>, <span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">everything</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>
-
 <span class="va">family_income</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
@@ -1483,14 +1470,9 @@ NC
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">family_income_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span>
   .data <span class="op">=</span> <span class="va">family_income</span>,
-  return_all_information <span class="op">=</span> <span class="cn">TRUE</span>,
-  upload_method <span class="op">=</span> <span class="st">'ftp'</span>
+  return_all_information <span class="op">=</span> <span class="cn">TRUE</span>
 <span class="op">)</span>
-<span class="co">#&gt; [1] "All required columns are present and the data is in the proper format!"</span>
-<span class="co">#&gt; [1] "Uploading data to TAXSIM server via ftp."</span>
-<span class="co">#&gt; [1] "Downloading data from TAXSIM server via ftp."</span>
 <span class="co">#&gt; Warning: One or more parsing issues, see `problems()` for details</span>
-
 <span class="va">family_income_taxes</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
@@ -2435,7 +2417,6 @@ cares_recovery_rebate
   <span class="op">)</span>
 <span class="co"># primary_wages, taxes_paid, color = as.character(num_dependents_eitc)</span>
 <span class="va">taxes_line_plot</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">.data</span>, <span class="va">x_var</span>, <span class="va">y_var</span>, <span class="va">color_var</span><span class="op">)</span> <span class="op">{</span>
-
   <span class="fu">ggplot</span><span class="op">(</span><span class="va">.data</span>, <span class="fu">aes</span><span class="op">(</span><span class="op">{</span><span class="op">{</span><span class="va">x_var</span><span class="op">}</span><span class="op">}</span>, <span class="op">{</span><span class="op">{</span><span class="va">y_var</span><span class="op">}</span><span class="op">}</span>, color <span class="op">=</span> <span class="op">{</span><span class="op">{</span><span class="va">color_var</span><span class="op">}</span><span class="op">}</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
     <span class="fu">geom_line</span><span class="op">(</span>size <span class="op">=</span> <span class="fl">1</span>, alpha <span class="op">=</span> <span class="fl">.8</span><span class="op">)</span> <span class="op">+</span>
     <span class="fu">geom_hline</span><span class="op">(</span>yintercept <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">+</span>
@@ -2445,7 +2426,6 @@ cares_recovery_rebate
     <span class="fu">plt_theme</span><span class="op">(</span><span class="op">)</span>
   
 <span class="op">}</span>
-
 <span class="fu">taxes_line_plot</span><span class="op">(</span><span class="va">family_income_long</span>, <span class="va">primary_wages</span>, <span class="va">taxes_paid</span>, <span class="va">num_dependents_eitc</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">facet_wrap</span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">jurisdiction</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">labs</span><span class="op">(</span>
@@ -2463,8 +2443,7 @@ cares_recovery_rebate
 </h3>
 <p>We’ll create a additional plot comparing pre-tax and post-tax household wages.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="fu">taxes_line_plot</span><span class="op">(</span><span class="va">family_income_long</span>, <span class="va">primary_wages</span>, <span class="va">post_tax_wages</span>, <span class="va">num_dependents_eitc</span><span class="op">)</span> <span class="op">+</span>
+<code class="sourceCode R"><span class="fu">taxes_line_plot</span><span class="op">(</span><span class="va">family_income_long</span>, <span class="va">primary_wages</span>, <span class="va">post_tax_wages</span>, <span class="va">num_dependents_eitc</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">facet_wrap</span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">jurisdiction</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">labs</span><span class="op">(</span>
     title <span class="op">=</span> <span class="st">"Relationship Between Pre and Post-Tax Wages"</span>,
@@ -2484,7 +2463,6 @@ cares_recovery_rebate
   eitc <span class="op">=</span> <span class="st">'Earned Income Tax Credit'</span>,
   child_tax_credit <span class="op">=</span> <span class="st">'Child Tax Credit'</span>
 <span class="op">)</span>
-
 <span class="va">family_income</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">num_dependents_eitc</span> <span class="op">==</span> <span class="fl">4</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>child_tax_credit <span class="op">=</span> <span class="va">child_tax_credit_adjusted</span> <span class="op">+</span> <span class="va">child_tax_credit_refundable</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>

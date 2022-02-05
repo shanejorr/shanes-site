@@ -13,6 +13,9 @@
     <loc>https://shanejorr.github.io/usincometaxes/articles/index.html</loc>
   </url>
   <url>
+    <loc>https://shanejorr.github.io/usincometaxes/articles/send-data-to-taxsim.html</loc>
+  </url>
+  <url>
     <loc>https://shanejorr.github.io/usincometaxes/articles/taxsim-input.html</loc>
   </url>
   <url>
@@ -55,13 +58,34 @@
     <loc>https://shanejorr.github.io/usincometaxes/reference/clean_from_taxsim.html</loc>
   </url>
   <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/connect_server_all.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/connect_server_all_ssh.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/connect_server_single.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/connect_server_single_ssh.html</loc>
+  </url>
+  <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/create_dataset_for_taxsim.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/create_ssh_command.html</loc>
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/from_taxsim_cols.html</loc>
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/get_state_soi.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/import_data_ftp.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/import_data_ssh.html</loc>
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/index.html</loc>
