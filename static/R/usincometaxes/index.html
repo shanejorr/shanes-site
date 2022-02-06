@@ -36,7 +36,7 @@
     
     <a class="navbar-brand me-2" href="index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,7 +79,7 @@
   <main id="main" class="col-md-9"><div class="section level2">
 <h2 id="calculate-federal-and-state-income-taxes">Calculate Federal and State Income Taxes<a class="anchor" aria-label="anchor" href="#calculate-federal-and-state-income-taxes"></a>
 </h2>
-<p><code>usincometaxes</code> is an R package that calculates federal and state income taxes in the United States. It relies on the National Bureau of Economic Research’s (NBER) <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> tax simulator for calculations. The package takes care of the behind-the-scenes work of getting the data in the proper format, converting it to the proper file type for uploading to the NBER server, uploading the data, downloading the results, and placing the results into a tidy data frame.</p>
+<p><code>usincometaxes</code> is an R package that calculates federal and state income taxes in the United States. It relies on the National Bureau of Economic Research’s (NBER) <a href="http://taxsim.nber.org/taxsim32/" class="external-link">TAXSIM 32</a> tax simulator for calculations. The package takes care of the behind-the-scenes work of getting the data in the proper format, converting it to the proper file type for uploading to the NBER server, uploading the data, downloading the results, and placing the results into a tidy data frame.</p>
 <p><em>NOTE: This package is not associated with the NBER. It is a private creation that uses their wonderful tax calculator.</em></p>
 </div>
 <div class="section level2">
@@ -104,12 +104,13 @@
   state <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'North Carolina'</span>, <span class="st">'NY'</span><span class="op">)</span>,
   tax_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2015</span>, <span class="fl">2020</span><span class="op">)</span>,
   filing_status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'single'</span>, <span class="st">'married, jointly'</span><span class="op">)</span>,
-  primary_wages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10000</span>, <span class="fl">100000</span><span class="op">)</span>,
+  primary_wages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50000</span>, <span class="fl">100000</span><span class="op">)</span>,
   primary_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span>, <span class="fl">36</span><span class="op">)</span>
 <span class="op">)</span>
 
 <span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span>
   .data <span class="op">=</span> <span class="va">family_income</span>,
+  marginal_tax_rates <span class="op">=</span> <span class="st">'Wages'</span>,
   return_all_information <span class="op">=</span> <span class="cn">FALSE</span>
 <span class="op">)</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -136,10 +137,10 @@
 <tbody>
 <tr class="odd">
 <td align="right">1</td>
-<td align="right">-369.12</td>
-<td align="right">143.75</td>
-<td align="right">1530</td>
-<td align="right">7.65</td>
+<td align="right">5718.75</td>
+<td align="right">2443.75</td>
+<td align="right">7650</td>
+<td align="right">25</td>
 <td align="right">5.75</td>
 <td align="right">15</td>
 </tr>
@@ -148,7 +149,7 @@
 <td align="right">5029.00</td>
 <td align="right">4586.76</td>
 <td align="right">15300</td>
-<td align="right">12.00</td>
+<td align="right">12</td>
 <td align="right">6.09</td>
 <td align="right">15</td>
 </tr>
@@ -194,12 +195,12 @@
 <td align="left">North Carolina</td>
 <td align="right">2015</td>
 <td align="left">single</td>
-<td align="right">1e+04</td>
+<td align="right">5e+04</td>
 <td align="right">26</td>
-<td align="right">-369.12</td>
-<td align="right">143.75</td>
-<td align="right">1530</td>
-<td align="right">7.65</td>
+<td align="right">5718.75</td>
+<td align="right">2443.75</td>
+<td align="right">7650</td>
+<td align="right">25</td>
 <td align="right">5.75</td>
 <td align="right">15</td>
 </tr>
@@ -213,7 +214,7 @@
 <td align="right">5029.00</td>
 <td align="right">4586.76</td>
 <td align="right">15300</td>
-<td align="right">12.00</td>
+<td align="right">12</td>
 <td align="right">6.09</td>
 <td align="right">15</td>
 </tr>
@@ -234,14 +235,15 @@
 <p>All columns must have the column names and data types listed in the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">Description of Input Columns</a> vignette. <code>.data</code> can contain columns beyond those listed in the vignette. The additional columns will be ignored.</p>
 </div>
 <div class="section level2">
-<h2 id="upload-and-download-method">Upload and download method<a class="anchor" aria-label="anchor" href="#upload-and-download-method"></a>
+<h2 id="marginal-tax-rates">Marginal tax rates<a class="anchor" aria-label="anchor" href="#marginal-tax-rates"></a>
 </h2>
-<p><code>usincometaxes</code> connects to the TAXSIM server via SSH, which requires an SSH client on your computer. Mac and Linux computers should have an SSH client installed. Since 2019, Windows 10 has also included an SSH client. To see if you have an SSH client, run <code>Sys.which('ssh')</code> in R. You will either see the path to the client or a blank string, which indicates that an SSH client is not installed.</p>
+<p>By default, marginal tax rates are calculated using wages. The default can be changed with the <code>return_all_information</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. Possible options are: ‘Wages’ (default), ‘Long Term Capital Gains’, ‘Primary Wage Earner’, or ‘Secondary Wage Earner’.</p>
+<p>Go to the Marginal Tax Rates section of the <a href="https://users.nber.org/~taxsim/taxsim32/" class="external-link">TAXSIM 32 documentation</a> for more information.</p>
 </div>
 <div class="section level2">
 <h2 id="giving-credit">Giving credit<a class="anchor" aria-label="anchor" href="#giving-credit"></a>
 </h2>
-<p>The NBER’s <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> tax simulator does all tax calculations. This package simply lets users interact with the tax simulator through R. Therefore, users should cite the TAXSIM 35 tax simulator when they use this package in their work:</p>
+<p>The NBER’s <a href="http://taxsim.nber.org/taxsim32/" class="external-link">TAXSIM 32</a> tax simulator does all tax calculations. This package simply lets users interact with the tax simulator through R. Therefore, users should cite the TAXSIM 35 tax simulator when they use this package in their work:</p>
 <p>          Feenberg, Daniel Richard, and Elizabeth Coutts, An Introduction to the TAXSIM Model, Journal of Policy Analysis and Management vol 12 no 1, Winter 1993, pages 189-194.</p>
 </div>
 

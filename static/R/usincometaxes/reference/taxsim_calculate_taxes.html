@@ -12,7 +12,7 @@ See http://taxsim.nber.org/taxsim35/ for more information on TAXSIM 35."><!-- ma
     
     <a class="navbar-brand me-2" href="../index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,7 +60,11 @@ See <a href="http://taxsim.nber.org/taxsim35/" class="external-link">http://taxs
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">taxsim_calculate_taxes</span><span class="op">(</span><span class="va">.data</span>, return_all_information <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">taxsim_calculate_taxes</span><span class="op">(</span>
+  <span class="va">.data</span>,
+  marginal_tax_rates <span class="op">=</span> <span class="st">"Wages"</span>,
+  return_all_information <span class="op">=</span> <span class="cn">FALSE</span>
+<span class="op">)</span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -68,6 +72,9 @@ See <a href="http://taxsim.nber.org/taxsim35/" class="external-link">http://taxs
     <dl><dt>.data</dt>
 <dd><p>Data frame containing the information that will be used to calculate taxes.
 This data set will be sent to TAXSIM. Data frame must have specified column names and data types.</p></dd>
+<dt>marginal_tax_rates</dt>
+<dd><p>Variable to use when calculating marginal tax rates. One of 'Wages', 'Long Term Capital Gains',
+'Primary Wage Earner', or 'Secondary Wage Earner'. Default is 'Wages'.</p></dd>
 <dt>return_all_information</dt>
 <dd><p>Boolean (TRUE or FALSE). Whether to return all information from TAXSIM (TRUE),
 or only key information (FALSE). Returning all information returns 42 columns of output, while only
@@ -193,6 +200,7 @@ Journal of Policy Analysis and Management vol 12 no 1, Winter 1993, pages 189-19
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Connecting to TAXSIM server via ftp ...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Data uploaded ...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Data downloaded ...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Upload and download successful!</span>
 <span class="r-in"></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">family_income</span>, <span class="va">family_taxes</span>, by <span class="op">=</span> <span class="st">'id_number'</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   id_number          state tax_year    filing_status primary_wages primary_age</span>

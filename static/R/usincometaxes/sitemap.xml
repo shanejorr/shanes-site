@@ -70,6 +70,9 @@
     <loc>https://shanejorr.github.io/usincometaxes/reference/connect_server_single_ssh.html</loc>
   </url>
   <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/convert_marginal_tax_rates.html</loc>
+  </url>
+  <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/create_dataset_for_taxsim.html</loc>
   </url>
   <url>
@@ -83,6 +86,9 @@
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/import_data_ftp.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/import_data_helper.html</loc>
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/import_data_ssh.html</loc>
