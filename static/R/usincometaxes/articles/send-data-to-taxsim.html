@@ -266,7 +266,8 @@
 <span class="va">results</span> <span class="op">&lt;-</span> <span class="fu">RCurl</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/RCurl/man/getURL.html" class="external-link">getURL</a></span><span class="op">(</span><span class="va">download_address</span>, userpwd <span class="op">=</span> <span class="va">user_pwd</span><span class="op">)</span>
 
 <span class="co"># read in results</span>
-<span class="fu">vroom</span><span class="fu">::</span><span class="fu"><a href="https://vroom.r-lib.org/reference/problems.html" class="external-link">problems</a></span><span class="op">(</span><span class="fu">vroom</span><span class="fu">::</span><span class="fu"><a href="https://vroom.r-lib.org/reference/vroom.html" class="external-link">vroom</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span><span class="op">)</span> <span class="co">#, show_col_types = FALSE))</span></code></pre></div>
+<span class="co"># wrap text in I to properly read in</span>
+<span class="fu">vroom</span><span class="fu">::</span><span class="fu"><a href="https://vroom.r-lib.org/reference/vroom.html" class="external-link">vroom</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span></code></pre></div>
   </main>
 </div>
 
