@@ -44,7 +44,7 @@
     <a class="dropdown-item" href="../articles/using-usincometaxes.html">Calculating Federal and State Income Taxes</a>
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
-    <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM32</a>
+    <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
   </div>
 </li>
       </ul>
@@ -86,19 +86,21 @@
 <p>Returned columns when <code>return_all_information</code> = <code>FALSE</code>.</p>
 <ul>
 <li>
-<strong>id_number</strong>: ID number from the input data set, so users can match the tax information with the input data set.</li>
+<strong>taxsimid</strong>: ID number from the input data set, so users can match the tax information with the input data set.</li>
 <li>
-<strong>federal_taxes</strong>: Federal income tax liability including capital gains rates, surtaxes, AMT and refundable and non-refundable credits.</li>
+<strong>fiitax</strong>: Federal income tax liability including capital gains rates, surtaxes, AMT and refundable and non-refundable credits.</li>
 <li>
-<strong>state_taxes</strong>: State income tax liability.</li>
+<strong>siitax</strong>: State income tax liability.</li>
 <li>
-<strong>fica_taxes</strong>: Total FICA taxes, including the employers and employees share.</li>
+<strong>fica</strong>: Total FICA taxes, including the employers and employees share.</li>
 <li>
-<strong>federal_marginal_rate</strong>: Marginal federal tax rate.</li>
+<strong>frate</strong>: Marginal federal tax rate.</li>
 <li>
-<strong>state_marginal_rate</strong>: Marginal state tax rate, if a state was identified.</li>
+<strong>srate</strong>: Marginal state tax rate, if a state was identified.</li>
 <li>
-<strong>fica_rate</strong>: FICA rate.</li>
+<strong>ficar</strong>: FICA rate.</li>
+<li>
+<strong>tfica</strong>: taxpayer liability for FICA. Marginal rates are with respect to wage income unless another rate is requested. If detailed intermediate results are requested, the following 35 columns of data are added:.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -109,274 +111,84 @@
 <li>All standard columns. <br>
 </li>
 <li>
-<strong>federal_agi</strong>: Federal AGI</li>
+<strong>v10_federal_agi</strong>: Federal AGI</li>
 <li>
-<strong>ui_agi</strong>: UI in AGI</li>
+<strong>v11_ui_agi</strong>: UI in AGI</li>
 <li>
-<strong>soc_sec_agi</strong>: Social Security in AGI</li>
+<strong>v12_soc_sec_agi</strong>: Social Security in AGI</li>
 <li>
-<strong>zero_bracket_amount</strong>: Zero Bracket Amount</li>
+<strong>v13_zero_bracket_amount</strong>: Zero Bracket Amount</li>
 <li>
-<strong>personal_exemptions</strong>: Personal Exemptions</li>
+<strong>v14_personal_exemptions</strong>: Personal Exemptions</li>
 <li>
-<strong>exemption_phaseout</strong>: Exemption Phaseout</li>
+<strong>v15_exemption_phaseout</strong>: Exemption Phaseout</li>
 <li>
-<strong>deduction_phaseout</strong>: Deduction Phaseout</li>
+<strong>v16_deduction_phaseout</strong>: Deduction Phaseout</li>
 <li>
-<strong>itemized_deductions</strong>: Itemized Deductions Allowed (Zero for non-itemizers)</li>
+<strong>v17_itemized_deductions</strong>: Itemized Deductions Allowed (Zero for non-itemizers)</li>
 <li>
-<strong>federal_taxable_income</strong>: Federal Taxable Income</li>
+<strong>v18_federal_taxable_income</strong>: Federal Taxable Income</li>
 <li>
-<strong>tax_on_taxable_income</strong>: Tax on Taxable Income (no special capital gains rates)</li>
+<strong>v19_tax_on_taxable_income</strong>: Tax on Taxable Income (no special capital gains rates)</li>
 <li>
-<strong>exemption_surtax</strong>: Exemption Surtax</li>
+<strong>v20_exemption_surtax</strong>: Exemption Surtax</li>
 <li>
-<strong>general_tax_credit</strong>: General Tax Credit</li>
+<strong>v21_general_tax_credit</strong>: General Tax Credit</li>
 <li>
-<strong>child_tax_credit_adjusted</strong>: Child Tax Credit (as adjusted)</li>
+<strong>v22_child_tax_credit_adjusted</strong>: Child Tax Credit (as adjusted)</li>
 <li>
-<strong>child_tax_credit_refundable</strong>: Additional Child Tax Credit (refundable)</li>
+<strong>v23_child_tax_credit_refundable</strong>: Additional Child Tax Credit (refundable)</li>
 <li>
-<strong>child_care_credit</strong>: Child Care Credit</li>
+<strong>v24_child_care_credit</strong>: Child Care Credit</li>
 <li>
-<strong>eitc</strong>: Earned Income Credit (total federal)</li>
+<strong>v25_eitc</strong>: Earned Income Credit (total federal)</li>
 <li>
-<strong>amt_income</strong>: Income for the Alternative Minimum Tax</li>
+<strong>v26_amt_income</strong>: Income for the Alternative Minimum Tax</li>
 <li>
-<strong>amt_liability</strong>: AMT Liability after credit for regular tax and other allowed credits.</li>
+<strong>v27_amt_liability</strong>: AMT Liability after credit for regular tax and other allowed credits.</li>
 <li>
-<strong>fed_income_tax_before_credit</strong>:Federal Income Tax Before Credits (includes special treatment of Capital gains, exemption surtax (1988-1996) and 15% rate phaseout (1988-1990) but not AMT)</li>
+<strong>v28_fed_income_tax_before_credit</strong>:Federal Income Tax Before Credits (includes special treatment of Capital gains, exemption surtax (1988-1996) and 15% rate phaseout (1988-1990) but not AMT)</li>
 <li>
-<strong>fica</strong>: FICA</li>
-<li>
-<strong>medicare_tax_unearned_income</strong>: Medicare Tax on Unearned Income</li>
-<li>
-<strong>medicare_tax_earned_income</strong>: Medicare Tax on Earned Income</li>
-<li>
-<strong>cares_recovery_rebate</strong>: CARES act Recovery Rebates</li>
+<strong>v29_fica</strong>: FICA</li>
 </ul>
 <p>The following columns are zero if no state is specified:</p>
 <ul>
 <li>
-<strong>state_household_income</strong>: State Household Income (imputation for property tax credit)</li>
+<strong>v30_state_household_income</strong>: State Household Income (imputation for property tax credit)</li>
 <li>
-<strong>state_rent_expense</strong>: State Rent Expense (imputation for property tax credit)</li>
+<strong>v31_state_rent_expense</strong>: State Rent Expense (imputation for property tax credit)</li>
 <li>
-<strong>state_agi</strong>: State AGI</li>
+<strong>v32_state_agi</strong>: State AGI</li>
 <li>
-<strong>state_exemption_amount</strong>: State Exemption amount</li>
+<strong>v33_state_exemption_amount</strong>: State Exemption amount</li>
 <li>
-<strong>state_std_deduction_amount</strong>: State Standard Deduction</li>
+<strong>v34_state_std_deduction_amount</strong>: State Standard Deduction</li>
 <li>
-<strong>state_itemized_deducation</strong>: State Itemized Deductions</li>
+<strong>v35_state_itemized_deducation</strong>: State Itemized Deductions</li>
 <li>
-<strong>state_taxable_income</strong>: State Taxable Income</li>
+<strong>v36_state_taxable_income</strong>: State Taxable Income</li>
 <li>
-<strong>state_property_tax_credit</strong>: State Property Tax Credit</li>
+<strong>v37_state_property_tax_credit</strong>: State Property Tax Credit</li>
 <li>
-<strong>state_child_care_credit</strong>: State Child Care Credit</li>
+<strong>v38_state_child_care_credit</strong>: State Child Care Credit</li>
 <li>
-<strong>state_eitc</strong>: State EIC</li>
+<strong>v39_state_eitc</strong>: State EIC</li>
 <li>
-<strong>state_total_credits</strong>: State Total Credits</li>
+<strong>v40_state_total_credits</strong>: State Total Credits</li>
 <li>
-<strong>state_bracket_rate</strong>: State Bracket Rate</li>
-<li>
-<strong>self_emp_income</strong>: Earned Self-Employment Income for FICA</li>
+<strong>v41_state_bracket_rate</strong>: State Bracket Rate</li>
 </ul>
-</div>
-<div class="section level2">
-<h2 id="mapping-usincometaxes-columns-to-taxsim-32-columns">Mapping <code>usincometaxes</code> columns to TAXSIM 32 columns<a class="anchor" aria-label="anchor" href="#mapping-usincometaxes-columns-to-taxsim-32-columns"></a>
-</h2>
-<p>Results from <code>usincometaxes</code> include all output from TAXSIM 32. The table below maps <code>usincometaxes</code> output column names to TAXSIM 32 output column names.</p>
-<table class="table">
-<thead><tr class="header">
-<th align="left">usincometaxes</th>
-<th align="left">TAXSIM</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">id_number</td>
-<td align="left">taxsimid</td>
-</tr>
-<tr class="even">
-<td align="left">year</td>
-<td align="left">year</td>
-</tr>
-<tr class="odd">
-<td align="left">state</td>
-<td align="left">state</td>
-</tr>
-<tr class="even">
-<td align="left">federal_taxes</td>
-<td align="left">fiitax</td>
-</tr>
-<tr class="odd">
-<td align="left">state_taxes</td>
-<td align="left">siitax</td>
-</tr>
-<tr class="even">
-<td align="left">fica_taxes</td>
-<td align="left">fica</td>
-</tr>
-<tr class="odd">
-<td align="left">federal_marginal_rate</td>
-<td align="left">frate</td>
-</tr>
-<tr class="even">
-<td align="left">state_marginal_rate</td>
-<td align="left">srate</td>
-</tr>
-<tr class="odd">
-<td align="left">fica_rate</td>
-<td align="left">ficar</td>
-</tr>
-<tr class="even">
-<td align="left">federal_agi</td>
-<td align="left">v10</td>
-</tr>
-<tr class="odd">
-<td align="left">ui_agi</td>
-<td align="left">v11</td>
-</tr>
-<tr class="even">
-<td align="left">soc_sec_agi</td>
-<td align="left">v12</td>
-</tr>
-<tr class="odd">
-<td align="left">zero_bracket_amount</td>
-<td align="left">v13</td>
-</tr>
-<tr class="even">
-<td align="left">personal_exemptions</td>
-<td align="left">v14</td>
-</tr>
-<tr class="odd">
-<td align="left">exemption_phaseout</td>
-<td align="left">v15</td>
-</tr>
-<tr class="even">
-<td align="left">deduction_phaseout</td>
-<td align="left">v16</td>
-</tr>
-<tr class="odd">
-<td align="left">itemized_deductions</td>
-<td align="left">v17</td>
-</tr>
-<tr class="even">
-<td align="left">federal_taxable_income</td>
-<td align="left">v18</td>
-</tr>
-<tr class="odd">
-<td align="left">tax_on_taxable_income</td>
-<td align="left">v19</td>
-</tr>
-<tr class="even">
-<td align="left">exemption_surtax</td>
-<td align="left">v20</td>
-</tr>
-<tr class="odd">
-<td align="left">general_tax_credit</td>
-<td align="left">v21</td>
-</tr>
-<tr class="even">
-<td align="left">child_tax_credit_adjusted</td>
-<td align="left">v22</td>
-</tr>
-<tr class="odd">
-<td align="left">child_tax_credit_refundable</td>
-<td align="left">v23</td>
-</tr>
-<tr class="even">
-<td align="left">child_care_credit</td>
-<td align="left">v24</td>
-</tr>
-<tr class="odd">
-<td align="left">eitc</td>
-<td align="left">v25</td>
-</tr>
-<tr class="even">
-<td align="left">amt_income</td>
-<td align="left">v26</td>
-</tr>
-<tr class="odd">
-<td align="left">amt_liability</td>
-<td align="left">v27</td>
-</tr>
-<tr class="even">
-<td align="left">fed_income_tax_before_credit</td>
-<td align="left">v28</td>
-</tr>
-<tr class="odd">
-<td align="left">fica</td>
-<td align="left">v29</td>
-</tr>
-<tr class="even">
-<td align="left">state_household_income</td>
-<td align="left">v30</td>
-</tr>
-<tr class="odd">
-<td align="left">state_rent_expense</td>
-<td align="left">v31</td>
-</tr>
-<tr class="even">
-<td align="left">state_agi</td>
-<td align="left">v32</td>
-</tr>
-<tr class="odd">
-<td align="left">state_exemption_amount</td>
-<td align="left">v33</td>
-</tr>
-<tr class="even">
-<td align="left">state_std_deduction_amount</td>
-<td align="left">v34</td>
-</tr>
-<tr class="odd">
-<td align="left">state_itemized_deducation</td>
-<td align="left">v35</td>
-</tr>
-<tr class="even">
-<td align="left">state_taxable_income</td>
-<td align="left">v36</td>
-</tr>
-<tr class="odd">
-<td align="left">state_property_tax_credit</td>
-<td align="left">v37</td>
-</tr>
-<tr class="even">
-<td align="left">state_child_care_credit</td>
-<td align="left">v38</td>
-</tr>
-<tr class="odd">
-<td align="left">state_eitc</td>
-<td align="left">v39</td>
-</tr>
-<tr class="even">
-<td align="left">state_total_credits</td>
-<td align="left">v40</td>
-</tr>
-<tr class="odd">
-<td align="left">state_bracket_rate</td>
-<td align="left">v41</td>
-</tr>
-<tr class="even">
-<td align="left">self_emp_income</td>
-<td align="left">v42</td>
-</tr>
-<tr class="odd">
-<td align="left">medicare_tax_unearned_income</td>
-<td align="left">v43</td>
-</tr>
-<tr class="even">
-<td align="left">medicare_tax_earned_income</td>
-<td align="left">v44</td>
-</tr>
-<tr class="odd">
-<td align="left">cares_recovery_rebate</td>
-<td align="left">v45</td>
-</tr>
-</tbody>
-</table>
+<p>Additional federal results:</p>
+<ul>
+<li>
+<strong>v42_self_emp_income</strong>: Earned Self-Employment Income for FICA</li>
+<li>
+<strong>v43_medicare_tax_unearned_income</strong>: Medicare Tax on Unearned Income</li>
+<li>
+<strong>v44_medicare_tax_earned_income</strong>: Medicare Tax on Earned Income</li>
+<li>
+<strong>v45_cares_recovery_rebate</strong>: CARES act Recovery Rebates</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>

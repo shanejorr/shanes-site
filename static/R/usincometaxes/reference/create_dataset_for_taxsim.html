@@ -3,14 +3,14 @@
 checks it to make sure it is in the proper format for TAXSIM 35, and then cleans so it can be sent to TAXSIM 35.
 This function is useful for troubleshooting. It is not needed to calculate taxes. The function is useful
 if you continue receiving unreasonable errors from taxsim_calculate_taxes. In such as case,
-you can run this function on the data frame used in taxsim_calculate_taxes. You should then save
-this data frame as a csv file. Then, upload the file to TAXSIM 35.
+you can run this function on your data set. You should then save the resulting
+data frame as a csv file. Then, upload the file to TAXSIM 35.
 If there are no errors with TAXSIM 35 then the issue lies in taxsim_calculate_taxes."><title>Convert a data frame to the TAXSIM 35 output. — create_dataset_for_taxsim • usincometaxes</title><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.1.0/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.1.0/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous"><!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Convert a data frame to the TAXSIM 35 output. — create_dataset_for_taxsim"><meta property="og:description" content="This function takes a data set that is in the format required for taxsim_calculate_taxes,
 checks it to make sure it is in the proper format for TAXSIM 35, and then cleans so it can be sent to TAXSIM 35.
 This function is useful for troubleshooting. It is not needed to calculate taxes. The function is useful
 if you continue receiving unreasonable errors from taxsim_calculate_taxes. In such as case,
-you can run this function on the data frame used in taxsim_calculate_taxes. You should then save
-this data frame as a csv file. Then, upload the file to TAXSIM 35.
+you can run this function on your data set. You should then save the resulting
+data frame as a csv file. Then, upload the file to TAXSIM 35.
 If there are no errors with TAXSIM 35 then the issue lies in taxsim_calculate_taxes."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -39,7 +39,7 @@ If there are no errors with TAXSIM 35 then the issue lies in taxsim_calculate_ta
     <a class="dropdown-item" href="../articles/using-usincometaxes.html">Calculating Federal and State Income Taxes</a>
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
-    <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM32</a>
+    <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
   </div>
 </li>
       </ul><form class="form-inline my-2 my-lg-0" role="search">
@@ -68,8 +68,8 @@ If there are no errors with TAXSIM 35 then the issue lies in taxsim_calculate_ta
 checks it to make sure it is in the proper format for TAXSIM 35, and then cleans so it can be sent to TAXSIM 35.
 This function is useful for troubleshooting. It is not needed to calculate taxes. The function is useful
 if you continue receiving unreasonable errors from <code><a href="taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></code>. In such as case,
-you can run this function on the data frame used in <code><a href="taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></code>. You should then save
-this data frame as a csv file. Then, upload the file to <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a>.
+you can run this function on your data set. You should then save the resulting
+data frame as a csv file. Then, upload the file to <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a>.
 If there are no errors with TAXSIM 35 then the issue lies in <code><a href="taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></code>.</p>
     </div>
 
@@ -88,21 +88,24 @@ This data set will be sent to TAXSIM. Data frame must have specified column name
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame that that can be manually uploaded to <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a>.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><code>create_dataset_for_taxsim</code> takes the same columns as column names as <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a>.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
 <span class="r-in"><span class="va">family_income</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span class="r-in">    id_number <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
-<span class="r-in">     state <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'North Carolina'</span>, <span class="st">'NY'</span><span class="op">)</span>,</span>
-<span class="r-in">     tax_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2015</span>, <span class="fl">2015</span><span class="op">)</span>,</span>
-<span class="r-in">     filing_status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'single'</span>, <span class="st">'married, jointly'</span><span class="op">)</span>,</span>
-<span class="r-in">     primary_wages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10000</span>, <span class="fl">100000</span><span class="op">)</span>,</span>
-<span class="r-in">     primary_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span>, <span class="fl">36</span><span class="op">)</span></span>
+<span class="r-in">    taxsimid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span class="r-in">    state <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'North Carolina'</span>, <span class="st">'NY'</span><span class="op">)</span>,</span>
+<span class="r-in">    year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2015</span>, <span class="fl">2015</span><span class="op">)</span>,</span>
+<span class="r-in">    mstat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'single'</span>, <span class="st">'married, jointly'</span><span class="op">)</span>,</span>
+<span class="r-in">    pwages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10000</span>, <span class="fl">100000</span><span class="op">)</span>,</span>
+<span class="r-in">    page <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span>, <span class="fl">36</span><span class="op">)</span></span>
 <span class="r-in"><span class="op">)</span></span>
 <span class="r-in"></span>
 <span class="r-in"><span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu">create_dataset_for_taxsim</span><span class="op">(</span><span class="va">family_income</span><span class="op">)</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> All required columns are present and the data is in the proper format!</span>
 <span class="r-in"></span>
 <span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
 <span class="r-in"><span class="co"># write out the data frame as a csv file for uploading to TAXSIM 35</span></span>

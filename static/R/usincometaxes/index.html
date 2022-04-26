@@ -54,7 +54,7 @@
     <a class="dropdown-item" href="articles/using-usincometaxes.html">Calculating Federal and State Income Taxes</a>
     <a class="dropdown-item" href="articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="articles/taxsim-output.html">Description of Output Columns</a>
-    <a class="dropdown-item" href="articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM32</a>
+    <a class="dropdown-item" href="articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
   </div>
 </li>
       </ul>
@@ -79,7 +79,7 @@
   <main id="main" class="col-md-9"><div class="section level2">
 <h2 id="calculate-federal-and-state-income-taxes">Calculate Federal and State Income Taxes<a class="anchor" aria-label="anchor" href="#calculate-federal-and-state-income-taxes"></a>
 </h2>
-<p><code>usincometaxes</code> is an R package that calculates federal and state income taxes in the United States. It relies on the National Bureau of Economic Research’s (NBER) <a href="http://taxsim.nber.org/taxsim32/" class="external-link">TAXSIM 32</a> tax simulator for calculations. The package takes care of the behind-the-scenes work of getting the data in the proper format, converting it to the proper file type for uploading to the NBER server, uploading the data, downloading the results, and placing the results into a tidy data frame.</p>
+<p><code>usincometaxes</code> is an R package that calculates federal and state income taxes in the United States. It relies on the National Bureau of Economic Research’s (NBER) <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> tax simulator for calculations. The package takes care of the behind-the-scenes work of getting the data in the proper format, converting it to the proper file type for uploading to the NBER server, uploading the data, downloading the results, and placing the results into a tidy data frame.</p>
 <p><em>NOTE: This package is not associated with the NBER. It is a private creation that uses their wonderful tax calculator.</em></p>
 </div>
 <div class="section level2">
@@ -93,19 +93,19 @@
 <h2 id="quick-example">Quick example<a class="anchor" aria-label="anchor" href="#quick-example"></a>
 </h2>
 <p><code>usincometaxes</code> helps users estimate household income taxes from data sets containing financial and household data. This allows users to estimate income taxes from surveys with financial information, as the United States Census Public Use Micro Data (PUMS).</p>
-<p><code>usincometaxes</code> contains one function: <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. Below is a simple example of its use.</p>
+<p>The short example below uses <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> to calculate income taxes.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://yihui.org/knitr/" class="external-link">knitr</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/shanejorr/usincometaxes" class="external-link">usincometaxes</a></span><span class="op">)</span>
 
 <span class="va">family_income</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>
-  id_number <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,
+  taxsimid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,
   state <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'North Carolina'</span>, <span class="st">'NY'</span><span class="op">)</span>,
-  tax_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2015</span>, <span class="fl">2020</span><span class="op">)</span>,
-  filing_status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'single'</span>, <span class="st">'married, jointly'</span><span class="op">)</span>,
-  primary_wages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50000</span>, <span class="fl">100000</span><span class="op">)</span>,
-  primary_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span>, <span class="fl">36</span><span class="op">)</span>
+  year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2015</span>, <span class="fl">2020</span><span class="op">)</span>,
+  mstat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'married, jointly'</span>, <span class="st">'single'</span><span class="op">)</span>,
+  pwages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50000</span>, <span class="fl">100000</span><span class="op">)</span>, <span class="co"># primary wages</span>
+  page <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span>, <span class="fl">36</span><span class="op">)</span> <span class="co"># primary age</span>
 <span class="op">)</span>
 
 <span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span>
@@ -115,108 +115,106 @@
 <span class="op">)</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">family_taxes</span><span class="op">)</span></code></pre></div>
-<table style="width:100%;" class="table">
-<colgroup>
-<col width="10%">
-<col width="14%">
-<col width="12%">
-<col width="11%">
-<col width="21%">
-<col width="19%">
-<col width="10%">
-</colgroup>
+<table class="table">
 <thead><tr class="header">
-<th align="right">id_number</th>
-<th align="right">federal_taxes</th>
-<th align="right">state_taxes</th>
-<th align="right">fica_taxes</th>
-<th align="right">federal_marginal_rate</th>
-<th align="right">state_marginal_rate</th>
-<th align="right">fica_rate</th>
+<th align="right">taxsimid</th>
+<th align="right">fiitax</th>
+<th align="right">siitax</th>
+<th align="right">fica</th>
+<th align="right">frate</th>
+<th align="right">srate</th>
+<th align="right">ficar</th>
+<th align="right">tfica</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td align="right">1</td>
-<td align="right">5718.75</td>
-<td align="right">2443.75</td>
+<td align="right">3487.5</td>
+<td align="right">2012.50</td>
 <td align="right">7650</td>
-<td align="right">25</td>
-<td align="right">5.75</td>
 <td align="right">15</td>
+<td align="right">5.75</td>
+<td align="right">15.3</td>
+<td align="right">3825</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
-<td align="right">5029.00</td>
-<td align="right">4586.76</td>
+<td align="right">15103.5</td>
+<td align="right">5377.86</td>
 <td align="right">15300</td>
-<td align="right">12</td>
-<td align="right">6.09</td>
-<td align="right">15</td>
+<td align="right">24</td>
+<td align="right">6.41</td>
+<td align="right">15.3</td>
+<td align="right">7650</td>
 </tr>
 </tbody>
 </table>
-<p>Users can use the <code>id_number</code> column to join the tax data with the original data set. Every <code>id_number</code> in the input data is represented in the output tax data.</p>
+<p>Users can use the <code>taxsimid</code> column to join the tax data with the original data set. Every <code>taxsimid</code> in the input data is represented in the output tax data.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">family_income</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
-  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">family_taxes</span>, by <span class="op">=</span> <span class="st">'id_number'</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
+  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">family_taxes</span>, by <span class="op">=</span> <span class="st">'taxsimid'</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <colgroup>
-<col width="6%">
 <col width="8%">
+<col width="13%">
 <col width="5%">
-<col width="10%">
-<col width="8%">
-<col width="7%">
-<col width="8%">
-<col width="7%">
+<col width="15%">
 <col width="6%">
-<col width="12%">
-<col width="11%">
-<col width="6%">
+<col width="5%">
+<col width="7%">
+<col width="7%">
+<col width="5%">
+<col width="5%">
+<col width="5%">
+<col width="5%">
+<col width="5%">
 </colgroup>
 <thead><tr class="header">
-<th align="right">id_number</th>
+<th align="right">taxsimid</th>
 <th align="left">state</th>
-<th align="right">tax_year</th>
-<th align="left">filing_status</th>
-<th align="right">primary_wages</th>
-<th align="right">primary_age</th>
-<th align="right">federal_taxes</th>
-<th align="right">state_taxes</th>
-<th align="right">fica_taxes</th>
-<th align="right">federal_marginal_rate</th>
-<th align="right">state_marginal_rate</th>
-<th align="right">fica_rate</th>
+<th align="right">year</th>
+<th align="left">mstat</th>
+<th align="right">pwages</th>
+<th align="right">page</th>
+<th align="right">fiitax</th>
+<th align="right">siitax</th>
+<th align="right">fica</th>
+<th align="right">frate</th>
+<th align="right">srate</th>
+<th align="right">ficar</th>
+<th align="right">tfica</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td align="right">1</td>
 <td align="left">North Carolina</td>
 <td align="right">2015</td>
-<td align="left">single</td>
+<td align="left">married, jointly</td>
 <td align="right">5e+04</td>
 <td align="right">26</td>
-<td align="right">5718.75</td>
-<td align="right">2443.75</td>
+<td align="right">3487.5</td>
+<td align="right">2012.50</td>
 <td align="right">7650</td>
-<td align="right">25</td>
-<td align="right">5.75</td>
 <td align="right">15</td>
+<td align="right">5.75</td>
+<td align="right">15.3</td>
+<td align="right">3825</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
 <td align="left">NY</td>
 <td align="right">2020</td>
-<td align="left">married, jointly</td>
+<td align="left">single</td>
 <td align="right">1e+05</td>
 <td align="right">36</td>
-<td align="right">5029.00</td>
-<td align="right">4586.76</td>
+<td align="right">15103.5</td>
+<td align="right">5377.86</td>
 <td align="right">15300</td>
-<td align="right">12</td>
-<td align="right">6.09</td>
-<td align="right">15</td>
+<td align="right">24</td>
+<td align="right">6.41</td>
+<td align="right">15.3</td>
+<td align="right">7650</td>
 </tr>
 </tbody>
 </table>
@@ -224,26 +222,235 @@
 <div class="section level2">
 <h2 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a>
 </h2>
-<p><code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> returns a data frame where each row corresponds to a row in <code>.data</code> and each column is a piece of tax information. The output and <code>.data</code> can be linked by the <code>id_number</code> column.</p>
-<p>The amount of output (tax information) received is controlled by the <code>return_all_information</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. Setting <code>return_all_information</code> to <code>FALSE</code> returns minimal information such as federal and state tax liabilities and FICA taxes. When <code>return_all_information</code> is <code>TRUE</code> 45 different tax items are returned.</p>
-<p>See the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-output.html" class="external-link">Description of Output Columns</a> vignette for output information.</p>
+<p><code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> returns a data frame where each row corresponds to a row in <code>.data</code> and each column is a piece of tax information. The output and <code>.data</code> can be linked by the <code>taxsimid</code> column.</p>
+<p>The amount of output (tax information) received is controlled by the <code>return_all_information</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. Setting <code>return_all_information</code> to <code>FALSE</code> returns minimal information such as federal and state tax liabilities and FICA taxes. When <code>return_all_information</code> is <code>TRUE</code> 44 different tax items are returned.</p>
+<p><code>usoncometax</code>’s output contains the same information and column names as <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a>. Therefore, please consult either the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-output.html" class="external-link">Description of Output Columns</a> vignette or <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35 documentation</a> for more output information.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">family_taxes_full_output</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span>
+  .data <span class="op">=</span> <span class="va">family_income</span>,
+  marginal_tax_rates <span class="op">=</span> <span class="st">'Wages'</span>,
+  return_all_information <span class="op">=</span> <span class="cn">TRUE</span>
+<span class="op">)</span>
+
+<span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">family_taxes_full_output</span><span class="op">)</span></code></pre></div>
+<table class="table">
+<colgroup>
+<col width="1%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="1%">
+<col width="1%">
+<col width="1%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="3%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="3%">
+<col width="3%">
+<col width="2%">
+<col width="1%">
+<col width="1%">
+<col width="2%">
+<col width="3%">
+<col width="1%">
+<col width="3%">
+<col width="2%">
+<col width="1%">
+<col width="3%">
+<col width="3%">
+<col width="3%">
+<col width="2%">
+<col width="3%">
+<col width="3%">
+<col width="1%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="3%">
+<col width="3%">
+<col width="2%">
+</colgroup>
+<thead><tr class="header">
+<th align="right">taxsimid</th>
+<th align="right">fiitax</th>
+<th align="right">siitax</th>
+<th align="right">fica</th>
+<th align="right">frate</th>
+<th align="right">srate</th>
+<th align="right">ficar</th>
+<th align="right">tfica</th>
+<th align="right">v10_federal_agi</th>
+<th align="right">v11_ui_agi</th>
+<th align="right">v12_soc_sec_agi</th>
+<th align="right">v13_zero_bracket_amount</th>
+<th align="right">v14_personal_exemptions</th>
+<th align="right">v15_exemption_phaseout</th>
+<th align="right">v16_deduction_phaseout</th>
+<th align="right">v17_itemized_deductions</th>
+<th align="right">v18_federal_taxable_income</th>
+<th align="right">v19_tax_on_taxable_income</th>
+<th align="right">v20_exemption_surtax</th>
+<th align="right">v21_general_tax_credit</th>
+<th align="right">v22_child_tax_credit_adjusted</th>
+<th align="right">v23_child_tax_credit_refundable</th>
+<th align="right">v24_child_care_credit</th>
+<th align="right">v25_eitc</th>
+<th align="right">v26_amt_income</th>
+<th align="right">v27_amt_liability</th>
+<th align="right">v28_fed_income_tax_before_credit</th>
+<th align="right">v29_fica</th>
+<th align="right">v30_state_household_income</th>
+<th align="right">v31_state_rent_expense</th>
+<th align="right">v32_state_agi</th>
+<th align="right">v33_state_exemption_amount</th>
+<th align="right">v34_state_std_deduction_amount</th>
+<th align="right">v35_state_itemized_deducation</th>
+<th align="right">v36_state_taxable_income</th>
+<th align="right">v37_state_property_tax_credit</th>
+<th align="right">v38_state_child_care_credit</th>
+<th align="right">v39_state_eitc</th>
+<th align="right">v40_state_total_credits</th>
+<th align="right">v41_state_bracket_rate</th>
+<th align="right">v42_self_emp_income</th>
+<th align="right">v43_medicare_tax_unearned_income</th>
+<th align="right">v44_medicare_tax_earned_income</th>
+<th align="right">v45_cares_recovery_rebate</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">3487.5</td>
+<td align="right">2012.50</td>
+<td align="right">7650</td>
+<td align="right">15</td>
+<td align="right">5.75</td>
+<td align="right">15.3</td>
+<td align="right">3825</td>
+<td align="right">5e+04</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">12600</td>
+<td align="right">8000</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">29400</td>
+<td align="right">3487.5</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">5e+04</td>
+<td align="right">0</td>
+<td align="right">3487.5</td>
+<td align="right">7650</td>
+<td align="right">50000.01</td>
+<td align="right">0</td>
+<td align="right">50000.01</td>
+<td align="right">0</td>
+<td align="right">15000</td>
+<td align="right">0</td>
+<td align="right">35000.01</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">5e+04</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">15103.5</td>
+<td align="right">5377.86</td>
+<td align="right">15300</td>
+<td align="right">24</td>
+<td align="right">6.41</td>
+<td align="right">15.3</td>
+<td align="right">7650</td>
+<td align="right">1e+05</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">12400</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">87600</td>
+<td align="right">15103.5</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1e+05</td>
+<td align="right">0</td>
+<td align="right">15103.5</td>
+<td align="right">15300</td>
+<td align="right">100001.01</td>
+<td align="right">0</td>
+<td align="right">100000.01</td>
+<td align="right">0</td>
+<td align="right">8000</td>
+<td align="right">0</td>
+<td align="right">92000.01</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">6.41</td>
+<td align="right">1e+05</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
 <h2 id="input">Input<a class="anchor" aria-label="anchor" href="#input"></a>
 </h2>
 <p>Taxes are calculated with <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> using the financial and household characteristics found in the data frame represented by the <code>.data</code> parameter. Each column is a different piece of information and each row contains a tax payer unit.</p>
-<p>All columns must have the column names and data types listed in the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">Description of Input Columns</a> vignette. <code>.data</code> can contain columns beyond those listed in the vignette. The additional columns will be ignored.</p>
+<p>All columns must have the column names and data types listed in the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">Description of Input Columns</a> vignette. These are the same column names found in the <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> documentation. Therefore, you can consult the package documentation or TAXSIM 35 documentation for more information on input columns. There are two differences between <code>usincometaxes</code> and TAXSIM 35:</p>
+<ol style="list-style-type: decimal">
+<li>
+<code>usincometaxes</code> allows users to specify the state with either the two letter abbreviation or <a href="https://users.nber.org/~taxsim/statesoi.html" class="external-link">state SOI code</a>. <code>usincometaxes</code> will convert the abbreviation to an SOI code for TAXSIM 35.</li>
+<li>For filing status, <code>mstat</code> users can either use the TAXSIM 35 integer found in TAXSIM 35’s documentation or one of the following descriptions:
+<ul>
+<li>“single” or 1 for single;</li>
+<li>“married, jointly” or 2 for married, filing jointly;</li>
+<li>“married, separately” or 6 for married, filing separately;</li>
+<li>“dependent child” or 8 for dependent, usually a child with income; or</li>
+<li>“head of household” or 1 for head of household filing status.</li>
+</ul>
+</li>
+</ol>
+<p>The input data frame, <code>.data</code>, can contain columns beyond those listed in the vignette. The additional columns will be ignored.</p>
 </div>
 <div class="section level2">
 <h2 id="marginal-tax-rates">Marginal tax rates<a class="anchor" aria-label="anchor" href="#marginal-tax-rates"></a>
 </h2>
 <p>By default, marginal tax rates are calculated using wages. The default can be changed with the <code>marginal_tax_rates</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. Possible options are: ‘Wages’ (default), ‘Long Term Capital Gains’, ‘Primary Wage Earner’, or ‘Secondary Wage Earner’.</p>
-<p>Go to the Marginal Tax Rates section of the <a href="https://users.nber.org/~taxsim/taxsim32/" class="external-link">TAXSIM 32 documentation</a> for more information.</p>
 </div>
 <div class="section level2">
 <h2 id="giving-credit">Giving credit<a class="anchor" aria-label="anchor" href="#giving-credit"></a>
 </h2>
-<p>The NBER’s <a href="http://taxsim.nber.org/taxsim32/" class="external-link">TAXSIM 32</a> tax simulator does all tax calculations. This package simply lets users interact with the tax simulator through R. Therefore, users should cite the TAXSIM 35 tax simulator when they use this package in their work:</p>
+<p>The NBER’s <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> tax simulator does all tax calculations. This package simply lets users interact with the tax simulator through R. Therefore, users should cite the TAXSIM 35 tax simulator when they use this package in their work:</p>
 <p>          Feenberg, Daniel Richard, and Elizabeth Coutts, An Introduction to the TAXSIM Model, Journal of Policy Analysis and Management vol 12 no 1, Winter 1993, pages 189-194.</p>
 </div>
 
