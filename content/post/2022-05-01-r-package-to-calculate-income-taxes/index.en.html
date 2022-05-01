@@ -1,0 +1,974 @@
+---
+title: "R Package to Calculate Income Taxes"
+author: "Shane"
+date: '2022-05-01'
+slug: r-package-to-calculate-income-taxes
+categories: []
+tags: r package
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2022-05-01T18:23:26-04:00'
+featured: no
+image:
+  focal_point: ''
+  preview_only: no
+projects: []
+links:
+- icon: github
+  icon_pack: fab
+  name: Github
+  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2022-05-01-r-package-to-calculate-income-taxes/index.en.Rmd
+draft: yes
+---
+
+<script src="{{< blogdown/postref >}}index.en_files/header-attrs/header-attrs.js"></script>
+
+
+<p>A joy of programming is making tools to solve your everyday problems. For example, I found myself often having to estimate income taxes on various economic data sets that included income and family characteristics. I felt like I was starting fresh each time: figuring out what external tool to use; cleaning the data to put it in the right format for that tool; and uploading and downloading the results.</p>
+<p>Each time, I began by searching for an R package that automatically calculates income taxes. And each search came up empty. So, I build the package myself.</p>
+<p><a href="https://www.shaneorr.io/r/usincometaxes/"><code>usincometaxes</code></a> calculates federal and state income taxes, all within R. Technically, the package doesn’t calculate the taxes. It relies on the NBER’s <a href="http://taxsim.nber.org/taxsim35/">TAXSIM35 tax calculator</a> to do the hard work.</p>
+<p><code>usincometaxes</code> gets the data in the right format, performs checks on the data to ensure the format is correct, sends the data to TAXSIM35’s server, and pulls the data back into an R data frame. The user simply has to call a function to calculate taxes and wait for the results to fall into an R data frame.</p>
+<p><code>usincometaxes</code>’s <a href="https://www.shaneorr.io/r/usincometaxes/">documentation</a> contains instructions and vignettes. But, here is a quick example to wet your appetite.</p>
+<div id="example-of-using-usincometaxes" class="section level2">
+<h2>Example of using <code>usincometaxes</code></h2>
+<p><code>usincometaxes</code> contains a dataset with simulated income and household data that we will use to calculate taxes.</p>
+<pre class="r"><code>library(usincometaxes)
+library(gt)
+library(tidyverse)</code></pre>
+<pre class="r"><code>data(taxpayer_finances)
+
+head(taxpayer_finances) %&gt;%
+  head() %&gt;%
+  gt()</code></pre>
+<div id="aossjdvifh" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#aossjdvifh .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#aossjdvifh .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#aossjdvifh .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#aossjdvifh .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 6px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#aossjdvifh .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#aossjdvifh .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#aossjdvifh .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#aossjdvifh .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#aossjdvifh .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#aossjdvifh .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#aossjdvifh .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#aossjdvifh .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#aossjdvifh .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#aossjdvifh .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#aossjdvifh .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#aossjdvifh .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#aossjdvifh .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#aossjdvifh .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#aossjdvifh .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#aossjdvifh .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#aossjdvifh .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#aossjdvifh .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#aossjdvifh .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#aossjdvifh .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#aossjdvifh .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#aossjdvifh .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#aossjdvifh .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#aossjdvifh .gt_left {
+  text-align: left;
+}
+
+#aossjdvifh .gt_center {
+  text-align: center;
+}
+
+#aossjdvifh .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#aossjdvifh .gt_font_normal {
+  font-weight: normal;
+}
+
+#aossjdvifh .gt_font_bold {
+  font-weight: bold;
+}
+
+#aossjdvifh .gt_font_italic {
+  font-style: italic;
+}
+
+#aossjdvifh .gt_super {
+  font-size: 65%;
+}
+
+#aossjdvifh .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 65%;
+}
+</style>
+<table class="gt_table">
+  
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">taxsimid</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">year</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">mstat</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">state</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">page</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">sage</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">depx</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">age1</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">age2</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">age3</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">pwages</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">swages</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">dividends</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">intrec</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">stcg</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">ltcg</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">2000</td>
+<td class="gt_row gt_left">single</td>
+<td class="gt_row gt_left">NC</td>
+<td class="gt_row gt_right">37</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">4</td>
+<td class="gt_row gt_right">6</td>
+<td class="gt_row gt_right">7</td>
+<td class="gt_row gt_right">8</td>
+<td class="gt_row gt_right">26361.75</td>
+<td class="gt_row gt_right">0.00</td>
+<td class="gt_row gt_right">2260.86</td>
+<td class="gt_row gt_right">4340.19</td>
+<td class="gt_row gt_right">2280.16</td>
+<td class="gt_row gt_right">2060.29</td></tr>
+    <tr><td class="gt_row gt_right">2</td>
+<td class="gt_row gt_right">2000</td>
+<td class="gt_row gt_left">single</td>
+<td class="gt_row gt_left">NC</td>
+<td class="gt_row gt_right">29</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">7</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">33966.34</td>
+<td class="gt_row gt_right">0.00</td>
+<td class="gt_row gt_right">1969.54</td>
+<td class="gt_row gt_right">868.10</td>
+<td class="gt_row gt_right">1064.50</td>
+<td class="gt_row gt_right">2234.61</td></tr>
+    <tr><td class="gt_row gt_right">3</td>
+<td class="gt_row gt_right">2000</td>
+<td class="gt_row gt_left">married, jointly</td>
+<td class="gt_row gt_left">NC</td>
+<td class="gt_row gt_right">36</td>
+<td class="gt_row gt_right">30</td>
+<td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">13</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">174191.53</td>
+<td class="gt_row gt_right">102286.98</td>
+<td class="gt_row gt_right">1972.47</td>
+<td class="gt_row gt_right">2048.31</td>
+<td class="gt_row gt_right">1009.11</td>
+<td class="gt_row gt_right">1226.34</td></tr>
+    <tr><td class="gt_row gt_right">4</td>
+<td class="gt_row gt_right">2000</td>
+<td class="gt_row gt_left">married, jointly</td>
+<td class="gt_row gt_left">NC</td>
+<td class="gt_row gt_right">37</td>
+<td class="gt_row gt_right">34</td>
+<td class="gt_row gt_right">3</td>
+<td class="gt_row gt_right">5</td>
+<td class="gt_row gt_right">6</td>
+<td class="gt_row gt_right">7</td>
+<td class="gt_row gt_right">67604.57</td>
+<td class="gt_row gt_right">53205.76</td>
+<td class="gt_row gt_right">1173.95</td>
+<td class="gt_row gt_right">881.67</td>
+<td class="gt_row gt_right">3582.74</td>
+<td class="gt_row gt_right">1405.74</td></tr>
+    <tr><td class="gt_row gt_right">5</td>
+<td class="gt_row gt_right">2000</td>
+<td class="gt_row gt_left">married, jointly</td>
+<td class="gt_row gt_left">NC</td>
+<td class="gt_row gt_right">38</td>
+<td class="gt_row gt_right">39</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">21176.78</td>
+<td class="gt_row gt_right">21687.72</td>
+<td class="gt_row gt_right">4614.91</td>
+<td class="gt_row gt_right">1588.52</td>
+<td class="gt_row gt_right">560.93</td>
+<td class="gt_row gt_right">825.04</td></tr>
+    <tr><td class="gt_row gt_right">6</td>
+<td class="gt_row gt_right">2000</td>
+<td class="gt_row gt_left">single</td>
+<td class="gt_row gt_left">NC</td>
+<td class="gt_row gt_right">36</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">2</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">0</td>
+<td class="gt_row gt_right">53397.72</td>
+<td class="gt_row gt_right">0.00</td>
+<td class="gt_row gt_right">2067.41</td>
+<td class="gt_row gt_right">1320.01</td>
+<td class="gt_row gt_right">687.23</td>
+<td class="gt_row gt_right">3548.07</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+<p>Now, let’s calculate federal and state income taxes.</p>
+<pre class="r"><code>family_taxes &lt;- taxsim_calculate_taxes(
+  .data = taxpayer_finances,
+  return_all_information = FALSE
+)
+family_taxes %&gt;%
+  head() %&gt;%
+  gt()</code></pre>
+<div id="uxbqaqeivo" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#uxbqaqeivo .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#uxbqaqeivo .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#uxbqaqeivo .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#uxbqaqeivo .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 6px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#uxbqaqeivo .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uxbqaqeivo .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#uxbqaqeivo .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#uxbqaqeivo .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#uxbqaqeivo .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#uxbqaqeivo .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#uxbqaqeivo .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#uxbqaqeivo .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#uxbqaqeivo .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#uxbqaqeivo .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#uxbqaqeivo .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#uxbqaqeivo .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#uxbqaqeivo .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#uxbqaqeivo .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uxbqaqeivo .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#uxbqaqeivo .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uxbqaqeivo .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#uxbqaqeivo .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#uxbqaqeivo .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uxbqaqeivo .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#uxbqaqeivo .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#uxbqaqeivo .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#uxbqaqeivo .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#uxbqaqeivo .gt_left {
+  text-align: left;
+}
+
+#uxbqaqeivo .gt_center {
+  text-align: center;
+}
+
+#uxbqaqeivo .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#uxbqaqeivo .gt_font_normal {
+  font-weight: normal;
+}
+
+#uxbqaqeivo .gt_font_bold {
+  font-weight: bold;
+}
+
+#uxbqaqeivo .gt_font_italic {
+  font-style: italic;
+}
+
+#uxbqaqeivo .gt_super {
+  font-size: 65%;
+}
+
+#uxbqaqeivo .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 65%;
+}
+</style>
+<table class="gt_table">
+  
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">taxsimid</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">fiitax</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">siitax</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">fica</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">frate</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">srate</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">ficar</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">tfica</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td class="gt_row gt_right">1</td>
+<td class="gt_row gt_right">924.97</td>
+<td class="gt_row gt_right">1046.23</td>
+<td class="gt_row gt_right">4033.35</td>
+<td class="gt_row gt_right">15.00</td>
+<td class="gt_row gt_right">7.00</td>
+<td class="gt_row gt_right">15.3</td>
+<td class="gt_row gt_right">2016.67</td></tr>
+    <tr><td class="gt_row gt_right">2</td>
+<td class="gt_row gt_right">3596.23</td>
+<td class="gt_row gt_right">1947.22</td>
+<td class="gt_row gt_right">5196.85</td>
+<td class="gt_row gt_right">15.00</td>
+<td class="gt_row gt_right">7.00</td>
+<td class="gt_row gt_right">15.3</td>
+<td class="gt_row gt_right">2598.42</td></tr>
+    <tr><td class="gt_row gt_right">3</td>
+<td class="gt_row gt_right">78080.32</td>
+<td class="gt_row gt_right">20429.27</td>
+<td class="gt_row gt_right">26915.48</td>
+<td class="gt_row gt_right">36.58</td>
+<td class="gt_row gt_right">8.12</td>
+<td class="gt_row gt_right">2.9</td>
+<td class="gt_row gt_right">13457.74</td></tr>
+    <tr><td class="gt_row gt_right">4</td>
+<td class="gt_row gt_right">23279.56</td>
+<td class="gt_row gt_right">7783.72</td>
+<td class="gt_row gt_right">18483.98</td>
+<td class="gt_row gt_right">30.83</td>
+<td class="gt_row gt_right">7.75</td>
+<td class="gt_row gt_right">15.3</td>
+<td class="gt_row gt_right">9241.99</td></tr>
+    <tr><td class="gt_row gt_right">5</td>
+<td class="gt_row gt_right">5584.33</td>
+<td class="gt_row gt_right">2619.27</td>
+<td class="gt_row gt_right">6558.27</td>
+<td class="gt_row gt_right">15.00</td>
+<td class="gt_row gt_right">7.00</td>
+<td class="gt_row gt_right">15.3</td>
+<td class="gt_row gt_right">3279.13</td></tr>
+    <tr><td class="gt_row gt_right">6</td>
+<td class="gt_row gt_right">8358.38</td>
+<td class="gt_row gt_right">3411.43</td>
+<td class="gt_row gt_right">8169.85</td>
+<td class="gt_row gt_right">28.00</td>
+<td class="gt_row gt_right">7.00</td>
+<td class="gt_row gt_right">15.3</td>
+<td class="gt_row gt_right">4084.93</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+<p>The column <code>fiitax</code> is federal income taxes and <code>siitax</code> is state income taxes. See the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-output.html">description of output columns vignette</a> for more information on the output columns.</p>
+<p>Let’s combine our income tax dataset with the original dataset containing household characteristics and income.</p>
+<pre class="r"><code>income_and_taxes &lt;- taxpayer_finances %&gt;%
+  left_join(family_taxes, by = &#39;taxsimid&#39;)</code></pre>
+<p>Now we have a single data frame containing both wages and income tax liabilities. Let’s take a look at the relationship between wages and estimated federal income taxes. The colors represent the number of children 18 or younger.</p>
+<pre class="r"><code># custom theme for all plots in the vignette
+plt_theme &lt;- function() {
+  
+    theme_minimal() +
+    theme(
+      legend.text = element_text(size = 11),
+      axis.text = element_text(size = 10),
+      axis.title=element_text(size=11,face=&quot;bold&quot;),
+      strip.text = element_text(size = 11),
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(face = &quot;bold&quot;),
+      plot.subtitle = element_text(size = 12),
+      legend.position = &#39;bottom&#39;
+    )
+}
+
+# color palettes for number of children
+dep_color_palette &lt;- rev(c(&#39;#4B0055&#39;,&#39;#353E7C&#39;,&#39;#007094&#39;,&#39;#009B95&#39;,&#39;#00BE7D&#39;,&#39;#96D84B&#39;))
+income_and_taxes %&gt;%
+  mutate(
+    tax_unit_income = pwages + swages,
+    num_dependents_eitc = factor(depx, levels = as.character(0:5)),
+    filing_status = tools::toTitleCase(mstat)
+  ) %&gt;%
+  ggplot(aes(tax_unit_income, fiitax, color = num_dependents_eitc)) +
+    geom_point(alpha = .5) +
+    scale_x_continuous(labels = scales::label_dollar(scale = .001, suffix = &quot;K&quot;), limits = c(0, 200000)) +
+    scale_y_continuous(labels = scales::label_dollar(scale = .001, suffix = &quot;K&quot;), limits = c(-10000, 50000)) +
+    scale_color_discrete(type = dep_color_palette) +
+    facet_grid(rows = vars(mstat), cols = vars(year)) +
+    labs(
+      title = &quot;Federal Income Taxes by Filing Status, Year, and Number of Children&quot;,
+      x = &quot;\nHousehold Wages&quot;,
+      y = &quot;Federal Income Taxes&quot;
+    ) +
+    plt_theme() +
+    guides(color = guide_legend(title = &quot;Number of Childern 18 or Younger&quot;, title.position = &quot;top&quot;, byrow = TRUE))</code></pre>
+<p><img src="{{< blogdown/postref >}}index.en_files/figure-html/plot_family_taxes-1.png" width="864" /></p>
+<p>And that’s all there is to it.</p>
+<p>As mentioned earlier, the <a href="http://taxsim.nber.org/taxsim35/">TAXSIM35 tax calculator</a> does all the hard work of calculating taxes. So, if you use <code>usincometaxes</code> in your work, please cite TAXSIM:</p>
+<div class="line-block">          Feenberg, Daniel Richard, and Elizabeth Coutts, An Introduction to the TAXSIM Model, Journal of Policy Analysis and Management vol 12 no 1, Winter 1993, pages 189-194.</div>
+</div>
+<div id="links" class="section level2">
+<h2>Links</h2>
+<ul>
+<li><a href="https://www.shaneorr.io/r/usincometaxes/"><code>usincometaxes</code> documentation</a></li>
+<li><a href="https://github.com/shanejorr/usincometaxes"><code>usincometaxes</code> on GitHub</a></li>
+<li>[TAXSIM35 tax calculator], which conducts all the tax calculations.</li>
+</ul>
+</div>

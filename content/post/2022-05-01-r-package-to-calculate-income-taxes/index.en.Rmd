@@ -1,0 +1,134 @@
+---
+title: "R Package to Calculate Income Taxes"
+author: "Shane"
+date: '2022-05-01'
+slug: r-package-to-calculate-income-taxes
+categories: []
+tags: r package
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2022-05-01T18:23:26-04:00'
+featured: no
+image:
+  focal_point: ''
+  preview_only: no
+projects: []
+links:
+- icon: github
+  icon_pack: fab
+  name: Github
+  url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2022-05-01-r-package-to-calculate-income-taxes/index.en.Rmd
+draft: yes
+---
+
+```{r setup, echo = F}
+knitr::opts_chunk$set(echo = T,
+                      message = F,
+                      warning = F,
+                      error = F,
+                      eval = T)
+```
+
+A joy of programming is making tools to solve your everyday problems. For example, I found myself often having to estimate income taxes on various economic data sets that included income and family characteristics. I felt like I was starting fresh each time: figuring out what external tool to use; cleaning the data to put it in the right format for that tool; and uploading and downloading the results. 
+
+Each time, I began by searching for an R package that automatically calculates income taxes. And each search came up empty. So, I build the package myself.
+
+[`usincometaxes`](https://www.shaneorr.io/r/usincometaxes/) calculates federal and state income taxes, all within R. Technically, the package doesn't calculate the taxes. It relies on the NBER's [TAXSIM35 tax calculator](http://taxsim.nber.org/taxsim35/) to do the hard work. 
+
+`usincometaxes` gets the data in the right format, performs checks on the data to ensure the format is correct, sends the data to TAXSIM35's server, and pulls the data back into an R data frame. The user simply has to call a function to calculate taxes and wait for the results to fall into an R data frame.
+
+`usincometaxes`'s [documentation](https://www.shaneorr.io/r/usincometaxes/) contains instructions and vignettes. But, here is a quick example to wet your appetite.
+
+## Example of using `usincometaxes`
+
+`usincometaxes` contains a dataset with simulated income and household data that we will use to calculate taxes.
+
+```{r}
+library(usincometaxes)
+library(gt)
+library(tidyverse)
+```
+
+```{r}
+data(taxpayer_finances)
+
+head(taxpayer_finances) %>%
+  head() %>%
+  gt()
+```
+
+Now, let's calculate federal and state income taxes.
+
+```{r calcualte_survey_taxes}
+family_taxes <- taxsim_calculate_taxes(
+  .data = taxpayer_finances,
+  return_all_information = FALSE
+)
+family_taxes %>%
+  head() %>%
+  gt()
+```
+
+The column `fiitax` is federal income taxes and `siitax` is state income taxes. See the [description of output columns vignette](https://www.shaneorr.io/r/usincometaxes/articles/taxsim-output.html) for more information on the output columns.
+
+Let's combine our income tax dataset with the original dataset containing household characteristics and income.
+
+```{r join_tax_data}
+income_and_taxes <- taxpayer_finances %>%
+  left_join(family_taxes, by = 'taxsimid')
+```
+
+Now we have a single data frame containing both wages and income tax liabilities. Let's take a look at the relationship between wages and estimated federal income taxes. The colors represent the number of children 18 or younger.
+
+```{r plot_family_taxes, fig.height = 7, fig.width = 9}
+# custom theme for all plots in the vignette
+plt_theme <- function() {
+  
+    theme_minimal() +
+    theme(
+      legend.text = element_text(size = 11),
+      axis.text = element_text(size = 10),
+      axis.title=element_text(size=11,face="bold"),
+      strip.text = element_text(size = 11),
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      legend.position = 'bottom'
+    )
+}
+
+# color palettes for number of children
+dep_color_palette <- rev(c('#4B0055','#353E7C','#007094','#009B95','#00BE7D','#96D84B'))
+income_and_taxes %>%
+  mutate(
+    tax_unit_income = pwages + swages,
+    num_dependents_eitc = factor(depx, levels = as.character(0:5)),
+    filing_status = tools::toTitleCase(mstat)
+  ) %>%
+  ggplot(aes(tax_unit_income, fiitax, color = num_dependents_eitc)) +
+    geom_point(alpha = .5) +
+    scale_x_continuous(labels = scales::label_dollar(scale = .001, suffix = "K"), limits = c(0, 200000)) +
+    scale_y_continuous(labels = scales::label_dollar(scale = .001, suffix = "K"), limits = c(-10000, 50000)) +
+    scale_color_discrete(type = dep_color_palette) +
+    facet_grid(rows = vars(mstat), cols = vars(year)) +
+    labs(
+      title = "Federal Income Taxes by Filing Status, Year, and Number of Children",
+      x = "\nHousehold Wages",
+      y = "Federal Income Taxes"
+    ) +
+    plt_theme() +
+    guides(color = guide_legend(title = "Number of Childern 18 or Younger", title.position = "top", byrow = TRUE))
+```
+
+And that's all there is to it.
+
+As mentioned earlier, the [TAXSIM35 tax calculator](http://taxsim.nber.org/taxsim35/) does all the hard work of calculating taxes. So, if you use `usincometaxes` in your work, please cite TAXSIM:
+
+|           Feenberg, Daniel Richard, and Elizabeth Coutts, An Introduction to the TAXSIM Model, Journal of Policy Analysis and Management vol 12 no 1, Winter 1993, pages 189-194.
+
+## Links
+
+* [`usincometaxes` documentation](https://www.shaneorr.io/r/usincometaxes/)
+* [`usincometaxes` on GitHub](https://github.com/shanejorr/usincometaxes)
+* [TAXSIM35 tax calculator], which conducts all the tax calculations.
