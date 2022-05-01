@@ -19,7 +19,7 @@ links:
   icon_pack: fab
   name: Github
   url: https://github.com/shanejorr/shanes-site/blob/main/content/post/2022-05-01-r-package-to-calculate-income-taxes/index.en.Rmd
-draft: yes
+draft: no
 ---
 
 ```{r setup, echo = F}
