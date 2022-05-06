@@ -32,6 +32,9 @@ See http://taxsim.nber.org/taxsim35/ for more information on TAXSIM 35."><!-- ma
     <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
   </div>
 </li>
+<li class="nav-item">
+  <a class="nav-link" href="../news/index.html">Changelog</a>
+</li>
       </ul><form class="form-inline my-2 my-lg-0" role="search">
         <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off"></form>
 
@@ -122,6 +125,7 @@ Journal of Policy Analysis and Management vol 12 no 1, Winter 1993, pages 189-19
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
+<span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
 <span class="r-in"><span class="va">family_income</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span class="r-in">    taxsimid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
 <span class="r-in">    state <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'North Carolina'</span>, <span class="st">'NY'</span><span class="op">)</span>,</span>
@@ -131,17 +135,11 @@ Journal of Policy Analysis and Management vol 12 no 1, Winter 1993, pages 189-19
 <span class="r-in">    page <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span>, <span class="fl">36</span><span class="op">)</span></span>
 <span class="r-in"><span class="op">)</span></span>
 <span class="r-in"></span>
+<span class="r-in"></span>
 <span class="r-in"><span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu">taxsim_calculate_taxes</span><span class="op">(</span><span class="va">family_income</span><span class="op">)</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Connecting to TAXSIM server via ssh on port 22...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Upload and download successful!</span>
 <span class="r-in"></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">family_income</span>, <span class="va">family_taxes</span>, by <span class="op">=</span> <span class="st">'taxsimid'</span><span class="op">)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   taxsimid          state year            mstat pwages page   fiitax  siitax</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1        1 North Carolina 2015           single  1e+04   26  -369.12  143.75</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2        2             NY 2015 married, jointly  1e+05   36 11437.50 4761.98</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    fica frate srate ficar tfica</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  1530  7.65  5.75  15.3   765</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 15300 25.00  6.45  15.3  7650</span>
+<span class="r-in"><span class="op">}</span></span>
 <span class="r-in"></span>
 </code></pre></div>
     </div>
