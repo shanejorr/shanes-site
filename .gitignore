@@ -2,8 +2,12 @@
 .Rhistory
 .RData
 .Ruserdata
-blogdown
+/blogdown
 public/ 
 *.Rproj
 **/index.en_cache
 *.rds
+.DS_Store
+Thumbs.db
+/public/
+/resources/
