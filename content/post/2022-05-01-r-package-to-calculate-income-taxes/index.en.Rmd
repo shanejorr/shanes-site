@@ -131,4 +131,4 @@ As mentioned earlier, the [TAXSIM35 tax calculator](http://taxsim.nber.org/taxsi
 
 * [`usincometaxes` documentation](https://www.shaneorr.io/r/usincometaxes/)
 * [`usincometaxes` on GitHub](https://github.com/shanejorr/usincometaxes)
-* [TAXSIM35 tax calculator], which conducts all the tax calculations.
+* [TAXSIM35 tax calculator](http://taxsim.nber.org/taxsim35/), which conducts all the tax calculations.
