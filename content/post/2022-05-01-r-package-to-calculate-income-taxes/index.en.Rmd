@@ -22,7 +22,7 @@ links:
 draft: false
 ---
 
-```{r setup, echo = F} 
+```{r setup, echo = F}
 knitr::opts_chunk$set(echo = T,
                       message = F,
                       warning = F,
