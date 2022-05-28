@@ -1,12 +1,12 @@
 pandoc: 2.14.0.3
-pkgdown: 2.0.1
+pkgdown: 2.0.3
 pkgdown_sha: ~
 articles:
   send-data-to-taxsim: send-data-to-taxsim.html
   taxsim-input: taxsim-input.html
   taxsim-output: taxsim-output.html
   using-usincometaxes: using-usincometaxes.html
-last_built: 2022-05-06T03:12Z
+last_built: 2022-05-28T05:17Z
 urls:
   reference: https://shanejorr.github.io/usincometaxes/reference
   article: https://shanejorr.github.io/usincometaxes/articles

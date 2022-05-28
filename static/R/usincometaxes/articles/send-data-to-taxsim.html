@@ -26,14 +26,14 @@
     
     <a class="navbar-brand me-2" href="../index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div id="navbar" class="collapse navbar-collapse ms-2">
+    <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item">
   <a class="nav-link" href="../reference/index.html">Reference</a>
@@ -69,6 +69,9 @@
   </div>
 </nav><div class="container template-article">
 
+
+
+
 <div class="row">
   <main id="main"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Manually Upload Data to TAXSIM 35</h1>
@@ -82,7 +85,7 @@
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/shanejorr/usincometaxes" class="external-link">usincometaxes</a></span><span class="op">)</span></code></pre></div>
-<p><code>usincometaxes</code> sends data to the National Bureau of Economic Research’s (NBER) <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> server. The data must meet TAXSIM 32’s requirements for data types and column names. <code>usincometaxes</code> performs checks to ensure the data will be accepted by TAXSIM 35. It’s possible, however, that issues will slip through. This can produce cryptic errors that might be hard to location. If you receive unresolveable errors, it could be helpful to manually upload your data to TAXSIM 35’s servers.</p>
+<p><code>usincometaxes</code> sends data to the National Bureau of Economic Research’s (NBER) <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> server. The data must meet TAXSIM 32’s requirements for data types and column names. <code>usincometaxes</code> performs checks to ensure the data will be accepted by TAXSIM 35. It’s possible, however, that issues will slip through. This can produce cryptic errors that might be hard to location. If you receive unresolvable errors, it could be helpful to manually upload your data to TAXSIM 35’s servers.</p>
 <p><code>usincometaxes</code> provides a function, <code><a href="../reference/create_dataset_for_taxsim.html">create_dataset_for_taxsim()</a></code>, to format your data for manual uploading. To use the function, prepare your dataset as you normally would to use <code><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. For example, follow the formatting required for <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">input columns</a>. Then, supply the dataset to <code><a href="../reference/create_dataset_for_taxsim.html">create_dataset_for_taxsim()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">taxpayer_finances</span><span class="op">)</span>
@@ -257,7 +260,7 @@
 
 <div class="pkgdown-footer-right">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
 </div>
 
     </footer>
