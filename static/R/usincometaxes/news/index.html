@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,6 +53,16 @@
       <small>Source: <a href="https://github.com/shanejorr/usincometaxes/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="usincometaxes-040">usincometaxes 0.4.0<a class="anchor" aria-label="anchor" href="#usincometaxes-040"></a></h2>
+<div class="section level4">
+<h4 id="minor-changes-0-4-0">Minor Changes<a class="anchor" aria-label="anchor" href="#minor-changes-0-4-0"></a></h4>
+<ul><li>For ssh, create known_hosts file in temporary directory instead of .ssh.known_hosts. This is needed so that the package does not write to files outside the tempdir, in violation of CRAN requirements.</li>
+<li>For ssh, only use port 22.</li>
+<li>Merged from branch <a href="https://github.com/shanejorr/usincometaxes/tree/update-ssh" class="external-link">update-ssh</a>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="usincometaxes-030">usincometaxes 0.3.0<a class="anchor" aria-label="anchor" href="#usincometaxes-030"></a></h2>
 <div class="section level4">

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="description" content="Calculates federal and state income taxes in the United States. It acts as a wrapper 
     to the NBERs TAXSIM 35 (&lt;http://taxsim.nber.org/taxsim35/&gt;) tax simulator. TAXSIM 35 conducts 
-    the calculations, while `usincometaxes` prepares the data for TAXSIM 35, sends the data to 
+    the calculations, while usincometaxes prepares the data for TAXSIM 35, sends the data to 
     TAXSIM 35s server, retrieves the data, and places it into a data frame. All without the user
     worrying about this process.">
 <title>Calculate Federal and State Income Taxes in the United States • usincometaxes</title>
@@ -18,7 +18,7 @@
 <!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Calculate Federal and State Income Taxes in the United States">
 <meta property="og:description" content="Calculates federal and state income taxes in the United States. It acts as a wrapper 
     to the NBERs TAXSIM 35 (&lt;http://taxsim.nber.org/taxsim35/&gt;) tax simulator. TAXSIM 35 conducts 
-    the calculations, while `usincometaxes` prepares the data for TAXSIM 35, sends the data to 
+    the calculations, while usincometaxes prepares the data for TAXSIM 35, sends the data to 
     TAXSIM 35s server, retrieves the data, and places it into a data frame. All without the user
     worrying about this process.">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
@@ -34,7 +34,7 @@
     
     <a class="navbar-brand me-2" href="index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -431,7 +431,7 @@
 <ol style="list-style-type: decimal">
 <li>
 <code>usincometaxes</code> allows users to specify the state with either the two letter abbreviation or <a href="https://users.nber.org/~taxsim/statesoi.html" class="external-link">state SOI code</a>. <code>usincometaxes</code> will convert the abbreviation to an SOI code for TAXSIM 35.</li>
-<li>For filing status, <code>mstat</code> users can either use the TAXSIM 35 integer found in TAXSIM 35’s documentation or one of the following descriptions:<ul>
+<li>For filing status, <code>mstat</code>, users can either use the TAXSIM 35 integer found in TAXSIM 35’s documentation or one of the following descriptions:<ul>
 <li>“single” or 1 for single;</li>
 <li>“married, jointly” or 2 for married, filing jointly;</li>
 <li>“married, separately” or 6 for married, filing separately;</li>
