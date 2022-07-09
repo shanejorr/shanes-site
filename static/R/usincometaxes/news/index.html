@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,6 +28,7 @@
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
     <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
+    <a class="dropdown-item" href="../articles/interface-options.html">Interface Options for Calculating Taxes</a>
   </div>
 </li>
 <li class="active nav-item">
@@ -54,13 +55,20 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.4.0" id="usincometaxes-040">usincometaxes 0.4.0<a class="anchor" aria-label="anchor" href="#usincometaxes-040"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.5.0" id="usincometaxes-050">usincometaxes 0.5.0<a class="anchor" aria-label="anchor" href="#usincometaxes-050"></a></h2><p class="text-muted">CRAN release: 2022-07-08</p>
+<div class="section level4">
+<h4 id="major-changes-0-5-0">Major Changes<a class="anchor" aria-label="anchor" href="#major-changes-0-5-0"></a></h4>
+<ul><li>Add <code>interface</code> parameter to <code><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>, which allows users to select the method of interfacing with TAXSIM.</li>
+<li>Add ‘wasm’ option to <code>interface</code> parameter. The functionality incorporates Aman Gupta Karmani’s <a href="https://github.com/tmm1/taxsim.js" class="external-link">JS / WebAssembly tooling</a> into the package. Therefore, tax calculations can be conducted locally without send and retrieving data from the TAXSIM servers. (<a href="https://github.com/thomascwells" class="external-link">@thomascwells</a>, <a href="https://github.com/shanejorr/usincometaxes/pull/11" class="external-link">PR </a><a href="https://github.com/shanejorr/usincometaxes/issues/11" class="external-link">#11</a>)</li>
+<li>Add ‘http’ option to <code>interface</code> parameter. This option uses curl to send and retrieve data from TAXSIM via https. (<a href="https://github.com/thomascwells" class="external-link">@thomascwells</a>, <a href="https://github.com/shanejorr/usincometaxes/pull/9" class="external-link">PR </a><a href="https://github.com/shanejorr/usincometaxes/issues/9" class="external-link">#9</a>)</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="usincometaxes-040">usincometaxes 0.4.0<a class="anchor" aria-label="anchor" href="#usincometaxes-040"></a></h2><p class="text-muted">CRAN release: 2022-05-30</p>
 <div class="section level4">
 <h4 id="minor-changes-0-4-0">Minor Changes<a class="anchor" aria-label="anchor" href="#minor-changes-0-4-0"></a></h4>
 <ul><li>For ssh, create known_hosts file in temporary directory instead of .ssh.known_hosts. This is needed so that the package does not write to files outside the tempdir, in violation of CRAN requirements.</li>
 <li>For ssh, only use port 22.</li>
-<li>Merged from branch <a href="https://github.com/shanejorr/usincometaxes/tree/update-ssh" class="external-link">update-ssh</a>
-</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -83,7 +91,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p></p><p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>.</p>
+  <p></p><p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>, <a href="https://github.com/thomascwells" class="external-link">Thomas Wells</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

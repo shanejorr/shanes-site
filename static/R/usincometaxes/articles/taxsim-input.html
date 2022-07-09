@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,7 @@
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
     <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
+    <a class="dropdown-item" href="../articles/interface-options.html">Interface Options for Calculating Taxes</a>
   </div>
 </li>
 <li class="nav-item">
@@ -84,37 +85,64 @@
 
     
     
-<p><code>usincometaxes</code> calculates taxes through the function <code>taxsim_calculate_taxes(.data)</code>. The key parameter in this function is <code>.data</code>, which is a data frame containing the information used to calculate income taxes. Each column in <code>.data</code> contains financial or household information and maps to the variables in <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> . All variables in TAXSIM 35 can be used in <code>usincometaxes</code>.</p>
-<p>The column names in <code>usincometaxes</code> are the same as TAXSIM 35’s variable names. The data types for inputs are also the same as what is noted in the <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35 documentation</a>, except for two exceptions.</p>
+<p><code>usincometaxes</code> calculates taxes through the function
+<code>taxsim_calculate_taxes(.data)</code>. The key parameter in this
+function is <code>.data</code>, which is a data frame containing the
+information used to calculate income taxes. Each column in
+<code>.data</code> contains financial or household information and maps
+to the variables in <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM
+35</a> . All variables in TAXSIM 35 can be used in
+<code>usincometaxes</code>.</p>
+<p>The column names in <code>usincometaxes</code> are the same as TAXSIM
+35’s variable names. The data types for inputs are also the same as what
+is noted in the <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35
+documentation</a>, except for two exceptions.</p>
 <ol style="list-style-type: decimal">
-<li>For filing status, <code>mstat</code>, users can either enter a description of the filing status (shown below) or the number required by TAXSIM.</li>
-<li>For state, <code>state</code>, users can enter the two letter state abbreviation or the SOI code, as required by TAXSIM.</li>
+<li>For filing status, <code>mstat</code>, users can either enter a
+description of the filing status (shown below) or the number required by
+TAXSIM.</li>
+<li>For state, <code>state</code>, users can enter the two letter state
+abbreviation or the SOI code, as required by TAXSIM.</li>
 </ol>
-<p><code>usincometaxes</code> will convert descriptions of filing statuses or state abbreviations to the numbers required by TAXSIM.</p>
-<p><code>.data</code> can contain columns beyond those listed below. The additional columns will be ignored.</p>
+<p><code>usincometaxes</code> will convert descriptions of filing
+statuses or state abbreviations to the numbers required by TAXSIM.</p>
+<p><code>.data</code> can contain columns beyond those listed below. The
+additional columns will be ignored.</p>
 <div class="section level2">
 <h2 id="required-columns">Required columns<a class="anchor" aria-label="anchor" href="#required-columns"></a>
 </h2>
 <ul>
 <li>
-<strong>taxsimid</strong>: An arbitrary, non-negative, <em>whole number</em> greater than zero. This number links the results from TAXSIM 35 to the original input data frame specified with <code>.data</code>. <br><br>
+<strong>taxsimid</strong>: An arbitrary, non-negative, <em>whole
+number</em> greater than zero. This number links the results from TAXSIM
+35 to the original input data frame specified with <code>.data</code>.
+<br><br>
 </li>
 <li>
-<strong>year</strong>: Tax year ending Dec 31 (4 digits between 1960 and 2023). State must be zero if year is before 1977 or after 2023. <br><br>
+<strong>year</strong>: Tax year ending Dec 31 (4 digits between 1960
+and 2023). State must be zero if year is before 1977 or after 2023.
+<br><br>
 </li>
 <li>
-<strong>mstat</strong>: Filing status of tax unit. One of the following:
+<strong>mstat</strong>: Filing status of tax unit. One of the
+following:
 <ul>
 <li>“single” or 1 for single;</li>
 <li>“married, jointly” or 2 for married, filing jointly;</li>
 <li>“married, separately” or 6 for married, filing separately;</li>
-<li>“dependent child” or 8 for dependent, usually a child with income; or</li>
-<li>“head of household” or 1 for head of household filing status. <br><br>
+<li>“dependent child” or 8 for dependent, usually a child with income;
+or</li>
+<li>“head of household” or 1 for head of household filing status.
+<br><br>
 </li>
 </ul>
 </li>
 <li>
-<strong>state</strong>: State two letter abbreviation (‘NC’), full state name (‘North Carolina’) or <a href="https://users.nber.org/~taxsim/statesoi.html" class="external-link">state SOI code</a> (32). If state income taxes are not needed, either label as “No State” or remove this variable. State income tax information is only available from 1977 to 2023.</li>
+<strong>state</strong>: State two letter abbreviation (‘NC’), full
+state name (‘North Carolina’) or <a href="https://users.nber.org/~taxsim/statesoi.html" class="external-link">state SOI code</a>
+(32). If state income taxes are not needed, either label as “No State”
+or remove this variable. State income tax information is only available
+from 1977 to 2023.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -122,16 +150,25 @@
 </h2>
 <ul>
 <li>
-<strong>page</strong>: Age of primary taxpayer as of December 31st of tax year. Taxpayer age variables determine eligibility for additional standard deductions, personal exemption, EITC and AMT exclusion. <br><br>
+<strong>page</strong>: Age of primary taxpayer as of December 31st
+of tax year. Taxpayer age variables determine eligibility for additional
+standard deductions, personal exemption, EITC and AMT exclusion.
+<br><br>
 </li>
 <li>
-<strong>sage</strong>: Age of spouse as of December 31st of tax year (or 0 / NA if no spouse). <br><br>
+<strong>sage</strong>: Age of spouse as of December 31st of tax year
+(or 0 / NA if no spouse). <br><br>
 </li>
 <li>
-<strong>depx</strong>: Total number of dependents (part of personal exemption calculation). <br><br>
+<strong>depx</strong>: Total number of dependents (part of personal
+exemption calculation). <br><br>
 </li>
 <li>
-<strong>age1</strong>: Age of youngest dependent. Used for EITC, CTC and CCC. For 1991+ code students between 20 and 23 as 19 to get the EITC calculation correct. Code infants as “1”. If age1 is not present depx is used for the number of child eligible for the EIC, CTC and CDCC. <br><br>
+<strong>age1</strong>: Age of youngest dependent. Used for EITC, CTC
+and CCC. For 1991+ code students between 20 and 23 as 19 to get the EITC
+calculation correct. Code infants as “1”. If age1 is not present depx is
+used for the number of child eligible for the EIC, CTC and CDCC.
+<br><br>
 </li>
 <li>
 <strong>age2</strong>: Age of 2nd youngest dependent. <br><br>
@@ -139,35 +176,44 @@
 <li>
 <strong>age3</strong>: Age of 3rd youngest dependent.</li>
 </ul>
-<p>Ages of any additional dependents are not relevant for the tax calculation, but all dependents should be included in .</p>
+<p>Ages of any additional dependents are not relevant for the tax
+calculation, but all dependents should be included in .</p>
 <p><strong>Incomes</strong></p>
 <ul>
 <li>
-<strong>pwages</strong>: Wage and salary income of Primary Taxpayer (exclude QBI). <br><br>
+<strong>pwages</strong>: Wage and salary income of Primary Taxpayer
+(exclude QBI). <br><br>
 </li>
 <li>
-<strong>swages</strong>: Wage and salary income of Spouse (include self-employment but no QBI). Must be zero or the column should not exist for non-joint returns. <br><br>
+<strong>swages</strong>: Wage and salary income of Spouse (include
+self-employment but no QBI). Must be zero or the column should not exist
+for non-joint returns. <br><br>
 </li>
 <li>
-<strong>psemp</strong>: Self-employment income of Primary Taxpayer (exclude QBI). <br><br>
+<strong>psemp</strong>: Self-employment income of Primary Taxpayer
+(exclude QBI). <br><br>
 </li>
 <li>
 <strong>ssemp</strong>: Self-empoyment income of Spouse. <br><br>
 </li>
 <li>
-<strong>dividends</strong>: Dividend income (qualified dividends only for 2003 on). <br><br>
+<strong>dividends</strong>: Dividend income (qualified dividends
+only for 2003 on). <br><br>
 </li>
 <li>
 <strong>intrec</strong>: Interest income received (+/-). <br><br>
 </li>
 <li>
-<strong>stcg</strong>: Short Term Capital Gains or losses (+/-). <br><br>
+<strong>stcg</strong>: Short Term Capital Gains or losses (+/-).
+<br><br>
 </li>
 <li>
-<strong>ltcg</strong>: Long Term Capital Gains or losses (+/-). <br><br>
+<strong>ltcg</strong>: Long Term Capital Gains or losses (+/-).
+<br><br>
 </li>
 <li>
-<strong>otherprop</strong>: Other property income subject to NIIT, including:
+<strong>otherprop</strong>: Other property income subject to NIIT,
+including:
 <ul>
 <li>Unearned or limited partnership and passive S-Corp profits;</li>
 <li>Rent not eligible for QBI deduction;</li>
@@ -177,7 +223,8 @@
 </ul>
 </li>
 <li>
-<strong>nonprop</strong>: Other non-property income not subject to Medicare NIIT such as:
+<strong>nonprop</strong>: Other non-property income not subject to
+Medicare NIIT such as:
 <ul>
 <li>Alimony;</li>
 <li>Nonwage fellowships;</li>
@@ -190,37 +237,47 @@
 </ul>
 </li>
 <li>
-<strong>pensions</strong>: Taxable Pensions and IRA distributions. <br><br>
+<strong>pensions</strong>: Taxable Pensions and IRA distributions.
+<br><br>
 </li>
 <li>
 <strong>ggsi</strong>: Gross Social Security Benefits. <br><br>
 </li>
 <li>
-<strong>pui</strong>: Unemployment Compensation received - primary taxpayer. <br><br>
+<strong>pui</strong>: Unemployment Compensation received - primary
+taxpayer. <br><br>
 </li>
 <li>
-<strong>sui</strong>: Unemployment compensation received - secondary taxpayer. The split is relevant only 2020-2021. <br><br>
+<strong>sui</strong>: Unemployment compensation received - secondary
+taxpayer. The split is relevant only 2020-2021. <br><br>
 </li>
 <li>
-<strong>transfers</strong>: Other non-taxable transfer income such as:
+<strong>transfers</strong>: Other non-taxable transfer income such
+as:
 <ul>
 <li>Welfare;</li>
 <li>Workers comp;</li>
 <li>Veterans benefits; and</li>
-<li>Child support that would affect eligibility for state property tax rebates but would not be taxable at the federal level. <br><br>
+<li>Child support that would affect eligibility for state property tax
+rebates but would not be taxable at the federal level. <br><br>
 </li>
 </ul>
 </li>
 <li>
-<strong>rentpaid</strong>: Rent paid (used only for calculating state property tax rebates). <br><br>
+<strong>rentpaid</strong>: Rent paid (used only for calculating
+state property tax rebates). <br><br>
 </li>
 <li>
-<strong>proptax</strong>: Real Estate taxes paid. This is a preference for the AMT and is is also used to calculate state property tax rebates. <br><br>
+<strong>proptax</strong>: Real Estate taxes paid. This is a
+preference for the AMT and is is also used to calculate state property
+tax rebates. <br><br>
 </li>
 <li>
-<strong>otheritem</strong>: Other Itemized deductions that are a preference for the Alternative Minimum Tax. These would include:
+<strong>otheritem</strong>: Other Itemized deductions that are a
+preference for the Alternative Minimum Tax. These would include:
 <ul>
-<li>Other state and local taxes (line 8 of Schedule A) plus local income tax;</li>
+<li>Other state and local taxes (line 8 of Schedule A) plus local income
+tax;</li>
 <li>Preference share of medical expenses; and</li>
 <li>Miscellaneous (line 27). <br><br>
 </li>
@@ -230,22 +287,32 @@
 <strong>childcare</strong>: Child care expenses. <br>
 </li>
 </ul>
-<p><strong>The following are for the TCJA Business Tax Deduction.</strong></p>
+<p><strong>The following are for the TCJA Business Tax
+Deduction.</strong></p>
 <ul>
 <li>
 <strong>scorp</strong>: Active S-Corp income (is SSTB). <br><br>
 </li>
 <li>
-<strong>pbusinc</strong>: Primary Taxpayer’s Qualified Business Income (QBI) subject to a preferential rate without phaseout and assuming sufficient wages paid or capital to be eligible for the full deduction. Subject to SECA and Medicare additional Earnings Tax. <br><br>
+<strong>pbusinc</strong>: Primary Taxpayer’s Qualified Business
+Income (QBI) subject to a preferential rate without phaseout and
+assuming sufficient wages paid or capital to be eligible for the full
+deduction. Subject to SECA and Medicare additional Earnings Tax.
+<br><br>
 </li>
 <li>
-<strong>pprofinc</strong>: Primary Taxpayer’s Specialized Service Trade or Business service (SSTB) with a preferential rate subject to claw-back. Subject to SECA and Medicare Additional Earnings Tax. <br><br>
+<strong>pprofinc</strong>: Primary Taxpayer’s Specialized Service
+Trade or Business service (SSTB) with a preferential rate subject to
+claw-back. Subject to SECA and Medicare Additional Earnings Tax.
+<br><br>
 </li>
 <li>
-<strong>sbusinc</strong>: Spouse’s QBI. Must be zero for non-joint returns, or the column should not exist. <br><br>
+<strong>sbusinc</strong>: Spouse’s QBI. Must be zero for non-joint
+returns, or the column should not exist. <br><br>
 </li>
 <li>
-<strong>sprofinc</strong>: Spouse’s SSTB. Must be zero for non-joint returns, or the column should not exist.</li>
+<strong>sprofinc</strong>: Spouse’s SSTB. Must be zero for non-joint
+returns, or the column should not exist.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
@@ -256,7 +323,7 @@
 
     <footer><div class="pkgdown-footer-left">
   <p></p>
-<p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>.</p>
+<p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>, <a href="https://github.com/thomascwells" class="external-link">Thomas Wells</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

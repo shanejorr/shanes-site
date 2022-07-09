@@ -13,6 +13,9 @@
     <loc>https://shanejorr.github.io/usincometaxes/articles/index.html</loc>
   </url>
   <url>
+    <loc>https://shanejorr.github.io/usincometaxes/articles/interface-options.html</loc>
+  </url>
+  <url>
     <loc>https://shanejorr.github.io/usincometaxes/articles/send-data-to-taxsim.html</loc>
   </url>
   <url>
@@ -35,6 +38,12 @@
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/news.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/calculate_taxes_http.html</loc>
+  </url>
+  <url>
+    <loc>https://shanejorr.github.io/usincometaxes/reference/calculate_taxes_wasm.html</loc>
   </url>
   <url>
     <loc>https://shanejorr.github.io/usincometaxes/reference/check_data.html</loc>

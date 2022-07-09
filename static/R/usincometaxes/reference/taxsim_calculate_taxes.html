@@ -12,7 +12,7 @@ See http://taxsim.nber.org/taxsim35/ for more information on TAXSIM 35."><!-- ma
     
     <a class="navbar-brand me-2" href="../index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,6 +30,7 @@ See http://taxsim.nber.org/taxsim35/ for more information on TAXSIM 35."><!-- ma
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
     <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
+    <a class="dropdown-item" href="../articles/interface-options.html">Interface Options for Calculating Taxes</a>
   </div>
 </li>
 <li class="nav-item">
@@ -66,7 +67,8 @@ See <a href="http://taxsim.nber.org/taxsim35/" class="external-link">http://taxs
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">taxsim_calculate_taxes</span><span class="op">(</span>
   <span class="va">.data</span>,
   marginal_tax_rates <span class="op">=</span> <span class="st">"Wages"</span>,
-  return_all_information <span class="op">=</span> <span class="cn">FALSE</span>
+  return_all_information <span class="op">=</span> <span class="cn">FALSE</span>,
+  interface <span class="op">=</span> <span class="st">"wasm"</span>
 <span class="op">)</span></code></pre></div>
     </div>
 
@@ -82,6 +84,17 @@ This data set will be sent to TAXSIM. Data frame must have specified column name
 <dd><p>Boolean (TRUE or FALSE). Whether to return all information from TAXSIM (TRUE),
 or only key information (FALSE). Returning all information returns 42 columns of output, while only
 returning key information returns 9 columns. It is faster to download results with only key information.</p></dd>
+<dt>interface</dt>
+<dd><p>String indicating which NBER TAXSIM interface to use. Should
+be one of: "wasm", "ssh", or "http".</p><ul><li><p>"wasm" uses a compiled WebAssembly version of the TAXSIM app. Details
+about generating the wasm file can be found here:
+https://github.com/tmm1/taxsim.js</p></li>
+<li><p>"ssh" uses SSH to connect to taxsimssh.nber.org. Your system must already
+have SSH installed.</p></li>
+<li><p>"http" uses CURL to connect to
+https://taxsim.nber.org/uptest/webfile.cgi. 'http" does not work for dataset with more than
+1,000 rows.</p></li>
+</ul></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -148,7 +161,7 @@ Journal of Policy Analysis and Management vol 12 no 1, Winter 1993, pages 189-19
 
 
     <footer><div class="pkgdown-footer-left">
-  <p></p><p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>.</p>
+  <p></p><p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>, <a href="https://github.com/thomascwells" class="external-link">Thomas Wells</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

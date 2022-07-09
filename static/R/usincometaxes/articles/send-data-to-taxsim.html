@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,7 @@
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
     <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
+    <a class="dropdown-item" href="../articles/interface-options.html">Interface Options for Calculating Taxes</a>
   </div>
 </li>
 <li class="nav-item">
@@ -85,8 +86,21 @@
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/shanejorr/usincometaxes" class="external-link">usincometaxes</a></span><span class="op">)</span></code></pre></div>
-<p><code>usincometaxes</code> sends data to the National Bureau of Economic Research’s (NBER) <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> server. The data must meet TAXSIM 32’s requirements for data types and column names. <code>usincometaxes</code> performs checks to ensure the data will be accepted by TAXSIM 35. It’s possible, however, that issues will slip through. This can produce cryptic errors that might be hard to location. If you receive unresolvable errors, it could be helpful to manually upload your data to TAXSIM 35’s servers.</p>
-<p><code>usincometaxes</code> provides a function, <code><a href="../reference/create_dataset_for_taxsim.html">create_dataset_for_taxsim()</a></code>, to format your data for manual uploading. To use the function, prepare your dataset as you normally would to use <code><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. For example, follow the formatting required for <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">input columns</a>. Then, supply the dataset to <code><a href="../reference/create_dataset_for_taxsim.html">create_dataset_for_taxsim()</a></code>.</p>
+<p><code>usincometaxes</code> sends data to the National Bureau of
+Economic Research’s (NBER) <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> server. The data
+must meet TAXSIM 32’s requirements for data types and column names.
+<code>usincometaxes</code> performs checks to ensure the data will be
+accepted by TAXSIM 35. It’s possible, however, that issues will slip
+through. This can produce cryptic errors that might be hard to location.
+If you receive errors that you cannot correct it could be helpful to
+manually upload your data to TAXSIM 35’s servers.</p>
+<p><code>usincometaxes</code> provides a function,
+<code><a href="../reference/create_dataset_for_taxsim.html">create_dataset_for_taxsim()</a></code>, to format your data for manual
+uploading. To use the function, prepare your dataset as you normally
+would to use <code><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. For example, follow
+the formatting required for <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">input
+columns</a>. Then, supply the dataset to
+<code><a href="../reference/create_dataset_for_taxsim.html">create_dataset_for_taxsim()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">taxpayer_finances</span><span class="op">)</span>
 
@@ -241,13 +255,20 @@
 </tr>
 </tbody>
 </table>
-<p>Then, save this dataset as a csv file to your local computer. It is recommended to use <code><a href="https://readr.tidyverse.org/reference/read_delim.html" class="external-link">readr::read_csv()</a></code> to write out the dataset. <code>write.csv</code> tends to pose issues. Also note that you can name the <code>.csv</code> file anything you wish.</p>
+<p>Then, save this dataset as a csv file to your local computer. It is
+recommended to use <code><a href="https://readr.tidyverse.org/reference/read_delim.html" class="external-link">readr::read_csv()</a></code> to write out the
+dataset. <code>write.csv</code> tends to pose issues. Also note that you
+can name the <code>.csv</code> file anything you wish.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">taxsim_filename</span> <span class="op">&lt;-</span> <span class="st">'taxsim_dataset.csv'</span>
 
 <span class="fu">vroom</span><span class="fu">::</span><span class="fu"><a href="https://vroom.r-lib.org/reference/vroom_write.html" class="external-link">vroom_write</a></span><span class="op">(</span><span class="va">taxsim_dataset</span>, <span class="va">taxsim_filename</span><span class="op">)</span></code></pre></div>
-<p>Now, manually upload the file <code>taxsim_dataset.csv</code> to TAXSIM 35’s server by going to (<a href="https://users.nber.org/~taxsim/taxsim35/" class="external-link uri">https://users.nber.org/~taxsim/taxsim35/</a>), navigating to the section titled ‘OR…Upload a (not too large) file with TAXSIM data:’, and uploading the <code>.csv</code> file:</p>
-<p>Errors from the manual upload could guide you in solving any data formatting issues.</p>
+<p>Now, manually upload the file <code>taxsim_dataset.csv</code> to
+TAXSIM 35’s server by going to (<a href="https://users.nber.org/~taxsim/taxsim35/" class="external-link uri">https://users.nber.org/~taxsim/taxsim35/</a>), navigating to
+the section titled ‘OR…Upload a (not too large) file with TAXSIM data:’,
+and uploading the <code>.csv</code> file:</p>
+<p>Errors from the manual upload could guide you in solving any data
+formatting issues.</p>
   </main>
 </div>
 
@@ -255,7 +276,7 @@
 
     <footer><div class="pkgdown-footer-left">
   <p></p>
-<p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>.</p>
+<p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>, <a href="https://github.com/thomascwells" class="external-link">Thomas Wells</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

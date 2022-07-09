@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,7 @@
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
     <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
+    <a class="dropdown-item" href="../articles/interface-options.html">Interface Options for Calculating Taxes</a>
   </div>
 </li>
 <li class="nav-item">
@@ -84,12 +85,22 @@
 
     
     
-<p>This article presents two use cases for <code>usincometaxes</code>. The first shows users how to estimate income taxes from a data frame containing financial information and other characteristics of tax payer units. This income could come from surveys such as the <a href="https://www.bls.gov/cex/" class="external-link">Consumer Expenditure survey</a> or the <a href="https://psidonline.isr.umich.edu/" class="external-link">Panel Study of Income Dynamics survey</a>. The second use case focuses on running simulations.</p>
+<p>This article presents two use cases for <code>usincometaxes</code>.
+The first shows users how to estimate income taxes from a data frame
+containing financial information and other characteristics of tax payer
+units. This income could come from surveys such as the <a href="https://www.bls.gov/cex/" class="external-link">Consumer Expenditure survey</a> or the
+<a href="https://psidonline.isr.umich.edu/" class="external-link">Panel Study of Income
+Dynamics survey</a>. The second use case focuses on running
+simulations.</p>
 <div class="section level2">
 <h2 id="calculating-income-taxes-from-survey-data">Calculating income taxes from survey data<a class="anchor" aria-label="anchor" href="#calculating-income-taxes-from-survey-data"></a>
 </h2>
-<p>For the first example we will use an internal data set called <code>taxpayer_finances</code>. The data is randomly generated and formatted for use with <code>usincometaxes</code>. Guidance on formatting data can be found in the <a href="taxsim-input.html">Description of Input Columns</a> article.</p>
-<p>The data set contains financial and other household characteristics that help estimate income taxes.</p>
+<p>For the first example we will use an internal data set called
+<code>taxpayer_finances</code>. The data is randomly generated and
+formatted for use with <code>usincometaxes</code>. Guidance on
+formatting data can be found in the <a href="taxsim-input.html">Description of Input Columns</a> article.</p>
+<p>The data set contains financial and other household characteristics
+that help estimate income taxes.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">taxpayer_finances</span><span class="op">)</span>
 
@@ -244,9 +255,18 @@
 </tr>
 </tbody>
 </table>
-<p>Each row in the data set is a tax paying unit. Thus, each row files one tax return. Columns represent items reported on tax returns that impact taxes. Of course, the information in the data set does not represent everything people report on tax returns. For this reason, the income tax calculations are simply estimates.</p>
-<p>We call <code><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> to estimate federal and state income taxes for each tax paying unit. <code><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> sends the data to the <a href="https://users.nber.org/~taxsim/taxsim35/" class="external-link">NBER’s TAXSIM 35</a> program for calculation and returns the results as a data frame.</p>
-<p>We are only interested in federal and state tax liabilities, not line item credits and deduction, so we are using <code>return_all_information = FALSE</code>.</p>
+<p>Each row in the data set is a tax paying unit. Thus, each row files
+one tax return. Columns represent items reported on tax returns that
+impact taxes. Of course, the information in the data set does not
+represent everything people report on tax returns. For this reason, the
+income tax calculations are simply estimates.</p>
+<p>We call <code><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> to estimate federal and
+state income taxes for each tax paying unit.
+<code><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> sends the data to the <a href="https://users.nber.org/~taxsim/taxsim35/" class="external-link">NBER’s TAXSIM 35</a>
+program for calculation and returns the results as a data frame.</p>
+<p>We are only interested in federal and state tax liabilities, not line
+item credits and deduction, so we are using
+<code>return_all_information = FALSE</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span>
   .data <span class="op">=</span> <span class="va">taxpayer_finances</span>,
@@ -330,7 +350,10 @@
 </tr>
 </tbody>
 </table>
-<p>The <code>taxsimid</code> column is required for any input data frame used in <code>taxsim_calculate_taxes</code>. This column is also returned in the output data frame containing tax calculations, allowing us to link the input and output data frames.</p>
+<p>The <code>taxsimid</code> column is required for any input data frame
+used in <code>taxsim_calculate_taxes</code>. This column is also
+returned in the output data frame containing tax calculations, allowing
+us to link the input and output data frames.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">income_and_taxes</span> <span class="op">&lt;-</span> <span class="va">taxpayer_finances</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">family_taxes</span>, by <span class="op">=</span> <span class="st">'taxsimid'</span><span class="op">)</span>
@@ -542,7 +565,10 @@
 </tr>
 </tbody>
 </table>
-<p>Now we have a single data frame containing both wages and income tax liabilities. Let’s take a look at the relationship between wages and estimated federal income taxes. The colors represent the number of children 18 or younger.</p>
+<p>Now we have a single data frame containing both wages and income tax
+liabilities. Let’s take a look at the relationship between wages and
+estimated federal income taxes. The colors represent the number of
+children 18 or younger.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># custom theme for all plots in the vignette</span>
 <span class="va">plt_theme</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span>
@@ -583,7 +609,11 @@
     <span class="fu">guides</span><span class="op">(</span>color <span class="op">=</span> <span class="fu">guide_legend</span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Number of Childern 18 or Younger"</span>, title.position <span class="op">=</span> <span class="st">"top"</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>
 <span class="co">#&gt; Warning: Removed 134 rows containing missing values (geom_point).</span></code></pre></div>
 <p><img src="webimg/plot_family_taxes-1.png" width="648" style="display: block; margin: auto;"></p>
-<p>The plots shows what we would expect: higher income families pay more in taxes and households pay less the more children they have. We also see the reduction in federal marginal tax rates from 2000 to 2020, as shown by the decrease in income tax liabilities when comparing the two years.</p>
+<p>The plots shows what we would expect: higher income families pay more
+in taxes and households pay less the more children they have. We also
+see the reduction in federal marginal tax rates from 2000 to 2020, as
+shown by the decrease in income tax liabilities when comparing the two
+years.</p>
 </div>
 <div class="section level2">
 <h2 id="income-tax-simulations">Income tax simulations<a class="anchor" aria-label="anchor" href="#income-tax-simulations"></a>
@@ -591,7 +621,13 @@
 <div class="section level3">
 <h3 id="association-between-income-taxes-paid-and-household-wages">Association between income taxes paid and household wages<a class="anchor" aria-label="anchor" href="#association-between-income-taxes-paid-and-household-wages"></a>
 </h3>
-<p>An additional use of <code>usincometaxes</code> is to run simulations. This could be as simple as plotting the relationship between wages and income taxes paid. To do this, we first need to create a data set that holds everything constant except for wages. The code block below does this, except it also creates different data sets for households with zero and four children 18 or younger, so we can compare differences on this characteristic as well.</p>
+<p>An additional use of <code>usincometaxes</code> is to run
+simulations. This could be as simple as plotting the relationship
+between wages and income taxes paid. To do this, we first need to create
+a data set that holds everything constant except for wages. The code
+block below does this, except it also creates different data sets for
+households with zero and four children 18 or younger, so we can compare
+differences on this characteristic as well.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># calculate taxes from 0 to 200,000 in wages</span>
 <span class="va">wage_linespace</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">200000</span>, <span class="fl">100</span><span class="op">)</span>
@@ -627,6 +663,20 @@
   <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
 <table class="table">
+<colgroup>
+<col width="11%">
+<col width="6%">
+<col width="20%">
+<col width="7%">
+<col width="6%">
+<col width="6%">
+<col width="6%">
+<col width="6%">
+<col width="6%">
+<col width="6%">
+<col width="8%">
+<col width="8%">
+</colgroup>
 <thead><tr class="header">
 <th align="right">taxsimid</th>
 <th align="right">year</th>
@@ -728,7 +778,11 @@
 </tr>
 </tbody>
 </table>
-<p>Now, we will calculate federal and state income taxes for our simulated data set. Note that <code>return_all_information = TRUE</code>. This allows us to examine credit amounts like the Child Tax Credit and Earned Income Tax Credit (EITC).</p>
+<p>Now, we will calculate federal and state income taxes for our
+simulated data set. Note that
+<code>return_all_information = TRUE</code>. This allows us to examine
+credit amounts like the Child Tax Credit and Earned Income Tax Credit
+(EITC).</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">family_income_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span>
   .data <span class="op">=</span> <span class="va">family_income</span>,
@@ -1110,11 +1164,13 @@
 </tr>
 </tbody>
 </table>
-<p>As before, let’s merge our tax data with the original input data set.</p>
+<p>As before, let’s merge our tax data with the original input data
+set.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">family_income</span> <span class="op">&lt;-</span> <span class="va">family_income</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">family_income_taxes</span>, by <span class="op">=</span> <span class="st">'taxsimid'</span><span class="op">)</span></code></pre></div>
-<p>Now, let’s look at the relationship between household wages and estimated income tax liabilities.</p>
+<p>Now, let’s look at the relationship between household wages and
+estimated income tax liabilities.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">family_income_long</span> <span class="op">&lt;-</span> <span class="va">family_income</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">pwages</span>, <span class="va">depx</span>, <span class="va">fiitax</span>, <span class="va">siitax</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>
@@ -1146,12 +1202,14 @@
     color <span class="op">=</span> <span class="st">'Number of Children 18 or Younger:'</span>
   <span class="op">)</span></code></pre></div>
 <p><img src="webimg/unnamed-chunk-5-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>Note that North Carolina had a flat tax of 5.25% in 2020. That’s why their taxes increase linearly.</p>
+<p>Note that North Carolina had a flat tax of 5.25% in 2020. That’s why
+their taxes increase linearly.</p>
 </div>
 <div class="section level3">
 <h3 id="relationship-between-pre-and-post-tax-wages">Relationship Between Pre and Post-Tax Wages<a class="anchor" aria-label="anchor" href="#relationship-between-pre-and-post-tax-wages"></a>
 </h3>
-<p>We’ll create a additional plot comparing pre-tax and post-tax household wages.</p>
+<p>We’ll create a additional plot comparing pre-tax and post-tax
+household wages.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu">taxes_line_plot</span><span class="op">(</span><span class="va">family_income_long</span>, <span class="va">pwages</span>, <span class="va">post_tax_wages</span>, <span class="va">num_dependents_eitc</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">facet_wrap</span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">jurisdiction</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
@@ -1167,7 +1225,12 @@
 <div class="section level3">
 <h3 id="child-tax-credit-and-earned-income-tax-credit-eitc">Child Tax Credit and Earned Income Tax Credit (EITC)<a class="anchor" aria-label="anchor" href="#child-tax-credit-and-earned-income-tax-credit-eitc"></a>
 </h3>
-<p>As noted previously, setting <code>return_all_information = TRUE</code> lets us retrieve additional output. Included in this additional output are amounts for the Child Tax Credit and EITC. Let’s look at the amounts for both credits, while varying household wages. The values reflect a household with four children 18 or younger.</p>
+<p>As noted previously, setting
+<code>return_all_information = TRUE</code> lets us retrieve additional
+output. Included in this additional output are amounts for the Child Tax
+Credit and EITC. Let’s look at the amounts for both credits, while
+varying household wages. The values reflect a household with four
+children 18 or younger.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">tax_items_mapping</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>
   v25_eitc <span class="op">=</span> <span class="st">'Earned Income Tax Credit'</span>,
@@ -1199,7 +1262,7 @@
 
     <footer><div class="pkgdown-footer-left">
   <p></p>
-<p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>.</p>
+<p>Developed by <a href="https://shaneorr.io" class="external-link">Shane Orr</a>, <a href="https://github.com/thomascwells" class="external-link">Thomas Wells</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
