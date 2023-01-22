@@ -8,8 +8,8 @@
 <meta name="description" content="usincometaxes">
 <title>Manually Upload Data to TAXSIM 35 • usincometaxes</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.1.0/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.1.0/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link href="../deps/bootstrap-5.1.3/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.1.3/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Manually Upload Data to TAXSIM 35">
 <meta property="og:description" content="usincometaxes">
@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,7 +45,7 @@
     <a class="dropdown-item" href="../articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="../articles/taxsim-output.html">Description of Output Columns</a>
     <a class="dropdown-item" href="../articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
-    <a class="dropdown-item" href="../articles/interface-options.html">Interface Options for Calculating Taxes</a>
+    <a class="dropdown-item" href="../articles/wasm.html">About the Web Assembly Interface</a>
   </div>
 </li>
 <li class="nav-item">
@@ -88,7 +88,7 @@
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/shanejorr/usincometaxes" class="external-link">usincometaxes</a></span><span class="op">)</span></code></pre></div>
 <p><code>usincometaxes</code> sends data to the National Bureau of
 Economic Research’s (NBER) <a href="http://taxsim.nber.org/taxsim35/" class="external-link">TAXSIM 35</a> server. The data
-must meet TAXSIM 32’s requirements for data types and column names.
+must meet TAXSIM 35’s requirements for data types and column names.
 <code>usincometaxes</code> performs checks to ensure the data will be
 accepted by TAXSIM 35. It’s possible, however, that issues will slip
 through. This can produce cryptic errors that might be hard to location.
@@ -264,9 +264,9 @@ can name the <code>.csv</code> file anything you wish.</p>
 
 <span class="fu">vroom</span><span class="fu">::</span><span class="fu"><a href="https://vroom.r-lib.org/reference/vroom_write.html" class="external-link">vroom_write</a></span><span class="op">(</span><span class="va">taxsim_dataset</span>, <span class="va">taxsim_filename</span><span class="op">)</span></code></pre></div>
 <p>Now, manually upload the file <code>taxsim_dataset.csv</code> to
-TAXSIM 35’s server by going to (<a href="https://users.nber.org/~taxsim/taxsim35/" class="external-link uri">https://users.nber.org/~taxsim/taxsim35/</a>), navigating to
-the section titled ‘OR…Upload a (not too large) file with TAXSIM data:’,
-and uploading the <code>.csv</code> file:</p>
+TAXSIM 35’s server by going to (<a href="https://taxsim.nber.org/taxsim35/" class="external-link uri">https://taxsim.nber.org/taxsim35/</a>), navigating to the
+section titled ‘OR…Upload a (not too large) file with TAXSIM data:’, and
+uploading the <code>.csv</code> file:</p>
 <p>Errors from the manual upload could guide you in solving any data
 formatting issues.</p>
   </main>

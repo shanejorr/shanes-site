@@ -9,8 +9,8 @@
 ">
 <title>An R package to calculate federal and state income taxes in the United States • usincometaxes</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.1.0/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.1.0/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link href="deps/bootstrap-5.1.3/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.1.3/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="An R package to calculate federal and state income taxes in the United States">
 <meta property="og:description" content="`usincometaxes` is an R package that calculates federal and state income taxes in the United States. It acts as a wrapper to the NBER's TAXSIM 35 (&lt;http://taxsim.nber.org/taxsim35/&gt;) tax simulator. TAXSIM 35 conducts the calculations, while 'usincometaxes' prepares the data for TAXSIM 35, sends the data to TAXSIM 35's server or communicates with the Web Assembly file, retrieves the data, and places it into a data frame. All without the user worrying about this process.
@@ -28,7 +28,7 @@
     
     <a class="navbar-brand me-2" href="index.html">usincometaxes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@
     <a class="dropdown-item" href="articles/taxsim-input.html">Description of Input Columns</a>
     <a class="dropdown-item" href="articles/taxsim-output.html">Description of Output Columns</a>
     <a class="dropdown-item" href="articles/send-data-to-taxsim.html">Manually Upload Data to TAXSIM 35</a>
-    <a class="dropdown-item" href="articles/interface-options.html">Interface Options for Calculating Taxes</a>
+    <a class="dropdown-item" href="articles/wasm.html">About the Web Assembly Interface</a>
   </div>
 </li>
 <li class="nav-item">
@@ -107,11 +107,57 @@
 <span class="va">family_taxes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes</a></span><span class="op">(</span>
   .data <span class="op">=</span> <span class="va">family_income</span>,
   marginal_tax_rates <span class="op">=</span> <span class="st">'Wages'</span>,
-  return_all_information <span class="op">=</span> <span class="cn">FALSE</span>
+  return_all_information <span class="op">=</span> <span class="cn">TRUE</span>
 <span class="op">)</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">family_taxes</span><span class="op">)</span></code></pre></div>
 <table class="table">
+<colgroup>
+<col width="1%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="1%">
+<col width="1%">
+<col width="1%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="3%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="3%">
+<col width="3%">
+<col width="2%">
+<col width="1%">
+<col width="1%">
+<col width="2%">
+<col width="3%">
+<col width="1%">
+<col width="3%">
+<col width="2%">
+<col width="1%">
+<col width="3%">
+<col width="3%">
+<col width="3%">
+<col width="2%">
+<col width="3%">
+<col width="3%">
+<col width="1%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="3%">
+<col width="3%">
+<col width="2%">
+</colgroup>
 <thead><tr class="header">
 <th align="right">taxsimid</th>
 <th align="right">fiitax</th>
@@ -121,6 +167,42 @@
 <th align="right">srate</th>
 <th align="right">ficar</th>
 <th align="right">tfica</th>
+<th align="right">v10_federal_agi</th>
+<th align="right">v11_ui_agi</th>
+<th align="right">v12_soc_sec_agi</th>
+<th align="right">v13_zero_bracket_amount</th>
+<th align="right">v14_personal_exemptions</th>
+<th align="right">v15_exemption_phaseout</th>
+<th align="right">v16_deduction_phaseout</th>
+<th align="right">v17_itemized_deductions</th>
+<th align="right">v18_federal_taxable_income</th>
+<th align="right">v19_tax_on_taxable_income</th>
+<th align="right">v20_exemption_surtax</th>
+<th align="right">v21_general_tax_credit</th>
+<th align="right">v22_child_tax_credit_adjusted</th>
+<th align="right">v23_child_tax_credit_refundable</th>
+<th align="right">v24_child_care_credit</th>
+<th align="right">v25_eitc</th>
+<th align="right">v26_amt_income</th>
+<th align="right">v27_amt_liability</th>
+<th align="right">v28_fed_income_tax_before_credit</th>
+<th align="right">v29_fica</th>
+<th align="right">v30_state_household_income</th>
+<th align="right">v31_state_rent_expense</th>
+<th align="right">v32_state_agi</th>
+<th align="right">v33_state_exemption_amount</th>
+<th align="right">v34_state_std_deduction_amount</th>
+<th align="right">v35_state_itemized_deduction</th>
+<th align="right">v36_state_taxable_income</th>
+<th align="right">v37_state_property_tax_credit</th>
+<th align="right">v38_state_child_care_credit</th>
+<th align="right">v39_state_eitc</th>
+<th align="right">v40_state_total_credits</th>
+<th align="right">v41_state_bracket_rate</th>
+<th align="right">v42_self_emp_income</th>
+<th align="right">v43_medicare_tax_unearned_income</th>
+<th align="right">v44_medicare_tax_earned_income</th>
+<th align="right">v45_cares_recovery_rebate</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -132,6 +214,42 @@
 <td align="right">5.75</td>
 <td align="right">15.3</td>
 <td align="right">3825</td>
+<td align="right">5e+04</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">12600</td>
+<td align="right">8000</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">29400</td>
+<td align="right">3487.5</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">5e+04</td>
+<td align="right">0</td>
+<td align="right">3487.5</td>
+<td align="right">7650</td>
+<td align="right">50000.01</td>
+<td align="right">0</td>
+<td align="right">50000.01</td>
+<td align="right">0</td>
+<td align="right">15000</td>
+<td align="right">0</td>
+<td align="right">35000.01</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">5e+04</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
@@ -142,6 +260,42 @@
 <td align="right">6.41</td>
 <td align="right">15.3</td>
 <td align="right">7650</td>
+<td align="right">1e+05</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">12400</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">87600</td>
+<td align="right">15103.5</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1e+05</td>
+<td align="right">0</td>
+<td align="right">15103.5</td>
+<td align="right">15300</td>
+<td align="right">100001.01</td>
+<td align="right">0</td>
+<td align="right">100000.01</td>
+<td align="right">0</td>
+<td align="right">8000</td>
+<td align="right">0</td>
+<td align="right">92000.01</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">6.41</td>
+<td align="right">1e+05</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
 </tr>
 </tbody>
 </table>
@@ -152,19 +306,55 @@
   <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
 <table class="table">
 <colgroup>
-<col width="8%">
-<col width="13%">
-<col width="5%">
-<col width="15%">
-<col width="6%">
-<col width="5%">
-<col width="7%">
-<col width="7%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
+<col width="1%">
+<col width="1%">
+<col width="0%">
+<col width="1%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="0%">
+<col width="1%">
+<col width="1%">
+<col width="1%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="3%">
+<col width="3%">
+<col width="2%">
+<col width="1%">
+<col width="1%">
+<col width="1%">
+<col width="3%">
+<col width="1%">
+<col width="2%">
+<col width="2%">
+<col width="1%">
+<col width="2%">
+<col width="3%">
+<col width="3%">
+<col width="2%">
+<col width="3%">
+<col width="2%">
+<col width="1%">
+<col width="2%">
+<col width="2%">
+<col width="2%">
+<col width="3%">
+<col width="3%">
+<col width="2%">
 </colgroup>
 <thead><tr class="header">
 <th align="right">taxsimid</th>
@@ -180,6 +370,42 @@
 <th align="right">srate</th>
 <th align="right">ficar</th>
 <th align="right">tfica</th>
+<th align="right">v10_federal_agi</th>
+<th align="right">v11_ui_agi</th>
+<th align="right">v12_soc_sec_agi</th>
+<th align="right">v13_zero_bracket_amount</th>
+<th align="right">v14_personal_exemptions</th>
+<th align="right">v15_exemption_phaseout</th>
+<th align="right">v16_deduction_phaseout</th>
+<th align="right">v17_itemized_deductions</th>
+<th align="right">v18_federal_taxable_income</th>
+<th align="right">v19_tax_on_taxable_income</th>
+<th align="right">v20_exemption_surtax</th>
+<th align="right">v21_general_tax_credit</th>
+<th align="right">v22_child_tax_credit_adjusted</th>
+<th align="right">v23_child_tax_credit_refundable</th>
+<th align="right">v24_child_care_credit</th>
+<th align="right">v25_eitc</th>
+<th align="right">v26_amt_income</th>
+<th align="right">v27_amt_liability</th>
+<th align="right">v28_fed_income_tax_before_credit</th>
+<th align="right">v29_fica</th>
+<th align="right">v30_state_household_income</th>
+<th align="right">v31_state_rent_expense</th>
+<th align="right">v32_state_agi</th>
+<th align="right">v33_state_exemption_amount</th>
+<th align="right">v34_state_std_deduction_amount</th>
+<th align="right">v35_state_itemized_deduction</th>
+<th align="right">v36_state_taxable_income</th>
+<th align="right">v37_state_property_tax_credit</th>
+<th align="right">v38_state_child_care_credit</th>
+<th align="right">v39_state_eitc</th>
+<th align="right">v40_state_total_credits</th>
+<th align="right">v41_state_bracket_rate</th>
+<th align="right">v42_self_emp_income</th>
+<th align="right">v43_medicare_tax_unearned_income</th>
+<th align="right">v44_medicare_tax_earned_income</th>
+<th align="right">v45_cares_recovery_rebate</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -196,6 +422,42 @@
 <td align="right">5.75</td>
 <td align="right">15.3</td>
 <td align="right">3825</td>
+<td align="right">5e+04</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">12600</td>
+<td align="right">8000</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">29400</td>
+<td align="right">3487.5</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">5e+04</td>
+<td align="right">0</td>
+<td align="right">3487.5</td>
+<td align="right">7650</td>
+<td align="right">50000.01</td>
+<td align="right">0</td>
+<td align="right">50000.01</td>
+<td align="right">0</td>
+<td align="right">15000</td>
+<td align="right">0</td>
+<td align="right">35000.01</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">5e+04</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
@@ -211,6 +473,42 @@
 <td align="right">6.41</td>
 <td align="right">15.3</td>
 <td align="right">7650</td>
+<td align="right">1e+05</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">12400</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">87600</td>
+<td align="right">15103.5</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1e+05</td>
+<td align="right">0</td>
+<td align="right">15103.5</td>
+<td align="right">15300</td>
+<td align="right">100001.01</td>
+<td align="right">0</td>
+<td align="right">100000.01</td>
+<td align="right">0</td>
+<td align="right">8000</td>
+<td align="right">0</td>
+<td align="right">92000.01</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">6.41</td>
+<td align="right">1e+05</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
 </tr>
 </tbody>
 </table>
@@ -442,11 +740,6 @@
 <h2 id="marginal-tax-rates">Marginal tax rates<a class="anchor" aria-label="anchor" href="#marginal-tax-rates"></a>
 </h2>
 <p>By default, marginal tax rates are calculated using wages. The default can be changed with the <code>marginal_tax_rates</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code>. Possible options are: ‘Wages’ (default), ‘Long Term Capital Gains’, ‘Primary Wage Earner’, or ‘Secondary Wage Earner’.</p>
-</div>
-<div class="section level2">
-<h2 id="user-interface">User interface<a class="anchor" aria-label="anchor" href="#user-interface"></a>
-</h2>
-<p>The <code>interface</code> parameter to <code><a href="reference/taxsim_calculate_taxes.html">taxsim_calculate_taxes()</a></code> controls how the TAXSIM 35 program is accessed. It has three options: (1) ‘wasm’, (2) ‘ssh’, and (3) ‘http’. With ‘wasm’, all tax calculations are done locally on one’s own computer through <a href="https://github.com/tmm1/taxsim.js" class="external-link">WebAssembly / JavaScript files</a> that are bundled with the package. With ‘ssh’ and ‘http’, the date are uploaded to the NBER’s servers where the calculations are conducted. See the <a href="https://www.shaneorr.io/r/usincometaxes/articles/taxsim-input.html" class="external-link">TAXSIM input vignette</a> for more information on the interface options.</p>
 </div>
 <div class="section level2">
 <h2 id="giving-credit">Giving credit<a class="anchor" aria-label="anchor" href="#giving-credit"></a>

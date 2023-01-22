@@ -1,13 +1,13 @@
-pandoc: 2.17.1.1
+pandoc: 2.19.2
 pkgdown: 2.0.3
 pkgdown_sha: ~
 articles:
-  interface-options: interface-options.html
   send-data-to-taxsim: send-data-to-taxsim.html
   taxsim-input: taxsim-input.html
   taxsim-output: taxsim-output.html
   using-usincometaxes: using-usincometaxes.html
-last_built: 2022-07-09T23:22Z
+  wasm: wasm.html
+last_built: 2023-01-22T02:41Z
 urls:
   reference: https://shanejorr.github.io/usincometaxes/reference
   article: https://shanejorr.github.io/usincometaxes/articles
